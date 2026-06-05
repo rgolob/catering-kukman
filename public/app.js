@@ -12,8 +12,11 @@ posodobiUro();
 
 // Naloži zaposlene in njihove statuse
 async function naloziZaposlene() {
+  try {
   const res = await fetch('/api/status');
+  if (!res.ok) return;
   const statusi = await res.json();
+  if (!Array.isArray(statusi)) return;
 
   const grid = document.getElementById('zaposleni-grid');
   grid.innerHTML = '';
@@ -29,12 +32,16 @@ async function naloziZaposlene() {
     btn.addEventListener('click', () => odpriDialog(z.id, z.ime, jePrisoten));
     grid.appendChild(btn);
   });
+  } catch (e) { console.error('naloziZaposlene:', e); }
 }
 
 // Naloži današnjo evidenco
 async function naloziEvidenco() {
+  try {
   const res = await fetch('/api/danes');
+  if (!res.ok) return;
   const zapisi = await res.json();
+  if (!Array.isArray(zapisi)) return;
 
   const list = document.getElementById('evidenca-list');
   if (zapisi.length === 0) {
@@ -52,6 +59,7 @@ async function naloziEvidenco() {
       </div>
     `;
   }).join('');
+  } catch (e) { console.error('naloziEvidenco:', e); }
 }
 
 // Odpri potrditveni dialog
