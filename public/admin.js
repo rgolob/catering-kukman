@@ -5,6 +5,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'obracun') naloziObracunTab();
   });
 });
 
@@ -42,7 +43,10 @@ async function naloziZaposlene() {
     const jeAktiven = z.aktiven === 1;
     const pinPrikaz = z.pin ? `<code class="pin-koda">${z.pin}</code>` : '<span class="pin-ni">—</span>';
 
-    const pinSetupPill = z.pin_setup_required ? '<span class="pin-setup-pill">Čaka nastavitev</span>' : '';
+    const jePrivzetPin = z.pin_setup_required && z.pin === '1234';
+    const pinSetupPill = z.pin_setup_required
+      ? (jePrivzetPin ? '<span class="pin-setup-pill pin-privzet">Privzet PIN 1234</span>' : '<span class="pin-setup-pill">Čaka nastavitev</span>')
+      : '';
     const upVrednost = z.urna_postavka ? `€${parseFloat(z.urna_postavka).toFixed(2)}` : '—';
     tr.innerHTML = `
       <td>${escHtml(z.ime)}</td>
@@ -482,17 +486,14 @@ document.getElementById('btn-dodaj-stim').addEventListener('click', async () => 
   }
 });
 
-// Naloži obračun ko se aktivira tab
-document.querySelectorAll('.tab').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (btn.dataset.tab === 'obracun' && !obrLeto) {
-      const zdaj = new Date();
-      obrLeto = zdaj.getFullYear();
-      obrMesec = zdaj.getMonth() + 1;
-      naloziObracun();
-    }
-  });
-});
+function naloziObracunTab() {
+  if (!obrLeto) {
+    const zdaj = new Date();
+    obrLeto = zdaj.getFullYear();
+    obrMesec = zdaj.getMonth() + 1;
+  }
+  naloziObracun();
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function escHtml(s) {

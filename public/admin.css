@@ -446,3 +446,9 @@ button:hover { background: #1a365d; }
   font-size: 0.9rem; flex: 1; min-width: 120px; outline: none;
 }
 .stim-select:focus, .stim-input:focus, .stim-input-opomba:focus { border-color: #4299e1; }
+
+.pin-privzet {
+  background: #fffaf0 !important;
+  color: #c05621 !important;
+  border-color: #fbd38d !important;
+}

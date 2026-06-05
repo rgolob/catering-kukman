@@ -71,7 +71,7 @@ async function ensureDb() {
   if (Number(rows[0].n) === 0) {
     await db.batch(
       ['Ana Novak', 'Bojan Kranjc', 'Maja Horvat', 'Luka Kovač', 'Sara Zupan'].map(ime => ({
-        sql: 'INSERT OR IGNORE INTO zaposleni (ime) VALUES (?)', args: [ime]
+        sql: 'INSERT OR IGNORE INTO zaposleni (ime, pin, pin_setup_required) VALUES (?, ?, 1)', args: [ime, '1234']
       })), 'write'
     );
   }
@@ -390,8 +390,11 @@ function createApp() {
     const { ime } = req.body;
     if (!ime?.trim()) return res.status(400).json({ napaka: 'Ime je obvezno' });
     try {
-      const r = await req.db.execute({ sql: 'INSERT INTO zaposleni (ime) VALUES (?)', args: [ime.trim()] });
-      res.json({ id: Number(r.lastInsertRowid), ime: ime.trim(), aktiven: 1, pin: null });
+      const r = await req.db.execute({
+        sql: 'INSERT INTO zaposleni (ime, pin, pin_setup_required) VALUES (?, ?, 1)',
+        args: [ime.trim(), '1234']
+      });
+      res.json({ id: Number(r.lastInsertRowid), ime: ime.trim(), aktiven: 1, pin: '1234', pin_setup_required: 1 });
     } catch (_) {
       res.status(409).json({ napaka: 'Zaposleni s tem imenom že obstaja' });
     }
