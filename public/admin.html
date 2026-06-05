@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin – Catering Kukman</title>
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1>Catering Kukman</h1>
+        <span class="subtitle">Admin panel</span>
+      </div>
+      <div class="header-actions">
+        <a href="/" class="btn-link">← Evidenca</a>
+        <button id="btn-odjava" class="btn-odjava">Odjava</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" data-tab="zaposleni">Zaposleni</button>
+      <button class="tab" data-tab="evidenca">Evidenca</button>
+      <button class="tab" data-tab="nastavitve">Nastavitve</button>
+    </div>
+
+    <!-- Tab: Zaposleni -->
+    <div id="tab-zaposleni" class="tab-content active">
+      <div class="card">
+        <h2>Dodaj zaposlenega</h2>
+        <div class="form-row">
+          <input type="text" id="novo-ime" placeholder="Ime in priimek" maxlength="60" />
+          <button id="btn-dodaj">Dodaj</button>
+        </div>
+        <div id="dodaj-napaka" class="inline-napaka"></div>
+      </div>
+
+      <div class="card">
+        <h2>Seznam zaposlenih</h2>
+        <table id="zaposleni-tabela" class="tabela">
+          <thead>
+            <tr><th>Ime</th><th>Status</th><th>Dejanje</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab: Evidenca -->
+    <div id="tab-evidenca" class="tab-content">
+      <div class="card">
+        <h2>Filtriraj evidenco</h2>
+        <div class="filter-row">
+          <label>Od: <input type="date" id="filter-od" /></label>
+          <label>Do: <input type="date" id="filter-do" /></label>
+          <button id="btn-iskanje">Prikaži</button>
+          <button id="btn-izvoz" class="btn-izvoz">⬇ Izvozi Excel</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header-row">
+          <h2>Zapisi <span id="evidenca-stevilo" class="badge"></span></h2>
+        </div>
+        <table id="evidenca-tabela" class="tabela">
+          <thead>
+            <tr><th>Datum</th><th>Zaposleni</th><th>Tip</th><th>Ura</th><th></th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="evidenca-prazno" class="prazno" style="display:none">Ni zapisov za izbrano obdobje.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Nastavitve -->
+    <div id="tab-nastavitve" class="tab-content">
+      <div class="card" style="max-width: 440px;">
+        <h2>Sprememba gesla</h2>
+        <div class="form-group">
+          <label>Staro geslo</label>
+          <input type="password" id="staro-geslo" />
+        </div>
+        <div class="form-group">
+          <label>Novo geslo</label>
+          <input type="password" id="novo-geslo" />
+        </div>
+        <div class="form-group">
+          <label>Potrdi novo geslo</label>
+          <input type="password" id="novo-geslo2" />
+        </div>
+        <div id="geslo-napaka" class="inline-napaka"></div>
+        <div id="geslo-uspeh" class="inline-uspeh"></div>
+        <button id="btn-geslo">Spremeni geslo</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

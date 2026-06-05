@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin prijava – Catering Kukman</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 44px 40px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.3);
+      text-align: center;
+    }
+    .logo { font-size: 2.4rem; margin-bottom: 6px; }
+    h1 { font-size: 1.4rem; color: #1a202c; margin-bottom: 4px; }
+    .subtitle { font-size: 0.9rem; color: #718096; margin-bottom: 32px; }
+    label { display: block; text-align: left; font-size: 0.85rem; font-weight: 600; color: #4a5568; margin-bottom: 6px; }
+    input[type="password"] {
+      width: 100%;
+      padding: 13px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.15s;
+      margin-bottom: 20px;
+    }
+    input[type="password"]:focus { border-color: #4299e1; }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #2c5282;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    button:hover { background: #1a365d; }
+    .napaka {
+      background: #fff5f5;
+      color: #9b2c2c;
+      border: 1px solid #fed7d7;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.88rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .nazaj { display: block; margin-top: 20px; font-size: 0.85rem; color: #4299e1; text-decoration: none; }
+    .nazaj:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">🍽️</div>
+    <h1>Catering Kukman</h1>
+    <p class="subtitle">Admin prijava</p>
+    <div id="napaka" class="napaka"></div>
+    <label for="geslo">Geslo</label>
+    <input type="password" id="geslo" placeholder="Vnesite geslo" autofocus />
+    <button id="btn-prijava">Prijava</button>
+    <a href="/" class="nazaj">← Nazaj na evidenco</a>
+  </div>
+  <script>
+    async function prijava() {
+      const geslo = document.getElementById('geslo').value;
+      const napaka = document.getElementById('napaka');
+      napaka.style.display = 'none';
+
+      const res = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ geslo })
+      });
+
+      if (res.ok) {
+        window.location.href = '/admin';
+      } else {
+        const data = await res.json();
+        napaka.textContent = data.napaka || 'Napaka pri prijavi';
+        napaka.style.display = 'block';
+        document.getElementById('geslo').select();
+      }
+    }
+
+    document.getElementById('btn-prijava').addEventListener('click', prijava);
+    document.getElementById('geslo').addEventListener('keydown', e => {
+      if (e.key === 'Enter') prijava();
+    });
+  </script>
+</body>
+</html>
