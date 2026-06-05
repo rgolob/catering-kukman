@@ -501,6 +501,34 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ── Demo seed ─────────────────────────────────────────────────────────────────
+document.getElementById('btn-seed-demo').addEventListener('click', async () => {
+  const el = document.getElementById('seed-rezultat');
+  const btn = document.getElementById('btn-seed-demo');
+  if (!confirm('Vstaviti demo podatke (jan–jun 2026) za vseh 5 zaposlenih?')) return;
+  btn.disabled = true;
+  btn.textContent = 'Vstavljam…';
+  el.textContent = '';
+  try {
+    const res = await fetch('/api/admin/seed-demo', { method: 'POST' });
+    const d = await res.json();
+    if (res.ok) {
+      el.style.color = '#68d391';
+      el.textContent = `✓ ${d.sporocilo}`;
+      prikaziToast(d.sporocilo);
+      naloziZaposlene();
+    } else {
+      el.style.color = '#fc8181';
+      el.textContent = d.napaka || 'Napaka';
+    }
+  } catch (e) {
+    el.style.color = '#fc8181';
+    el.textContent = 'Ni povezave s strežnikom';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Vstavi demo podatke';
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 naloziZaposlene();
 naloziEvidenco();

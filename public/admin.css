@@ -452,3 +452,10 @@ button:hover { background: #1a365d; }
   color: #c05621 !important;
   border-color: #fbd38d !important;
 }
+
+.btn-seed {
+  background: #2d3748; color: #e2e8f0; border: 1.5px solid #4a5568;
+  padding: 9px 18px; border-radius: 8px; font-size: 0.9rem; cursor: pointer;
+}
+.btn-seed:hover { background: #4a5568; }
+.btn-seed:disabled { opacity: 0.5; cursor: not-allowed; }
