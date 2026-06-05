@@ -24,9 +24,15 @@ function prikaziToast(besedilo, tip = 'uspeh') {
 
 // ── ZAPOSLENI TAB ─────────────────────────────────────────────────────────────
 async function naloziZaposlene() {
-  const res = await fetch('/api/admin/zaposleni');
-  if (res.redirected || res.url.includes('/login')) { window.location.href = '/login'; return; }
-  const zaposleni = await res.json();
+  try {
+    const res = await fetch('/api/admin/zaposleni');
+    if (res.redirected || res.url.includes('/login')) { window.location.href = '/login'; return; }
+    if (!res.ok) {
+      prikaziToast(`Napaka strežnika (${res.status}) — preveri nastavitve baze`, 'napaka');
+      return;
+    }
+    const zaposleni = await res.json();
+    if (!Array.isArray(zaposleni)) { prikaziToast('Napaka pri nalaganju zaposlenih', 'napaka'); return; }
 
   const tbody = document.querySelector('#zaposleni-tabela tbody');
   tbody.innerHTML = '';
@@ -124,6 +130,10 @@ async function naloziZaposlene() {
       naloziZaposlene();
     });
   });
+  } catch (e) {
+    prikaziToast('Ni povezave s strežnikom', 'napaka');
+    console.error(e);
+  }
 }
 
 document.getElementById('btn-dodaj').addEventListener('click', async () => {
@@ -176,8 +186,11 @@ async function naloziEvidenco() {
   const od  = document.getElementById('filter-od').value;
   const do_ = document.getElementById('filter-do').value;
 
-  const res = await fetch(`/api/admin/evidenca?od=${od}&do=${do_}`);
-  const zapisi = await res.json();
+  try {
+    const res = await fetch(`/api/admin/evidenca?od=${od}&do=${do_}`);
+    if (!res.ok) { prikaziToast(`Napaka strežnika (${res.status})`, 'napaka'); return; }
+    const zapisi = await res.json();
+    if (!Array.isArray(zapisi)) { prikaziToast('Napaka pri nalaganju evidenc', 'napaka'); return; }
 
   const badge = document.getElementById('evidenca-stevilo');
   badge.textContent = zapisi.length;
@@ -216,6 +229,10 @@ async function naloziEvidenco() {
       naloziEvidenco();
     });
   });
+  } catch (e) {
+    prikaziToast('Ni povezave s strežnikom', 'napaka');
+    console.error(e);
+  }
 }
 
 document.getElementById('btn-iskanje').addEventListener('click', naloziEvidenco);
