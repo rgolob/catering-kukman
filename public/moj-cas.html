@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moj čas – Catering Kukman</title>
+  <link rel="stylesheet" href="moj-cas.css" />
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1 id="pozdrav">Moj čas</h1>
+        <div id="status-danes" class="status-danes"></div>
+      </div>
+      <button id="btn-odjava" class="btn-odjava">Odjava</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Mesečni pregled -->
+    <section class="card">
+      <div class="mesec-navigacija">
+        <button id="btn-prej" class="btn-nav">&#8249;</button>
+        <h2 id="mesec-naslov">Junij 2026</h2>
+        <button id="btn-naprej" class="btn-nav">&#8250;</button>
+      </div>
+
+      <div class="skupaj-mesec">
+        <span class="skupaj-label">Skupaj ta mesec</span>
+        <span id="skupaj-ure" class="skupaj-vrednost">—</span>
+      </div>
+
+      <table class="tabela" id="tabela-dni">
+        <thead>
+          <tr>
+            <th>Dan</th>
+            <th>Prihod</th>
+            <th>Odhod</th>
+            <th class="th-ure">Ure</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-dni"></tbody>
+      </table>
+      <div id="mesec-prazno" class="prazno" style="display:none">Ni zapisov za ta mesec.</div>
+    </section>
+
+    <!-- Kumulativno po mesecih -->
+    <section class="card">
+      <h2>Kumulativno po mesecih</h2>
+      <table class="tabela" id="tabela-meseci">
+        <thead>
+          <tr><th>Mesec</th><th class="th-ure">Ure skupaj</th></tr>
+        </thead>
+        <tbody id="tbody-meseci"></tbody>
+      </table>
+      <div id="kum-prazno" class="prazno" style="display:none">Še ni podatkov.</div>
+    </section>
+  </main>
+
+  <script src="moj-cas.js"></script>
+</body>
+</html>

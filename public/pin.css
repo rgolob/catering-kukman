@@ -1,0 +1,153 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f4f8;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header {
+  background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+  color: white;
+  text-align: center;
+  padding: 20px 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+header h1 { font-size: 1.6rem; font-weight: 700; }
+header p  { font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 20px;
+}
+
+.pin-card {
+  background: white;
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.navodilo {
+  font-size: 1rem;
+  color: #4a5568;
+  font-weight: 500;
+}
+
+.pin-prikaz {
+  display: flex;
+  gap: 18px;
+}
+
+.pin-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #cbd5e0;
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.pin-dot.vnesen {
+  background: #2c5282;
+  border-color: #2c5282;
+  transform: scale(1.1);
+}
+
+.pin-dot.napaka-anim {
+  border-color: #e53e3e;
+  background: #e53e3e;
+}
+
+.napaka {
+  font-size: 0.88rem;
+  color: #e53e3e;
+  font-weight: 500;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.tipkovnica {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+
+.tipka {
+  aspect-ratio: 1;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.tipka:hover {
+  background: #ebf4ff;
+  border-color: #4299e1;
+  transform: scale(1.05);
+}
+
+.tipka:active {
+  transform: scale(0.96);
+  background: #bee3f8;
+}
+
+.tipka-brisi {
+  background: #fff5f5;
+  border-color: #fed7d7;
+  color: #e53e3e;
+  font-size: 1.3rem;
+}
+
+.tipka-brisi:hover {
+  background: #fed7d7;
+  border-color: #e53e3e;
+}
+
+.tipka-prazna {
+  background: transparent;
+  border: none;
+  cursor: default;
+  pointer-events: none;
+}
+.tipka-prazna:hover { transform: none; background: transparent; }
+
+.nazaj {
+  font-size: 0.88rem;
+  color: #4299e1;
+  text-decoration: none;
+}
+.nazaj:hover { text-decoration: underline; }
+
+@keyframes tresenje {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-6px); }
+  80%       { transform: translateX(6px); }
+}
+
+.tresenje { animation: tresenje 0.4s ease; }

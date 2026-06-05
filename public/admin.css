@@ -270,6 +270,59 @@ button:hover { background: #1a365d; }
   vertical-align: middle;
 }
 
+/* PIN management */
+.td-pin { min-width: 160px; }
+
+.pin-celica {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pin-koda {
+  font-family: monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #2c5282;
+  background: #ebf4ff;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 2px;
+}
+
+.pin-ni { color: #a0aec0; }
+
+.pin-uredi-vrstica {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pin-input {
+  width: 70px;
+  padding: 6px 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 2px;
+  font-family: monospace;
+}
+.pin-input:focus { border-color: #4299e1; outline: none; }
+
+.btn-pin-uredi { background: #4a5568; font-size: 0.75rem; padding: 4px 10px; }
+.btn-pin-uredi:hover { background: #2d3748; }
+.btn-pin-shrani { background: #38a169; font-size: 0.75rem; padding: 4px 10px; }
+.btn-pin-shrani:hover { background: #276749; }
+.btn-pin-brisi { background: #e53e3e; font-size: 0.75rem; padding: 4px 10px; }
+.btn-pin-brisi:hover { background: #c53030; }
+.btn-pin-preklic { background: #a0aec0; font-size: 0.75rem; padding: 4px 10px; }
+.btn-pin-preklic:hover { background: #718096; }
+
 .prazno {
   text-align: center;
   color: #a0aec0;

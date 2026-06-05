@@ -315,7 +315,7 @@ h2 {
   padding: 20px;
   margin-top: 8px;
 }
-.admin-link {
+.admin-link, .moj-cas-link {
   font-size: 0.8rem;
   color: #a0aec0;
   text-decoration: none;
@@ -323,7 +323,10 @@ h2 {
   border-radius: 6px;
   transition: color 0.15s;
 }
-.admin-link:hover { color: #4a5568; }
+.admin-link:hover, .moj-cas-link:hover { color: #4a5568; }
+.moj-cas-link { color: #4299e1; }
+.moj-cas-link:hover { color: #2c5282; }
+.footer-sep { color: #cbd5e0; }
 
 @media (max-width: 480px) {
   header h1 { font-size: 1.5rem; }
