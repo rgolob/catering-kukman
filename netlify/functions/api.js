@@ -1,4 +1,12 @@
 const serverless = require('serverless-http');
-const { createApp } = require('../../app');
 
-module.exports.handler = serverless(createApp());
+let handler;
+try {
+  const { createApp } = require('../../app');
+  handler = serverless(createApp());
+} catch (e) {
+  console.error('INIT ERROR:', e);
+  handler = async () => ({ statusCode: 500, body: JSON.stringify({ napaka: e.message }) });
+}
+
+module.exports.handler = handler;
