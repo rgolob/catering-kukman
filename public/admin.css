@@ -390,3 +390,59 @@ button:hover { background: #1a365d; }
   border-color: #fc8181;
 }
 .btn-pin-ponastavi:hover { background: #fed7d7; }
+
+/* Obračun tab */
+.obr-nav-row {
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; margin-bottom: 20px;
+}
+.obr-mesec-napis {
+  font-size: 1.1rem; font-weight: 700; color: #1a202c;
+  min-width: 160px; text-align: center;
+}
+.btn-nav-obr {
+  background: #edf2f7; border: none;
+  width: 34px; height: 34px; border-radius: 50%;
+  font-size: 1.4rem; cursor: pointer; color: #4a5568;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s; padding: 0; line-height: 1;
+}
+.btn-nav-obr:hover { background: #e2e8f0; }
+.btn-nav-obr:disabled { opacity: 0.3; cursor: default; }
+
+.th-r { text-align: right; }
+.td-r { text-align: right; font-variant-numeric: tabular-nums; }
+.td-skupaj { font-weight: 700; color: #2c5282; }
+.obr-skupaj-row td { border-top: 2px solid #e2e8f0; background: #f7fafc; }
+
+/* Urna postavka input */
+.td-up { min-width: 110px; }
+.up-celica { display: flex; align-items: center; gap: 3px; }
+.up-euro-znak { color: #4a5568; font-size: 0.88rem; }
+.up-input {
+  width: 68px; padding: 4px 6px;
+  border: 1.5px solid #e2e8f0; border-radius: 6px;
+  font-size: 0.88rem; color: #1a202c;
+  outline: none; text-align: right;
+}
+.up-input:focus { border-color: #4299e1; }
+.up-unit { color: #718096; font-size: 0.78rem; }
+
+/* Stimulacija form */
+.stim-form-row {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  margin-bottom: 6px;
+}
+.stim-select {
+  padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.9rem; min-width: 160px; outline: none;
+}
+.stim-input {
+  padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.9rem; width: 110px; outline: none;
+}
+.stim-input-opomba {
+  padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.9rem; flex: 1; min-width: 120px; outline: none;
+}
+.stim-select:focus, .stim-input:focus, .stim-input-opomba:focus { border-color: #4299e1; }

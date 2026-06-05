@@ -51,6 +51,13 @@ async function ensureDb() {
     { sql: `CREATE TABLE IF NOT EXISTS config (
         kljuc TEXT PRIMARY KEY, vrednost TEXT NOT NULL
       )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS stimulacija (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        zaposleni_id INTEGER NOT NULL,
+        mesec TEXT NOT NULL,
+        znesek REAL NOT NULL DEFAULT 0,
+        opomba TEXT
+      )`, args: [] },
     { sql: `INSERT OR IGNORE INTO config (kljuc, vrednost) VALUES ('admin_hash', ?)`,
       args: [sha256('kukman2024')] }
   ], 'write');
@@ -58,6 +65,7 @@ async function ensureDb() {
   // Safe migration: add new columns if they don't exist
   try { await db.execute('ALTER TABLE zaposleni ADD COLUMN pin_setup_required INTEGER DEFAULT 0'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca ADD COLUMN naknadno INTEGER DEFAULT 0'); } catch(_) {}
+  try { await db.execute('ALTER TABLE zaposleni ADD COLUMN urna_postavka REAL DEFAULT 0'); } catch(_) {}
 
   const { rows } = await db.execute('SELECT COUNT(*) as n FROM zaposleni');
   if (Number(rows[0].n) === 0) {
@@ -314,22 +322,46 @@ function createApp() {
     const zdaj = new Date();
     const leto = parseInt(req.query.leto) || zdaj.getFullYear();
     const mesec = parseInt(req.query.mesec) || (zdaj.getMonth() + 1);
-    const od = `${leto}-${String(mesec).padStart(2, '0')}-01`;
-    const do_ = `${leto}-${String(mesec).padStart(2, '0')}-31`;
-    const { rows } = await req.db.execute({
-      sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ?
-            AND substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`,
-      args: [req.session.zaposleniId, od, do_]
+    const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
+    const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
+
+    const [{ rows }, { rows: zRows }, { rows: stimRows }] = await Promise.all([
+      req.db.execute({ sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [req.session.zaposleniId, od, do_] }),
+      req.db.execute({ sql: 'SELECT urna_postavka FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId] }),
+      req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] })
+    ]);
+
+    const urnaPostavka = parseFloat(zRows[0]?.urna_postavka) || 0;
+    const stimulacija = parseFloat(stimRows[0]?.skupaj) || 0;
+    const dnevi = izracunajDnevneUre(rows, zdaj);
+    const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
+    const osnova = urnaPostavka > 0 ? Math.round(skupajMinut / 60 * urnaPostavka * 100) / 100 : null;
+
+    res.json({
+      leto, mesec, dnevi,
+      urnaPostavka: urnaPostavka || null,
+      osnova,
+      stimulacija: stimulacija || null,
+      skupajPlacilo: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
     });
-    res.json({ leto, mesec, dnevi: izracunajDnevneUre(rows, zdaj) });
   });
 
   app.get('/api/moj-cas/kumulativno', requirePinAuth, async (req, res) => {
-    const { rows } = await req.db.execute({
-      sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas ASC',
-      args: [req.session.zaposleniId]
+    const [{ rows }, { rows: zRows }, { rows: stimRows }] = await Promise.all([
+      req.db.execute({ sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas ASC', args: [req.session.zaposleniId] }),
+      req.db.execute({ sql: 'SELECT urna_postavka FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId] }),
+      req.db.execute({ sql: 'SELECT mesec, SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? GROUP BY mesec', args: [req.session.zaposleniId] })
+    ]);
+    const urnaPostavka = parseFloat(zRows[0]?.urna_postavka) || 0;
+    const stimPoMesecih = new Map(stimRows.map(r => [r.mesec, parseFloat(r.skupaj) || 0]));
+
+    const meseci = izracunajMesecneUre(rows).map(m => {
+      const stim = stimPoMesecih.get(m.mesec) || 0;
+      const osnova = urnaPostavka > 0 ? Math.round(m.minute / 60 * urnaPostavka * 100) / 100 : null;
+      return { ...m, urnaPostavka: urnaPostavka || null, osnova, stimulacija: stim || null,
+        skupajPlacilo: (osnova !== null || stim > 0) ? Math.round(((osnova || 0) + stim) * 100) / 100 : null };
     });
-    res.json(izracunajMesecneUre(rows));
+    res.json(meseci);
   });
 
   app.post('/api/moj-cas/naknadno', requirePinAuth, async (req, res) => {
@@ -443,6 +475,79 @@ function createApp() {
     res.setHeader('Content-Disposition', `attachment; filename="evidenca_${od}_${do_}.xlsx"`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     res.send(buf);
+  });
+
+  app.patch('/api/admin/zaposleni/:id/urna-postavka', requireAuth, async (req, res) => {
+    const vrednost = parseFloat(req.body.urnaPostavka);
+    if (isNaN(vrednost) || vrednost < 0)
+      return res.status(400).json({ napaka: 'Neveljavna urna postavka' });
+    await req.db.execute({ sql: 'UPDATE zaposleni SET urna_postavka = ? WHERE id = ?', args: [vrednost, req.params.id] });
+    res.json({ ok: true });
+  });
+
+  app.get('/api/admin/obracun', requireAuth, async (req, res) => {
+    const zdaj = new Date();
+    const leto = parseInt(req.query.leto) || zdaj.getFullYear();
+    const mesec = parseInt(req.query.mesec) || (zdaj.getMonth() + 1);
+    const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
+    const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
+
+    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }] = await Promise.all([
+      req.db.execute('SELECT id, ime, urna_postavka FROM zaposleni WHERE aktiven = 1 ORDER BY ime'),
+      req.db.execute({ sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [od, do_] }),
+      req.db.execute({ sql: 'SELECT zaposleni_id, SUM(znesek) as skupaj FROM stimulacija WHERE mesec = ? GROUP BY zaposleni_id', args: [mesecStr] })
+    ]);
+
+    const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
+
+    const obracun = zaposleni.map(z => {
+      const zid = Number(z.id);
+      const zEv = evidenca.filter(e => Number(e.zaposleni_id) === zid);
+      const dnevi = izracunajDnevneUre(zEv, zdaj);
+      const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
+      const urnaPostavka = parseFloat(z.urna_postavka) || 0;
+      const osnova = urnaPostavka > 0 ? Math.round(skupajMinut / 60 * urnaPostavka * 100) / 100 : null;
+      const stimulacija = stimMap.get(zid) || 0;
+      return {
+        id: zid, ime: z.ime, urnaPostavka,
+        minute: skupajMinut, osnova, stimulacija: stimulacija || null,
+        skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
+      };
+    });
+    res.json({ leto, mesec, obracun });
+  });
+
+  app.get('/api/admin/stimulacija', requireAuth, async (req, res) => {
+    const { mesec } = req.query;
+    if (!mesec) return res.status(400).json({ napaka: 'Manjka mesec' });
+    const { rows } = await req.db.execute({
+      sql: `SELECT s.id, s.zaposleni_id, z.ime, s.znesek, s.opomba
+            FROM stimulacija s JOIN zaposleni z ON z.id = s.zaposleni_id
+            WHERE s.mesec = ? ORDER BY z.ime`,
+      args: [mesec]
+    });
+    res.json(rows);
+  });
+
+  app.post('/api/admin/stimulacija', requireAuth, async (req, res) => {
+    const { zaposleniId, mesec, znesek, opomba } = req.body;
+    if (!zaposleniId || !mesec || znesek == null)
+      return res.status(400).json({ napaka: 'Manjkajo podatki' });
+    if (!/^\d{4}-\d{2}$/.test(mesec))
+      return res.status(400).json({ napaka: 'Neveljaven format meseca (YYYY-MM)' });
+    const vrednost = parseFloat(znesek);
+    if (isNaN(vrednost) || vrednost <= 0)
+      return res.status(400).json({ napaka: 'Znesek mora biti pozitivno število' });
+    const r = await req.db.execute({
+      sql: 'INSERT INTO stimulacija (zaposleni_id, mesec, znesek, opomba) VALUES (?, ?, ?, ?)',
+      args: [zaposleniId, mesec, vrednost, opomba || null]
+    });
+    res.json({ id: Number(r.lastInsertRowid), ok: true });
+  });
+
+  app.delete('/api/admin/stimulacija/:id', requireAuth, async (req, res) => {
+    await req.db.execute({ sql: 'DELETE FROM stimulacija WHERE id = ?', args: [req.params.id] });
+    res.json({ ok: true });
   });
 
   app.post('/api/admin/geslo', requireAuth, async (req, res) => {

@@ -44,6 +44,10 @@ async function naloziInfo() {
   }
 }
 
+function formatEur(n) {
+  return n != null ? '€' + parseFloat(n).toFixed(2) : '—';
+}
+
 async function naloziMesec() {
   const res = await fetch(`/api/moj-cas/mesec?leto=${prikazanoLeto}&mesec=${prikazaniMesec}`);
   const data = await res.json();
@@ -58,6 +62,7 @@ async function naloziMesec() {
     tbody.innerHTML = '';
     prazno.style.display = 'block';
     document.getElementById('skupaj-ure').textContent = '0u';
+    document.getElementById('placilo-box').style.display = 'none';
     return;
   }
   prazno.style.display = 'none';
@@ -70,16 +75,9 @@ async function naloziMesec() {
   tbody.innerHTML = data.dnevi.map(d => {
     const jeDanes = d.datum === danasnji;
     let ureStr, ureClass;
-    if (d.nepopoln) {
-      ureStr = 'nepopoln';
-      ureClass = 'nepopoln';
-    } else if (d.vTeku) {
-      ureStr = formatirajUre(d.minute) + ' ▶';
-      ureClass = 'v-teku';
-    } else {
-      ureStr = formatirajUre(d.minute);
-      ureClass = '';
-    }
+    if (d.nepopoln) { ureStr = 'nepopoln'; ureClass = 'nepopoln'; }
+    else if (d.vTeku) { ureStr = formatirajUre(d.minute) + ' ▶'; ureClass = 'v-teku'; }
+    else { ureStr = formatirajUre(d.minute); ureClass = ''; }
 
     return `<tr class="${jeDanes ? 'danes-row' : ''}">
       <td>${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}</td>
@@ -89,7 +87,26 @@ async function naloziMesec() {
     </tr>`;
   }).join('');
 
-  // Disable "naprej" if we're already at current month
+  // Prikaz plačila
+  const plBox = document.getElementById('placilo-box');
+  if (data.skupajPlacilo !== null) {
+    const ure = (skupajMinut / 60).toFixed(2);
+    document.getElementById('placilo-osnova-napis').textContent =
+      `Osnova (${ure}h × €${parseFloat(data.urnaPostavka).toFixed(2)}/h)`;
+    document.getElementById('placilo-osnova-znesek').textContent = formatEur(data.osnova);
+    const stimRow = document.getElementById('placilo-stim-row');
+    if (data.stimulacija) {
+      document.getElementById('placilo-stim-znesek').textContent = formatEur(data.stimulacija);
+      stimRow.style.display = '';
+    } else {
+      stimRow.style.display = 'none';
+    }
+    document.getElementById('placilo-skupaj-znesek').textContent = formatEur(data.skupajPlacilo);
+    plBox.style.display = '';
+  } else {
+    plBox.style.display = 'none';
+  }
+
   const zdaj = new Date();
   const jeTekochiMesec = prikazanoLeto === zdaj.getFullYear() && prikazaniMesec === (zdaj.getMonth() + 1);
   document.getElementById('btn-naprej').disabled = jeTekochiMesec;
@@ -105,22 +122,30 @@ async function naloziKumulativno() {
   if (!meseci || meseci.length === 0) {
     tbody.innerHTML = '';
     prazno.style.display = 'block';
+    document.getElementById('th-placilo').style.display = 'none';
     return;
   }
   prazno.style.display = 'none';
 
-  let skupajVsega = 0;
+  const imaPlacilo = meseci.some(m => m.skupajPlacilo !== null);
+  document.getElementById('th-placilo').style.display = imaPlacilo ? '' : 'none';
+
+  let skupajVsega = 0, skupajPlacilo = 0;
   tbody.innerHTML = meseci.map(m => {
     skupajVsega += m.minute;
+    skupajPlacilo += m.skupajPlacilo || 0;
     const [leto, mes] = m.mesec.split('-');
     const ime = `${MESECI[parseInt(mes) - 1]} ${leto}`;
+    const placiloCell = imaPlacilo ? `<td class="td-ure">${m.skupajPlacilo != null ? formatEur(m.skupajPlacilo) : '—'}</td>` : '';
     return `<tr>
       <td>${ime}</td>
       <td class="td-ure">${formatirajUre(m.minute)}</td>
+      ${placiloCell}
     </tr>`;
   }).join('') + `<tr class="mesec-skupaj">
     <td>Skupaj vse</td>
     <td class="td-ure">${formatirajUre(skupajVsega)}</td>
+    ${imaPlacilo ? `<td class="td-ure">${formatEur(skupajPlacilo)}</td>` : ''}
   </tr>`;
 }
 

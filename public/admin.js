@@ -43,8 +43,16 @@ async function naloziZaposlene() {
     const pinPrikaz = z.pin ? `<code class="pin-koda">${z.pin}</code>` : '<span class="pin-ni">—</span>';
 
     const pinSetupPill = z.pin_setup_required ? '<span class="pin-setup-pill">Čaka nastavitev</span>' : '';
+    const upVrednost = z.urna_postavka ? `€${parseFloat(z.urna_postavka).toFixed(2)}` : '—';
     tr.innerHTML = `
       <td>${escHtml(z.ime)}</td>
+      <td class="td-up">
+        <div class="up-celica">
+          <span class="up-euro-znak">€</span>
+          <input type="number" class="up-input" value="${parseFloat(z.urna_postavka || 0).toFixed(2)}" min="0" step="0.10" placeholder="0.00" data-id="${z.id}" title="Urna postavka €/h" />
+          <span class="up-unit">/h</span>
+        </div>
+      </td>
       <td class="td-pin">
         <div class="pin-celica">
           <span class="pin-vrednost">${pinPrikaz}</span>
@@ -67,6 +75,25 @@ async function naloziZaposlene() {
       </td>
     `;
     tbody.appendChild(tr);
+  });
+
+  // Urna postavka — shrani ob spremembi
+  tbody.querySelectorAll('.up-input').forEach(input => {
+    input.addEventListener('change', async () => {
+      const vrednost = parseFloat(input.value);
+      if (isNaN(vrednost) || vrednost < 0) { input.value = '0.00'; return; }
+      const res = await fetch(`/api/admin/zaposleni/${input.dataset.id}/urna-postavka`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urnaPostavka: vrednost })
+      });
+      if (res.ok) {
+        prikaziToast(`Urna postavka shranjena`);
+        input.value = vrednost.toFixed(2);
+      } else {
+        prikaziToast('Napaka pri shranjevanju', 'napaka');
+      }
+    });
   });
 
   // PIN uredi
@@ -296,6 +323,175 @@ document.getElementById('btn-geslo').addEventListener('click', async () => {
     napaka.textContent = data.napaka;
     napaka.style.display = 'block';
   }
+});
+
+// ── OBRAČUN TAB ───────────────────────────────────────────────────────────────
+const MESECI_OBR = ['Januar','Februar','Marec','April','Maj','Junij',
+                    'Julij','Avgust','September','Oktober','November','December'];
+
+let obrLeto, obrMesec;
+
+function formatEur(n) {
+  if (n == null) return '—';
+  return '€' + parseFloat(n).toFixed(2);
+}
+function formatUre(min) {
+  if (!min) return '0u';
+  const u = Math.floor(min / 60), m = min % 60;
+  return m ? `${u}u ${m}m` : `${u}u`;
+}
+
+async function naloziObracun() {
+  document.getElementById('obr-mesec-napis').textContent =
+    `${MESECI_OBR[obrMesec - 1]} ${obrLeto}`;
+
+  const zdaj = new Date();
+  const jeTekochiMesec = obrLeto === zdaj.getFullYear() && obrMesec === (zdaj.getMonth() + 1);
+  document.getElementById('obr-btn-naprej').disabled = jeTekochiMesec;
+
+  try {
+    const [resObr, resStim] = await Promise.all([
+      fetch(`/api/admin/obracun?leto=${obrLeto}&mesec=${obrMesec}`),
+      fetch(`/api/admin/stimulacija?mesec=${obrLeto}-${String(obrMesec).padStart(2,'0')}`)
+    ]);
+
+    if (!resObr.ok) { prikaziToast('Napaka pri nalaganju obračuna', 'napaka'); return; }
+    const { obracun } = await resObr.json();
+    const stimulacije = resStim.ok ? await resStim.json() : [];
+
+    // Obračun tabela
+    const tbody = document.getElementById('obracun-tbody');
+    const prazno = document.getElementById('obracun-prazno');
+
+    let skupajMin = 0, skupajOsnova = 0, skupajStim = 0, skupajVse = 0;
+    tbody.innerHTML = obracun.map(z => {
+      skupajMin += z.minute || 0;
+      skupajOsnova += z.osnova || 0;
+      skupajStim += z.stimulacija || 0;
+      skupajVse += z.skupaj || 0;
+      return `<tr>
+        <td>${escHtml(z.ime)}</td>
+        <td class="td-r">${formatUre(z.minute)}</td>
+        <td class="td-r">${z.urnaPostavka ? `€${parseFloat(z.urnaPostavka).toFixed(2)}` : '—'}</td>
+        <td class="td-r">${formatEur(z.osnova)}</td>
+        <td class="td-r">${z.stimulacija ? formatEur(z.stimulacija) : '—'}</td>
+        <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}</td>
+      </tr>`;
+    }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
+        <td><strong>SKUPAJ</strong></td>
+        <td class="td-r"><strong>${formatUre(skupajMin)}</strong></td>
+        <td class="td-r">—</td>
+        <td class="td-r"><strong>${formatEur(skupajOsnova)}</strong></td>
+        <td class="td-r"><strong>${skupajStim ? formatEur(skupajStim) : '—'}</strong></td>
+        <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong></td>
+      </tr>` : '');
+
+    prazno.style.display = obracun.length ? 'none' : 'block';
+
+    // Stimulacija tabela + dropdown
+    await naloziStimulacije(stimulacije);
+
+  } catch(e) {
+    prikaziToast('Napaka pri nalaganju', 'napaka');
+    console.error(e);
+  }
+}
+
+async function naloziStimulacije(stimulacije) {
+  // Posodobi dropdown z aktivnimi zaposlenimi
+  try {
+    const res = await fetch('/api/admin/zaposleni');
+    if (res.ok) {
+      const zaposleni = await res.json();
+      const sel = document.getElementById('stim-zaposleni');
+      sel.innerHTML = zaposleni.filter(z => z.aktiven).map(z =>
+        `<option value="${z.id}">${escHtml(z.ime)}</option>`
+      ).join('');
+    }
+  } catch(_) {}
+
+  const tbody = document.getElementById('stim-tbody');
+  const prazno = document.getElementById('stim-prazno');
+
+  if (!Array.isArray(stimulacije) || stimulacije.length === 0) {
+    tbody.innerHTML = '';
+    prazno.style.display = 'block';
+    return;
+  }
+  prazno.style.display = 'none';
+
+  tbody.innerHTML = stimulacije.map(s => `
+    <tr>
+      <td>${escHtml(s.ime)}</td>
+      <td class="td-r">${formatEur(s.znesek)}</td>
+      <td>${escHtml(s.opomba || '—')}</td>
+      <td><button class="btn-sm btn-danger btn-stim-brisi" data-id="${s.id}">Izbriši</button></td>
+    </tr>
+  `).join('');
+
+  tbody.querySelectorAll('.btn-stim-brisi').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Izbrisati to stimulacijo?')) return;
+      const res = await fetch(`/api/admin/stimulacija/${btn.dataset.id}`, { method: 'DELETE' });
+      if (res.ok) { prikaziToast('Stimulacija izbrisana'); naloziObracun(); }
+      else prikaziToast('Napaka pri brisanju', 'napaka');
+    });
+  });
+}
+
+document.getElementById('obr-btn-prej').addEventListener('click', () => {
+  obrMesec--;
+  if (obrMesec < 1) { obrMesec = 12; obrLeto--; }
+  naloziObracun();
+});
+
+document.getElementById('obr-btn-naprej').addEventListener('click', () => {
+  obrMesec++;
+  if (obrMesec > 12) { obrMesec = 1; obrLeto++; }
+  naloziObracun();
+});
+
+document.getElementById('btn-dodaj-stim').addEventListener('click', async () => {
+  const napaka = document.getElementById('stim-napaka');
+  napaka.style.display = 'none';
+  const zaposleniId = document.getElementById('stim-zaposleni').value;
+  const znesek = document.getElementById('stim-znesek').value;
+  const opomba = document.getElementById('stim-opomba').value.trim();
+  const mesec = `${obrLeto}-${String(obrMesec).padStart(2,'0')}`;
+
+  if (!zaposleniId || !znesek || parseFloat(znesek) <= 0) {
+    napaka.textContent = 'Izberite zaposlenega in vnesite znesek.';
+    napaka.style.display = 'block'; return;
+  }
+
+  const res = await fetch('/api/admin/stimulacija', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zaposleniId, mesec, znesek: parseFloat(znesek), opomba })
+  });
+
+  if (res.ok) {
+    document.getElementById('stim-znesek').value = '';
+    document.getElementById('stim-opomba').value = '';
+    prikaziToast('Stimulacija dodana');
+    naloziObracun();
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka';
+    napaka.style.display = 'block';
+  }
+});
+
+// Naloži obračun ko se aktivira tab
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (btn.dataset.tab === 'obracun' && !obrLeto) {
+      const zdaj = new Date();
+      obrLeto = zdaj.getFullYear();
+      obrMesec = zdaj.getMonth() + 1;
+      naloziObracun();
+    }
+  });
 });
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

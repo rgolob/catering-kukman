@@ -25,6 +25,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="zaposleni">Zaposleni</button>
       <button class="tab" data-tab="evidenca">Evidenca</button>
+      <button class="tab" data-tab="obracun">Obračun</button>
       <button class="tab" data-tab="nastavitve">Nastavitve</button>
     </div>
 
@@ -43,7 +44,7 @@
         <h2>Seznam zaposlenih</h2>
         <table id="zaposleni-tabela" class="tabela">
           <thead>
-            <tr><th>Ime</th><th>PIN</th><th>Status</th><th>Dejanje</th></tr>
+            <tr><th>Ime</th><th>Urna p.</th><th>PIN</th><th>Status</th><th>Dejanje</th></tr>
           </thead>
           <tbody></tbody>
         </table>
@@ -73,6 +74,50 @@
           <tbody></tbody>
         </table>
         <div id="evidenca-prazno" class="prazno" style="display:none">Ni zapisov za izbrano obdobje.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Obračun -->
+    <div id="tab-obracun" class="tab-content">
+      <div class="card">
+        <div class="obr-nav-row">
+          <button id="obr-btn-prej" class="btn-nav-obr">&#8249;</button>
+          <span id="obr-mesec-napis" class="obr-mesec-napis"></span>
+          <button id="obr-btn-naprej" class="btn-nav-obr">&#8250;</button>
+        </div>
+
+        <table id="obracun-tabela" class="tabela">
+          <thead>
+            <tr>
+              <th>Ime</th>
+              <th class="th-r">Ure</th>
+              <th class="th-r">Urna p.</th>
+              <th class="th-r">Osnova</th>
+              <th class="th-r">Stimulacija</th>
+              <th class="th-r">Skupaj</th>
+            </tr>
+          </thead>
+          <tbody id="obracun-tbody"></tbody>
+        </table>
+        <div id="obracun-prazno" class="prazno" style="display:none">Ni podatkov za ta mesec.</div>
+      </div>
+
+      <div class="card">
+        <h2>Stimulativno nagrajevanje</h2>
+        <div class="stim-form-row">
+          <select id="stim-zaposleni" class="stim-select"></select>
+          <input type="number" id="stim-znesek" class="stim-input" placeholder="Znesek €" min="0.01" step="0.01" />
+          <input type="text" id="stim-opomba" class="stim-input-opomba" placeholder="Opomba (neobvezno)" maxlength="80" />
+          <button id="btn-dodaj-stim">Dodaj</button>
+        </div>
+        <div id="stim-napaka" class="inline-napaka"></div>
+        <table id="stim-tabela" class="tabela" style="margin-top:12px">
+          <thead>
+            <tr><th>Zaposleni</th><th class="th-r">Znesek</th><th>Opomba</th><th></th></tr>
+          </thead>
+          <tbody id="stim-tbody"></tbody>
+        </table>
+        <div id="stim-prazno" class="prazno" style="display:none">Ni stimulacij za ta mesec.</div>
       </div>
     </div>
 
