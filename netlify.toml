@@ -38,3 +38,8 @@
   from = "/moj-cas"
   to = "/moj-cas.html"
   status = 200
+
+[[redirects]]
+  from = "/pin-setup"
+  to = "/pin-setup.html"
+  status = 200

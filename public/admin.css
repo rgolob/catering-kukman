@@ -354,3 +354,39 @@ button:hover { background: #1a365d; }
   .form-row { flex-direction: column; }
   .filter-row { flex-direction: column; align-items: flex-start; }
 }
+
+/* NK badge (naknadno evidentiranje) */
+.nk-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #fefcbf;
+  color: #744210;
+  border: 1px solid #f6e05e;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 5px;
+  vertical-align: middle;
+  letter-spacing: 0.3px;
+}
+
+/* Pin setup pill */
+.pin-setup-pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: #fff5f5;
+  color: #c53030;
+  border: 1px solid #fc8181;
+  border-radius: 4px;
+  padding: 1px 6px;
+  letter-spacing: 0.3px;
+}
+
+/* Ponastavi PIN gumb */
+.btn-pin-ponastavi {
+  background: #fff5f5;
+  color: #c53030;
+  border-color: #fc8181;
+}
+.btn-pin-ponastavi:hover { background: #fed7d7; }

@@ -18,6 +18,11 @@
   </header>
 
   <main>
+    <!-- Naknadno evidentiranje -->
+    <section class="card">
+      <button id="btn-naknadno" class="btn-naknadno">+ Dodaj vnos za nazaj</button>
+    </section>
+
     <!-- Mesečni pregled -->
     <section class="card">
       <div class="mesec-navigacija">
@@ -57,6 +62,34 @@
       <div id="kum-prazno" class="prazno" style="display:none">Še ni podatkov.</div>
     </section>
   </main>
+
+  <!-- Modal: naknadno evidentiranje -->
+  <div id="naknadno-overlay" class="modal-overlay hidden">
+    <div class="modal-karta">
+      <h3>Naknadno evidentiranje</h3>
+      <p class="modal-opomba">Vnos bo označen kot naknadno evidentiran.</p>
+      <div class="form-skupina">
+        <label>Datum</label>
+        <input type="date" id="nak-datum" />
+      </div>
+      <div class="form-skupina">
+        <label>Ura</label>
+        <input type="time" id="nak-ura" />
+      </div>
+      <div class="form-skupina">
+        <label>Tip</label>
+        <div class="radio-skupina">
+          <label><input type="radio" name="nak-tip" value="PRIHOD" checked /> Prihod</label>
+          <label><input type="radio" name="nak-tip" value="ODHOD" /> Odhod</label>
+        </div>
+      </div>
+      <div id="nak-napaka" class="nak-napaka"></div>
+      <div class="modal-gumbi">
+        <button id="nak-potrdi" class="btn-primarni">Shrani</button>
+        <button id="nak-preklic" class="btn-sekundarni">Prekliči</button>
+      </div>
+    </div>
+  </div>
 
   <script src="moj-cas.js"></script>
 </body>

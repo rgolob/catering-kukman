@@ -188,6 +188,82 @@ main {
   font-style: italic;
 }
 
+/* Gumb za naknadno evidentiranje */
+.btn-naknadno {
+  width: 100%;
+  padding: 12px;
+  background: #ebf8ff;
+  border: 1.5px dashed #90cdf4;
+  border-radius: 10px;
+  color: #2b6cb0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-naknadno:hover { background: #bee3f8; }
+
+/* Modal overlay */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 100; padding: 16px;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal-karta {
+  background: white;
+  border-radius: 18px;
+  padding: 28px 24px;
+  width: 100%; max-width: 380px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+.modal-karta h3 {
+  font-size: 1.1rem; font-weight: 700;
+  color: #1a202c; margin-bottom: 6px;
+}
+.modal-opomba {
+  font-size: 0.82rem; color: #dd6b20;
+  background: #fffaf0; border: 1px solid #fbd38d;
+  border-radius: 8px; padding: 8px 12px;
+  margin-bottom: 18px;
+}
+.form-skupina { margin-bottom: 14px; }
+.form-skupina label {
+  display: block; font-size: 0.8rem; font-weight: 600;
+  color: #4a5568; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 6px;
+}
+.form-skupina input[type="date"],
+.form-skupina input[type="time"] {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.95rem; color: #1a202c;
+  outline: none; transition: border-color 0.15s;
+}
+.form-skupina input:focus { border-color: #4299e1; }
+.radio-skupina { display: flex; gap: 20px; }
+.radio-skupina label { display: flex; align-items: center; gap: 7px; font-size: 0.92rem; font-weight: 500; text-transform: none; letter-spacing: 0; }
+.nak-napaka { color: #e53e3e; font-size: 0.82rem; min-height: 18px; margin-bottom: 4px; }
+.modal-gumbi { display: flex; gap: 10px; margin-top: 16px; }
+.btn-primarni {
+  flex: 1; padding: 11px;
+  background: #3182ce; color: white;
+  border: none; border-radius: 9px;
+  font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-primarni:hover { background: #2c5282; }
+.btn-sekundarni {
+  flex: 1; padding: 11px;
+  background: #edf2f7; color: #4a5568;
+  border: none; border-radius: 9px;
+  font-size: 0.95rem; font-weight: 600;
+  cursor: pointer; transition: background 0.15s;
+}
+.btn-sekundarni:hover { background: #e2e8f0; }
+
 @media (max-width: 480px) {
   .header-inner { gap: 10px; }
   header h1 { font-size: 1.1rem; }

@@ -29,6 +29,8 @@ async function naloziInfo() {
   if (res.status === 401) { window.location.href = '/pin'; return; }
   const data = await res.json();
 
+  if (data.pinSetupRequired) { window.location.href = '/pin-setup'; return; }
+
   document.getElementById('pozdrav').textContent = data.ime;
 
   const status = data.statusDanes;
@@ -139,6 +141,51 @@ document.getElementById('btn-naprej').addEventListener('click', () => {
 document.getElementById('btn-odjava').addEventListener('click', async () => {
   await fetch('/api/pin-logout', { method: 'POST' });
   window.location.href = '/pin';
+});
+
+// ── Naknadno evidentiranje ────────────────────────────────────────────────────
+document.getElementById('btn-naknadno').addEventListener('click', () => {
+  const danes = new Date().toISOString().slice(0, 10);
+  document.getElementById('nak-datum').max = danes;
+  document.getElementById('nak-datum').value = danes;
+  document.getElementById('nak-ura').value = '';
+  document.getElementById('nak-napaka').textContent = '';
+  document.querySelector('input[name="nak-tip"][value="PRIHOD"]').checked = true;
+  document.getElementById('naknadno-overlay').classList.remove('hidden');
+});
+
+document.getElementById('nak-preklic').addEventListener('click', () => {
+  document.getElementById('naknadno-overlay').classList.add('hidden');
+});
+
+document.getElementById('naknadno-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('naknadno-overlay'))
+    document.getElementById('naknadno-overlay').classList.add('hidden');
+});
+
+document.getElementById('nak-potrdi').addEventListener('click', async () => {
+  const datum = document.getElementById('nak-datum').value;
+  const ura   = document.getElementById('nak-ura').value;
+  const tip   = document.querySelector('input[name="nak-tip"]:checked').value;
+  const napaka = document.getElementById('nak-napaka');
+
+  if (!datum || !ura) { napaka.textContent = 'Vnesite datum in uro.'; return; }
+
+  const cas = `${datum} ${ura}`;
+  const res = await fetch('/api/moj-cas/naknadno', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tip, cas })
+  });
+
+  if (res.ok) {
+    document.getElementById('naknadno-overlay').classList.add('hidden');
+    naloziMesec();
+    naloziKumulativno();
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
+  }
 });
 
 // Init

@@ -42,12 +42,15 @@ async function naloziZaposlene() {
     const jeAktiven = z.aktiven === 1;
     const pinPrikaz = z.pin ? `<code class="pin-koda">${z.pin}</code>` : '<span class="pin-ni">—</span>';
 
+    const pinSetupPill = z.pin_setup_required ? '<span class="pin-setup-pill">Čaka nastavitev</span>' : '';
     tr.innerHTML = `
       <td>${escHtml(z.ime)}</td>
       <td class="td-pin">
         <div class="pin-celica">
           <span class="pin-vrednost">${pinPrikaz}</span>
+          ${pinSetupPill}
           <button class="btn-sm btn-pin-uredi" data-id="${z.id}" data-pin="${z.pin || ''}">Uredi PIN</button>
+          <button class="btn-sm btn-pin-ponastavi" data-id="${z.id}" data-ime="${escHtml(z.ime)}">Ponastavi PIN</button>
         </div>
         <div class="pin-uredi-vrstica" id="pin-vrstica-${z.id}" style="display:none">
           <input type="text" class="pin-input" maxlength="4" pattern="\\d{4}" placeholder="4 cifre" value="${z.pin || ''}" />
@@ -73,6 +76,21 @@ async function naloziZaposlene() {
       btn.style.display = 'none';
       vrstica.style.display = 'flex';
       vrstica.querySelector('.pin-input').focus();
+    });
+  });
+
+  tbody.querySelectorAll('.btn-pin-ponastavi').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const ime = btn.dataset.ime;
+      if (!confirm(`Ponastavi PIN za "${ime}"?\n\nGenerirani začasni PIN bo prikazan samo enkrat. Zaposleni si bo moral nastaviti nov PIN ob naslednji prijavi.`)) return;
+      const res = await fetch(`/api/admin/zaposleni/${btn.dataset.id}/ponastavi-pin`, { method: 'POST' });
+      if (res.ok) {
+        const d = await res.json();
+        alert(`Začasni PIN za ${ime}:\n\n${d.tempPin}\n\nSporočite ga zaposlenemu. Ob naslednji prijavi si bo moral nastaviti nov PIN.`);
+        naloziZaposlene();
+      } else {
+        prikaziToast('Napaka pri ponastavitvi PIN-a', 'napaka');
+      }
     });
   });
 
@@ -211,11 +229,12 @@ async function naloziEvidenco() {
     const datum = dt.toLocaleDateString('sl-SI');
     const ura = dt.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
     const tr = document.createElement('tr');
+    const nakNapis = z.naknadno ? ' <span class="nk-pill">NK</span>' : '';
     tr.innerHTML = `
       <td>${datum}</td>
       <td>${escHtml(z.ime)}</td>
       <td><span class="tip-pill ${z.tip}">${z.tip === 'PRIHOD' ? 'Prihod' : 'Odhod'}</span></td>
-      <td>${ura}</td>
+      <td>${ura}${nakNapis}</td>
       <td><button class="btn-sm btn-danger" data-id="${z.id}">Izbriši</button></td>
     `;
     tbody.appendChild(tr);

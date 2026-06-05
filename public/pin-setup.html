@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nastavi PIN – Catering Kukman</title>
+  <link rel="stylesheet" href="pin.css" />
+  <style>
+    .korak-napis { font-size: 0.82rem; color: #9ae6b4; text-align: center; margin-bottom: 6px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .navodilo-sub { font-size: 0.8rem; color: rgba(255,255,255,0.55); text-align: center; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Catering Kukman</h1>
+    <p id="pozdrav-ime">Nastavi PIN</p>
+  </header>
+  <main>
+    <div class="pin-card">
+      <div class="korak-napis" id="korak-napis">Korak 1 od 2</div>
+      <p class="navodilo" id="navodilo">Izberite nov 4-mestni PIN</p>
+      <div class="pin-prikaz">
+        <div class="pin-dot" id="d0"></div>
+        <div class="pin-dot" id="d1"></div>
+        <div class="pin-dot" id="d2"></div>
+        <div class="pin-dot" id="d3"></div>
+      </div>
+      <div id="napaka" class="napaka"></div>
+      <p class="navodilo-sub" id="navodilo-sub"></p>
+      <div class="tipkovnica">
+        <button class="tipka" data-digit="1">1</button>
+        <button class="tipka" data-digit="2">2</button>
+        <button class="tipka" data-digit="3">3</button>
+        <button class="tipka" data-digit="4">4</button>
+        <button class="tipka" data-digit="5">5</button>
+        <button class="tipka" data-digit="6">6</button>
+        <button class="tipka" data-digit="7">7</button>
+        <button class="tipka" data-digit="8">8</button>
+        <button class="tipka" data-digit="9">9</button>
+        <button class="tipka tipka-brisi" id="btn-brisi">⌫</button>
+        <button class="tipka" data-digit="0">0</button>
+        <button class="tipka tipka-prazna"></button>
+      </div>
+    </div>
+  </main>
+  <script src="pin-setup.js"></script>
+</body>
+</html>

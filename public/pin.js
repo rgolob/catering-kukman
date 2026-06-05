@@ -16,7 +16,8 @@ async function preveriPin() {
   });
 
   if (res.ok) {
-    window.location.href = '/moj-cas';
+    const data = await res.json();
+    window.location.href = data.pinSetupRequired ? '/pin-setup' : '/moj-cas';
   } else {
     // Shake animation + error
     const prikaz = document.querySelector('.pin-prikaz');
