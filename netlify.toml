@@ -1,0 +1,39 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[functions]
+  node_bundler = "esbuild"
+
+[dev]
+  command = "node server.js"
+  port = 3000
+  targetPort = 3000
+
+# API klici → serverless function
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+  force = true
+
+# Strani → HTML datoteke (auth je na JS strani)
+[[redirects]]
+  from = "/login"
+  to = "/login.html"
+  status = 200
+
+[[redirects]]
+  from = "/admin"
+  to = "/admin.html"
+  status = 200
+
+[[redirects]]
+  from = "/pin"
+  to = "/pin.html"
+  status = 200
+
+[[redirects]]
+  from = "/moj-cas"
+  to = "/moj-cas.html"
+  status = 200
