@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evidenca prisotnosti – Catering Kukman</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>Catering Kukman</h1>
+    <p class="subtitle">Evidenca prisotnosti</p>
+    <div id="ura"></div>
+  </header>
+
+  <main>
+    <section class="zaposleni-section">
+      <h2>Klikni na svoje ime</h2>
+      <div id="zaposleni-grid" class="zaposleni-grid"></div>
+    </section>
+
+    <section class="evidenca-section">
+      <h2>Današnja evidenca</h2>
+      <div id="evidenca-list" class="evidenca-list"></div>
+    </section>
+  </main>
+
+  <!-- Potrditveni dialog -->
+  <div id="overlay" class="overlay hidden">
+    <div class="dialog">
+      <div id="dialog-tip-badge" class="tip-badge"></div>
+      <h2 id="dialog-ime"></h2>
+      <p class="dialog-cas">
+        <span id="dialog-cas"></span>
+      </p>
+      <p id="dialog-vprasanje" class="dialog-vprasanje"></p>
+      <div class="dialog-gumbi">
+        <button id="btn-potrdi" class="btn-potrdi">Potrdi</button>
+        <button id="btn-preklic" class="btn-preklic">Prekliči</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast obvestilo -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

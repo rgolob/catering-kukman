@@ -1,0 +1,13 @@
+{
+  "name": "catering-kukman-prisotnost",
+  "version": "1.0.0",
+  "description": "Evidenca prisotnosti zaposlenih - Catering Kukman",
+  "main": "server.js",
+  "scripts": {
+    "start": "node --experimental-sqlite server.js",
+    "dev": "node --experimental-sqlite server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
