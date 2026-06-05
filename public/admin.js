@@ -25,6 +25,7 @@ function prikaziToast(besedilo, tip = 'uspeh') {
 // ── ZAPOSLENI TAB ─────────────────────────────────────────────────────────────
 async function naloziZaposlene() {
   const res = await fetch('/api/admin/zaposleni');
+  if (res.redirected || res.url.includes('/login')) { window.location.href = '/login'; return; }
   const zaposleni = await res.json();
 
   const tbody = document.querySelector('#zaposleni-tabela tbody');
@@ -133,19 +134,28 @@ document.getElementById('btn-dodaj').addEventListener('click', async () => {
   const ime = imeInput.value.trim();
   if (!ime) { napaka.textContent = 'Vnesite ime.'; napaka.style.display = 'block'; return; }
 
-  const res = await fetch('/api/admin/zaposleni', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ime })
-  });
+  try {
+    const res = await fetch('/api/admin/zaposleni', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ime })
+    });
 
-  if (res.ok) {
-    imeInput.value = '';
-    prikaziToast(`${ime} dodan`);
-    naloziZaposlene();
-  } else {
-    const data = await res.json();
-    napaka.textContent = data.napaka;
+    if (res.redirected || res.url.includes('/login')) {
+      window.location.href = '/login'; return;
+    }
+
+    if (res.ok) {
+      imeInput.value = '';
+      prikaziToast(`${ime} dodan`);
+      naloziZaposlene();
+    } else {
+      const data = await res.json();
+      napaka.textContent = data.napaka || 'Napaka pri dodajanju';
+      napaka.style.display = 'block';
+    }
+  } catch (e) {
+    napaka.textContent = 'Napaka: ni povezave s strežnikom';
     napaka.style.display = 'block';
   }
 });
