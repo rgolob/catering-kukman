@@ -38,54 +38,79 @@ async function naloziZaposlene() {
     const zaposleni = await res.json();
     if (!Array.isArray(zaposleni)) { prikaziToast('Napaka pri nalaganju zaposlenih', 'napaka'); return; }
 
-  const tbody = document.querySelector('#zaposleni-tabela tbody');
-  tbody.innerHTML = '';
+  const seznam = document.getElementById('zaposleni-seznam');
+  seznam.innerHTML = '';
 
   zaposleni.forEach(z => {
-    const tr = document.createElement('tr');
     const jeAktiven = z.aktiven === 1;
-    const pinPrikaz = z.pin ? `<code class="pin-koda">${z.pin}</code>` : '<span class="pin-ni">—</span>';
-
     const jePrivzetPin = z.pin_setup_required && z.pin === '1234';
-    const pinSetupPill = z.pin_setup_required
-      ? (jePrivzetPin ? '<span class="pin-setup-pill pin-privzet">Privzet PIN 1234</span>' : '<span class="pin-setup-pill">Čaka nastavitev</span>')
+    const pinOpozorilo = z.pin_setup_required
+      ? `<span class="zap-pin-opozorilo" title="${jePrivzetPin ? 'Privzet PIN 1234' : 'Čaka nastavitev PIN-a'}">&#9888;</span>`
       : '';
-    const upVrednost = z.urna_postavka ? `€${parseFloat(z.urna_postavka).toFixed(2)}` : '—';
-    tr.innerHTML = `
-      <td>${escHtml(z.ime)}</td>
-      <td class="td-up">
-        <div class="up-celica">
-          <span class="up-euro-znak">€</span>
-          <input type="number" class="up-input" value="${parseFloat(z.urna_postavka || 0).toFixed(2)}" min="0" step="0.10" placeholder="0.00" data-id="${z.id}" title="Urna postavka €/h" />
-          <span class="up-unit">/h</span>
+
+    const kartica = document.createElement('div');
+    kartica.className = 'zap-kartica' + (jeAktiven ? '' : ' zap-kartica-neaktivna');
+    kartica.dataset.id = z.id;
+    kartica.innerHTML = `
+      <div class="zap-kartica-glava">
+        <div class="zap-kartica-levo">
+          <span class="zap-kartica-ime">${escHtml(z.ime)}</span>
+          ${pinOpozorilo}
         </div>
-      </td>
-      <td class="td-pin">
-        <div class="pin-celica">
-          <span class="pin-vrednost">${pinPrikaz}</span>
-          ${pinSetupPill}
-          <button class="btn-sm btn-pin-uredi" data-id="${z.id}" data-pin="${z.pin || ''}">Uredi PIN</button>
-          <button class="btn-sm btn-pin-ponastavi" data-id="${z.id}" data-ime="${escHtml(z.ime)}">Ponastavi PIN</button>
+        <div class="zap-kartica-desno">
+          <span class="status-pill ${jeAktiven ? 'aktiven' : 'neaktiven'}">${jeAktiven ? 'Aktiven' : 'Neaktiven'}</span>
+          <span class="zap-chevron">›</span>
         </div>
-        <div class="pin-uredi-vrstica" id="pin-vrstica-${z.id}" style="display:none">
-          <input type="text" class="pin-input" maxlength="4" pattern="\\d{4}" placeholder="4 cifre" value="${z.pin || ''}" />
-          <button class="btn-sm btn-pin-shrani" data-id="${z.id}">Shrani</button>
-          <button class="btn-sm btn-pin-brisi" data-id="${z.id}">Briši PIN</button>
-          <button class="btn-sm btn-pin-preklic" data-id="${z.id}">Prekliči</button>
+      </div>
+      <div class="zap-kartica-podrobnosti">
+        <div class="zap-podrobnosti-vrstica">
+          <span class="zap-podrobnosti-oznaka">Urna postavka</span>
+          <div class="up-celica">
+            <span class="up-euro-znak">€</span>
+            <input type="number" class="up-input" value="${parseFloat(z.urna_postavka || 0).toFixed(2)}" min="0" step="0.10" placeholder="0.00" data-id="${z.id}" />
+            <span class="up-unit">/h</span>
+          </div>
         </div>
-      </td>
-      <td><span class="status-pill ${jeAktiven ? 'aktiven' : 'neaktiven'}">${jeAktiven ? 'Aktiven' : 'Neaktiven'}</span></td>
-      <td>
-        <button class="btn-sm btn-toggle ${jeAktiven ? '' : 'aktiviraj'}" data-id="${z.id}" data-aktiven="${jeAktiven ? 1 : 0}">
-          ${jeAktiven ? 'Deaktiviraj' : 'Aktiviraj'}
-        </button>
-      </td>
+        <div class="zap-podrobnosti-vrstica">
+          <span class="zap-podrobnosti-oznaka">PIN</span>
+          <div class="pin-celica">
+            <div class="pin-prikaz-vrstica" id="pin-prikaz-${z.id}">
+              <span class="pin-zvezdice">••••</span>
+              <button class="btn-sm btn-pin-razkrij" data-id="${z.id}">Razkrij</button>
+              <button class="btn-sm btn-pin-uredi" data-id="${z.id}">Uredi</button>
+              <button class="btn-sm btn-pin-ponastavi" data-id="${z.id}" data-ime="${escHtml(z.ime)}">Ponastavi</button>
+            </div>
+            <div class="pin-razkrit-vrstica" id="pin-razkrit-${z.id}" style="display:none">
+              ${z.pin ? `<code class="pin-koda">${z.pin}</code>` : '<span class="pin-ni">Ni PIN-a</span>'}
+              ${z.pin_setup_required ? `<span class="pin-setup-pill${jePrivzetPin ? ' pin-privzet' : ''}">${jePrivzetPin ? 'Privzet 1234' : 'Čaka nastavitev'}</span>` : ''}
+              <button class="btn-sm btn-pin-skrij" data-id="${z.id}">Skrij</button>
+            </div>
+            <div class="pin-uredi-vrstica" id="pin-vrstica-${z.id}" style="display:none">
+              <input type="text" class="pin-input" maxlength="4" pattern="\\d{4}" placeholder="4 cifre" value="${z.pin || ''}" />
+              <button class="btn-sm btn-pin-shrani" data-id="${z.id}">Shrani</button>
+              <button class="btn-sm btn-pin-brisi" data-id="${z.id}">Briši PIN</button>
+              <button class="btn-sm btn-pin-preklic" data-id="${z.id}">Prekliči</button>
+            </div>
+          </div>
+        </div>
+        <div class="zap-podrobnosti-akcije">
+          <button class="btn-sm btn-toggle ${jeAktiven ? '' : 'aktiviraj'}" data-id="${z.id}" data-aktiven="${jeAktiven ? 1 : 0}">
+            ${jeAktiven ? 'Deaktiviraj' : 'Aktiviraj'}
+          </button>
+        </div>
+      </div>
     `;
-    tbody.appendChild(tr);
+    seznam.appendChild(kartica);
+
+    // Toggle expand/collapse on header click
+    kartica.querySelector('.zap-kartica-glava').addEventListener('click', () => {
+      kartica.classList.toggle('zap-odprta');
+    });
   });
 
   // Urna postavka — shrani ob spremembi
-  tbody.querySelectorAll('.up-input').forEach(input => {
+  seznam.querySelectorAll('.up-input').forEach(input => {
+    input.addEventListener('click', e => e.stopPropagation());
     input.addEventListener('change', async () => {
       const vrednost = parseFloat(input.value);
       if (isNaN(vrednost) || vrednost < 0) { input.value = '0.00'; return; }
@@ -103,18 +128,36 @@ async function naloziZaposlene() {
     });
   });
 
+  // PIN razkrij / skrij
+  seznam.querySelectorAll('.btn-pin-razkrij').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('pin-prikaz-' + btn.dataset.id).style.display = 'none';
+      document.getElementById('pin-razkrit-' + btn.dataset.id).style.display = 'flex';
+    });
+  });
+  seznam.querySelectorAll('.btn-pin-skrij').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('pin-razkrit-' + btn.dataset.id).style.display = 'none';
+      document.getElementById('pin-prikaz-' + btn.dataset.id).style.display = 'flex';
+    });
+  });
+
   // PIN uredi
-  tbody.querySelectorAll('.btn-pin-uredi').forEach(btn => {
-    btn.addEventListener('click', () => {
+  seznam.querySelectorAll('.btn-pin-uredi').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('pin-prikaz-' + btn.dataset.id).style.display = 'none';
       const vrstica = document.getElementById('pin-vrstica-' + btn.dataset.id);
-      btn.style.display = 'none';
       vrstica.style.display = 'flex';
       vrstica.querySelector('.pin-input').focus();
     });
   });
 
-  tbody.querySelectorAll('.btn-pin-ponastavi').forEach(btn => {
-    btn.addEventListener('click', async () => {
+  seznam.querySelectorAll('.btn-pin-ponastavi').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
       const ime = btn.dataset.ime;
       if (!confirm(`Ponastavi PIN za "${ime}"?\n\nGenerirani začasni PIN bo prikazan samo enkrat. Zaposleni si bo moral nastaviti nov PIN ob naslednji prijavi.`)) return;
       const res = await fetch(`/api/admin/zaposleni/${btn.dataset.id}/ponastavi-pin`, { method: 'POST' });
@@ -128,11 +171,11 @@ async function naloziZaposlene() {
     });
   });
 
-  tbody.querySelectorAll('.btn-pin-preklic').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const vrstica = document.getElementById('pin-vrstica-' + btn.dataset.id);
-      vrstica.style.display = 'none';
-      vrstica.closest('td').querySelector('.btn-pin-uredi').style.display = '';
+  seznam.querySelectorAll('.btn-pin-preklic').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      document.getElementById('pin-vrstica-' + btn.dataset.id).style.display = 'none';
+      document.getElementById('pin-prikaz-' + btn.dataset.id).style.display = 'flex';
     });
   });
 
@@ -151,8 +194,9 @@ async function naloziZaposlene() {
     }
   }
 
-  tbody.querySelectorAll('.btn-pin-shrani').forEach(btn => {
-    btn.addEventListener('click', () => {
+  seznam.querySelectorAll('.btn-pin-shrani').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
       const input = document.getElementById('pin-vrstica-' + btn.dataset.id).querySelector('.pin-input');
       const pin = input.value.trim();
       if (pin && !/^\d{4}$/.test(pin)) {
@@ -162,16 +206,18 @@ async function naloziZaposlene() {
     });
   });
 
-  tbody.querySelectorAll('.btn-pin-brisi').forEach(btn => {
-    btn.addEventListener('click', () => {
+  seznam.querySelectorAll('.btn-pin-brisi').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
       if (confirm('Izbrisati PIN tega zaposlenega?')) shraniPin(btn.dataset.id, null);
     });
   });
 
-  tbody.querySelectorAll('.btn-toggle').forEach(btn => {
-    btn.addEventListener('click', async () => {
+  seznam.querySelectorAll('.btn-toggle').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
       const jeAktiven = btn.dataset.aktiven === '1';
-      const ime = btn.closest('tr').querySelector('td').textContent;
+      const ime = btn.closest('.zap-kartica').querySelector('.zap-kartica-ime').textContent;
       if (!confirm(`${jeAktiven ? 'Deaktivirati' : 'Aktivirati'} zaposlenega "${ime}"?`)) return;
       await fetch(`/api/admin/zaposleni/${btn.dataset.id}`, {
         method: 'PATCH',

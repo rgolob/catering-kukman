@@ -323,6 +323,102 @@ button:hover { background: #1a365d; }
 .btn-pin-preklic { background: #a0aec0; font-size: 0.75rem; padding: 4px 10px; }
 .btn-pin-preklic:hover { background: #718096; }
 
+/* ── Zaposleni kartice ────────────────────────────────────────────────────── */
+.zap-seznam { display: flex; flex-direction: column; gap: 6px; }
+
+.zap-kartica {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.zap-kartica:hover { border-color: #cbd5e0; }
+.zap-kartica.zap-odprta { border-color: #4299e1; }
+.zap-kartica-neaktivna { opacity: 0.6; }
+
+.zap-kartica-glava {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  gap: 12px;
+  background: #f7fafc;
+  transition: background 0.12s;
+}
+.zap-kartica-glava:hover { background: #edf2f7; }
+.zap-odprta .zap-kartica-glava { background: #ebf4ff; }
+
+.zap-kartica-levo {
+  display: flex; align-items: center; gap: 8px;
+}
+.zap-kartica-ime { font-weight: 700; font-size: 1rem; color: #1a202c; }
+
+.zap-pin-opozorilo {
+  font-size: 0.9rem;
+  color: #d69e2e;
+  cursor: default;
+}
+
+.zap-kartica-desno {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+
+.zap-chevron {
+  font-size: 1.2rem;
+  color: #a0aec0;
+  transition: transform 0.2s ease;
+  display: inline-block;
+  line-height: 1;
+}
+.zap-odprta .zap-chevron { transform: rotate(90deg); }
+
+.zap-kartica-podrobnosti {
+  display: none;
+  padding: 16px 18px;
+  border-top: 1px solid #e2e8f0;
+  flex-direction: column;
+  gap: 14px;
+}
+.zap-odprta .zap-kartica-podrobnosti { display: flex; }
+
+.zap-podrobnosti-vrstica {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.zap-podrobnosti-oznaka {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #718096;
+  min-width: 110px;
+  padding-top: 6px;
+}
+
+.zap-podrobnosti-akcije {
+  display: flex;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.pin-prikaz-vrstica,
+.pin-razkrit-vrstica {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.pin-zvezdice {
+  font-size: 1rem;
+  letter-spacing: 3px;
+  color: #a0aec0;
+}
+.btn-pin-razkrij { background: #4a5568; font-size: 0.75rem; padding: 4px 10px; }
+.btn-pin-razkrij:hover { background: #2d3748; }
+.btn-pin-skrij { background: #a0aec0; font-size: 0.75rem; padding: 4px 10px; }
+.btn-pin-skrij:hover { background: #718096; }
+
 .prazno {
   text-align: center;
   color: #a0aec0;
