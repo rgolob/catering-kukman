@@ -1,5 +1,6 @@
 let izbraniZaposleni = null;
 let izbraniTip = null;
+let dialogPin = '';
 
 // Ura v headerju
 function posodobiUro() {
@@ -97,10 +98,58 @@ async function naloziEvidenco() {
   } catch (e) { console.error('naloziEvidenco:', e); }
 }
 
+// ── Dialog PIN logika ──────────────────────────────────────────────────────────
+
+function posodobiDialogPin() {
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('dp' + i);
+    dot.classList.toggle('vnesen', i < dialogPin.length);
+    dot.classList.remove('napaka-anim');
+  }
+}
+
+function dodajDialogCifro(c) {
+  if (dialogPin.length >= 4) return;
+  document.getElementById('dialog-pin-napaka').textContent = '';
+  dialogPin += c;
+  posodobiDialogPin();
+  if (dialogPin.length === 4) potrdiZapis();
+}
+
+function brisiDialogPin() {
+  if (dialogPin.length === 0) return;
+  dialogPin = dialogPin.slice(0, -1);
+  posodobiDialogPin();
+  document.getElementById('dialog-pin-napaka').textContent = '';
+}
+
+function resetDialogPin() {
+  dialogPin = '';
+  posodobiDialogPin();
+  document.getElementById('dialog-pin-napaka').textContent = '';
+}
+
+function prikaziPinNapako(sporocilo) {
+  const prikaz = document.getElementById('dialog-pin-prikaz');
+  prikaz.classList.remove('tresenje');
+  void prikaz.offsetWidth;
+  prikaz.classList.add('tresenje');
+  for (let i = 0; i < 4; i++) {
+    document.getElementById('dp' + i).classList.add('napaka-anim');
+  }
+  document.getElementById('dialog-pin-napaka').textContent = sporocilo;
+  dialogPin = '';
+  setTimeout(() => {
+    posodobiDialogPin();
+    document.getElementById('dialog-pin-napaka').textContent = '';
+  }, 800);
+}
+
 // Odpri potrditveni dialog
 function odpriDialog(id, ime, jePrisoten) {
   izbraniZaposleni = id;
   izbraniTip = jePrisoten ? 'ODHOD' : 'PRIHOD';
+  resetDialogPin();
 
   const badge = document.getElementById('dialog-tip-badge');
   badge.textContent = izbraniTip === 'PRIHOD' ? 'Prihod' : 'Odhod';
@@ -111,9 +160,7 @@ function odpriDialog(id, ime, jePrisoten) {
   const zdaj = new Date();
   document.getElementById('dialog-cas').textContent = zdaj.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 
-  document.getElementById('dialog-vprasanje').textContent = izbraniTip === 'PRIHOD'
-    ? 'Ali potrjuješ prihod na delo?'
-    : 'Ali potrjuješ odhod z dela?';
+  document.getElementById('dialog-vprasanje').textContent = 'Vnesite vaš PIN za potrditev';
 
   document.getElementById('overlay').classList.remove('hidden');
 }
@@ -121,11 +168,12 @@ function odpriDialog(id, ime, jePrisoten) {
 // Zapri dialog
 function zapriDialog() {
   document.getElementById('overlay').classList.add('hidden');
+  resetDialogPin();
   izbraniZaposleni = null;
   izbraniTip = null;
 }
 
-// Takoj posodobi kartico po potrditvi (brez čakanja na API refresh)
+// Takoj posodobi kartico po potrditvi
 function posodobiKarticoTakoj(id, tip, cas) {
   const btn = document.querySelector(`[data-id="${id}"]`);
   if (!btn) return;
@@ -142,29 +190,40 @@ function posodobiKarticoTakoj(id, tip, cas) {
   posodobiPretecenCas();
 }
 
-// Potrdi zapis
+// Potrdi zapis (kliče se samodejno po 4 vnesenih cifrach)
 async function potrdiZapis() {
-  if (!izbraniZaposleni || !izbraniTip) return;
+  if (!izbraniZaposleni || !izbraniTip || dialogPin.length !== 4) return;
+
+  const pinZaPoslati = dialogPin;
 
   try {
     const res = await fetch('/api/belezi', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zaposleni_id: izbraniZaposleni, tip: izbraniTip })
+      body: JSON.stringify({ zaposleni_id: izbraniZaposleni, tip: izbraniTip, pin: pinZaPoslati })
     });
+
+    if (res.status === 401) {
+      prikaziPinNapako('Napačen PIN');
+      return;
+    }
+
     const zapis = await res.json();
+    if (!res.ok) {
+      prikaziPinNapako(zapis.napaka || 'Napaka');
+      return;
+    }
 
-    // Takoj posodobi kartico – ne čakaj na polni API refresh
+    // Takoj posodobi kartico
     posodobiKarticoTakoj(izbraniZaposleni, izbraniTip, new Date(zapis.cas));
-
     zapriDialog();
     prikaziToast(zapis.ime, izbraniTip);
 
-    // Osveži vse v ozadju
     naloziZaposlene();
     naloziEvidenco();
   } catch (e) {
     console.error('Napaka:', e);
+    prikaziPinNapako('Napaka pri povezavi');
   }
 }
 
@@ -176,11 +235,23 @@ function prikaziToast(ime, tip) {
   setTimeout(() => toast.classList.add('hidden'), 3000);
 }
 
-// Event listenerji
-document.getElementById('btn-potrdi').addEventListener('click', potrdiZapis);
+// ── Event listenerji ───────────────────────────────────────────────────────────
+
+document.querySelectorAll('.dialog-tipka[data-digit]').forEach(btn => {
+  btn.addEventListener('click', () => dodajDialogCifro(btn.dataset.digit));
+});
+document.getElementById('dialog-btn-brisi').addEventListener('click', brisiDialogPin);
 document.getElementById('btn-preklic').addEventListener('click', zapriDialog);
 document.getElementById('overlay').addEventListener('click', (e) => {
   if (e.target === document.getElementById('overlay')) zapriDialog();
+});
+
+// Tipkovnica za PIN v dialogu
+document.addEventListener('keydown', e => {
+  if (document.getElementById('overlay').classList.contains('hidden')) return;
+  if (e.key >= '0' && e.key <= '9') dodajDialogCifro(e.key);
+  else if (e.key === 'Backspace') brisiDialogPin();
+  else if (e.key === 'Escape') zapriDialog();
 });
 
 // Začetno nalaganje

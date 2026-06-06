@@ -30,14 +30,33 @@
     <div class="dialog">
       <div id="dialog-tip-badge" class="tip-badge"></div>
       <h2 id="dialog-ime"></h2>
-      <p class="dialog-cas">
-        <span id="dialog-cas"></span>
-      </p>
+      <p class="dialog-cas"><span id="dialog-cas"></span></p>
       <p id="dialog-vprasanje" class="dialog-vprasanje"></p>
-      <div class="dialog-gumbi">
-        <button id="btn-potrdi" class="btn-potrdi">Potrdi</button>
-        <button id="btn-preklic" class="btn-preklic">Prekliči</button>
+
+      <div class="dialog-pin-prikaz" id="dialog-pin-prikaz">
+        <div class="pin-dot" id="dp0"></div>
+        <div class="pin-dot" id="dp1"></div>
+        <div class="pin-dot" id="dp2"></div>
+        <div class="pin-dot" id="dp3"></div>
       </div>
+      <div id="dialog-pin-napaka" class="dialog-pin-napaka"></div>
+
+      <div class="dialog-tipkovnica">
+        <button class="dialog-tipka" data-digit="1">1</button>
+        <button class="dialog-tipka" data-digit="2">2</button>
+        <button class="dialog-tipka" data-digit="3">3</button>
+        <button class="dialog-tipka" data-digit="4">4</button>
+        <button class="dialog-tipka" data-digit="5">5</button>
+        <button class="dialog-tipka" data-digit="6">6</button>
+        <button class="dialog-tipka" data-digit="7">7</button>
+        <button class="dialog-tipka" data-digit="8">8</button>
+        <button class="dialog-tipka" data-digit="9">9</button>
+        <button class="dialog-tipka dialog-tipka-brisi" id="dialog-btn-brisi">⌫</button>
+        <button class="dialog-tipka" data-digit="0">0</button>
+        <button class="dialog-tipka dialog-tipka-prazna"></button>
+      </div>
+
+      <button id="btn-preklic" class="btn-preklic">Prekliči</button>
     </div>
   </div>
 

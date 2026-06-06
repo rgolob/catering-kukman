@@ -261,40 +261,102 @@ h2 {
   margin-bottom: 28px;
 }
 
-.dialog-gumbi {
+/* PIN vnos v dialogu */
+.dialog-pin-prikaz {
   display: flex;
-  gap: 12px;
+  gap: 18px;
   justify-content: center;
+  margin: 8px 0 4px;
 }
 
-.btn-potrdi, .btn-preklic {
-  padding: 13px 32px;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
+.dialog-pin-napaka {
+  font-size: 0.88rem;
+  color: #e53e3e;
+  font-weight: 500;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.dialog-tipkovnica {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  margin: 0 auto;
+}
+
+.dialog-tipka {
+  aspect-ratio: 1;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: white;
+  font-size: 1.4rem;
   font-weight: 600;
+  color: #2d3748;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.12s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
 }
 
-.btn-potrdi {
-  background: #2c5282;
-  color: white;
+.dialog-tipka:hover {
+  background: #ebf4ff;
+  border-color: #4299e1;
+  transform: scale(1.05);
 }
 
-.btn-potrdi:hover {
-  background: #1a365d;
-  transform: translateY(-1px);
+.dialog-tipka:active {
+  transform: scale(0.96);
+  background: #bee3f8;
+}
+
+.dialog-tipka-brisi {
+  background: #fff5f5;
+  border-color: #fed7d7;
+  color: #e53e3e;
+  font-size: 1.2rem;
+}
+
+.dialog-tipka-brisi:hover {
+  background: #fed7d7;
+  border-color: #e53e3e;
+}
+
+.dialog-tipka-prazna {
+  background: transparent;
+  border: none;
+  cursor: default;
+  pointer-events: none;
 }
 
 .btn-preklic {
-  background: #edf2f7;
-  color: #4a5568;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: color 0.15s;
+  margin-top: 4px;
 }
 
 .btn-preklic:hover {
-  background: #e2e8f0;
+  color: #4a5568;
 }
+
+@keyframes tresenje {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-8px); }
+  40%       { transform: translateX(8px); }
+  60%       { transform: translateX(-6px); }
+  80%       { transform: translateX(6px); }
+}
+
+.tresenje { animation: tresenje 0.4s ease; }
 
 /* Toast */
 .toast {
