@@ -8,6 +8,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (btn.dataset.tab === 'obracun') naloziObracunTab();
     if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
+    if (btn.dataset.tab === 'lestvica') naloziLestvicaTab();
   });
 });
 
@@ -757,6 +758,88 @@ async function naloziZahtevke() {
 }
 
 document.getElementById('zahtevki-samo-cakajoci').addEventListener('change', () => naloziZahtevke());
+
+// ── LESTVICA TAB ──────────────────────────────────────────────────────────────
+let lestvicaObdobje = 'mesec';
+
+function lestvicaObd() {
+  const zdaj = new Date();
+  const leto = zdaj.getFullYear();
+  const mes = String(zdaj.getMonth() + 1).padStart(2, '0');
+  const prejLeto = zdaj.getMonth() === 0 ? leto - 1 : leto;
+  const prejMes = String(zdaj.getMonth() === 0 ? 12 : zdaj.getMonth()).padStart(2, '0');
+
+  if (lestvicaObdobje === 'mesec') {
+    const od = `${leto}-${mes}-01`;
+    const zadnji = new Date(leto, zdaj.getMonth() + 1, 0).getDate();
+    return { od, do: `${leto}-${mes}-${String(zadnji).padStart(2, '0')}` };
+  }
+  if (lestvicaObdobje === 'prej') {
+    const od = `${prejLeto}-${prejMes}-01`;
+    const zadnji = new Date(prejLeto, parseInt(prejMes), 0).getDate();
+    return { od, do: `${prejLeto}-${prejMes}-${String(zadnji).padStart(2, '0')}` };
+  }
+  return null;
+}
+
+function formatUre(minute) {
+  const h = Math.floor(minute / 60);
+  const m = minute % 60;
+  return m > 0 ? `${h} ur ${m} min` : `${h} ur`;
+}
+
+async function naloziLestvico() {
+  const obd = lestvicaObd();
+  const params = obd ? `?od=${obd.od}&do=${obd.do}` : '';
+  const res = await fetch('/api/admin/lestvica' + params);
+  if (!res.ok) return;
+  const data = await res.json();
+
+  const seznam = document.getElementById('lestvica-seznam');
+  const prazno = document.getElementById('lestvica-prazno');
+
+  const zUr = data.filter(z => z.minute > 0);
+  if (!zUr.length) {
+    seznam.innerHTML = '';
+    prazno.style.display = 'block';
+    return;
+  }
+  prazno.style.display = 'none';
+
+  const maxMin = zUr[0].minute;
+  const medalje = ['🥇', '🥈', '🥉'];
+
+  seznam.innerHTML = data.map((z, i) => {
+    const medalja = i < 3 ? medalje[i] : `<span class="lestvica-rank">${i + 1}</span>`;
+    const barW = maxMin > 0 ? Math.round(z.minute / maxMin * 100) : 0;
+    const ure = z.minute > 0 ? formatUre(z.minute) : '—';
+    const dniTxt = z.dni === 1 ? '1 dan' : `${z.dni} dni`;
+    return `<div class="lestvica-vrstica ${i === 0 ? 'lestvica-prva' : ''}">
+      <span class="lestvica-medalja">${medalja}</span>
+      <div class="lestvica-info">
+        <div class="lestvica-ime">${escHtml(z.ime)}</div>
+        <div class="lestvica-bar-wrap"><div class="lestvica-bar" style="width:${barW}%"></div></div>
+      </div>
+      <div class="lestvica-stat">
+        <span class="lestvica-ure">${ure}</span>
+        <span class="lestvica-dni">${z.dni > 0 ? dniTxt : ''}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function naloziLestvicaTab() {
+  naloziLestvico();
+}
+
+document.getElementById('lestvica-obdobje').querySelectorAll('.btn-obdobje').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.btn-obdobje').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    lestvicaObdobje = btn.dataset.obdobje;
+    naloziLestvico();
+  });
+});
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 naloziZaposlene();

@@ -278,16 +278,36 @@ function createApp() {
 
   app.get('/api/status', async (req, res) => {
     const danes = localDate();
-    const { rows } = await req.db.execute({
-      sql: `SELECT z.id, z.ime,
-        (SELECT tip FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ?
-         ORDER BY cas DESC LIMIT 1) AS zadnji_tip,
-        (SELECT cas FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ? AND tip = 'PRIHOD'
-         ORDER BY cas DESC LIMIT 1) AS zadnji_prihod
-        FROM zaposleni z WHERE z.aktiven = 1 ORDER BY z.ime`,
-      args: [danes, danes]
+    const mesecOd = danes.slice(0, 7) + '-01';
+    const zdaj = new Date();
+
+    const [{ rows }, { rows: evMesec }] = await Promise.all([
+      req.db.execute({
+        sql: `SELECT z.id, z.ime,
+          (SELECT tip FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ?
+           ORDER BY cas DESC LIMIT 1) AS zadnji_tip,
+          (SELECT cas FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ? AND tip = 'PRIHOD'
+           ORDER BY cas DESC LIMIT 1) AS zadnji_prihod
+          FROM zaposleni z WHERE z.aktiven = 1 ORDER BY z.ime`,
+        args: [danes, danes]
+      }),
+      req.db.execute({
+        sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE substr(cas,1,10) >= ? ORDER BY cas ASC`,
+        args: [mesecOd]
+      })
+    ]);
+
+    const minutePoId = new Map();
+    rows.forEach(z => {
+      const zid = Number(z.id);
+      const zEv = evMesec.filter(e => Number(e.zaposleni_id) === zid);
+      minutePoId.set(zid, izracunajDnevneUre(zEv, zdaj).reduce((s, d) => s + d.minute, 0));
     });
-    res.json(rows);
+
+    const sorted = [...rows].sort((a, b) =>
+      (minutePoId.get(Number(b.id)) || 0) - (minutePoId.get(Number(a.id)) || 0)
+    );
+    res.json(sorted);
   });
 
   app.get('/api/danes', async (req, res) => {
@@ -680,6 +700,30 @@ function createApp() {
       skupajMinut: Math.round(skupajMinut),
       dnevi
     });
+  });
+
+  // ── Lestvica ──────────────────────────────────────────────────────────────────
+  app.get('/api/admin/lestvica', requireAuth, async (req, res) => {
+    const { od, do: do_ } = req.query;
+    const zdaj = new Date();
+    const args = od && do_ ? [od, do_] : [];
+    const where = od && do_ ? 'AND substr(cas,1,10) BETWEEN ? AND ?' : '';
+
+    const [{ rows: zaposleni }, { rows: evidenca }] = await Promise.all([
+      req.db.execute('SELECT id, ime FROM zaposleni WHERE aktiven = 1 ORDER BY ime'),
+      req.db.execute({ sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE 1=1 ${where} ORDER BY cas ASC`, args })
+    ]);
+
+    const lestvica = zaposleni.map(z => {
+      const zid = Number(z.id);
+      const dnevi = izracunajDnevneUre(evidenca.filter(e => Number(e.zaposleni_id) === zid), zdaj);
+      const minute = dnevi.reduce((s, d) => s + d.minute, 0);
+      const dni = dnevi.filter(d => d.minute > 0 || d.vTeku).length;
+      return { id: zid, ime: z.ime, minute, dni };
+    });
+
+    lestvica.sort((a, b) => b.minute - a.minute);
+    res.json(lestvica);
   });
 
   // ── Zahtevki ──────────────────────────────────────────────────────────────────

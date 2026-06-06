@@ -671,3 +671,60 @@ button:hover { background: #1a365d; }
   white-space: nowrap;
 }
 .td-akcije { white-space: nowrap; display: flex; gap: 5px; }
+
+/* ── Lestvica tab ─────────────────────────────────────────────────────────── */
+.lestvica-header-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+}
+.lestvica-obdobje { display: flex; gap: 6px; }
+.btn-obdobje {
+  background: #edf2f7; color: #4a5568; border: none;
+  padding: 6px 14px; border-radius: 20px;
+  font-size: 0.82rem; font-weight: 600; cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-obdobje:hover { background: #e2e8f0; color: #2d3748; }
+.btn-obdobje.active { background: #2c5282; color: white; }
+
+.lestvica-vrstica {
+  display: flex; align-items: center; gap: 14px;
+  padding: 12px 14px; border-radius: 10px;
+  margin-bottom: 8px; background: #f7fafc;
+  transition: background 0.12s;
+}
+.lestvica-vrstica:hover { background: #edf2f7; }
+.lestvica-prva { background: #fffbeb; }
+.lestvica-prva:hover { background: #fefce8; }
+
+.lestvica-medalja {
+  font-size: 1.5rem; min-width: 36px; text-align: center; flex-shrink: 0;
+}
+.lestvica-rank {
+  display: inline-block; width: 28px; height: 28px;
+  background: #e2e8f0; color: #718096;
+  border-radius: 50%; text-align: center; line-height: 28px;
+  font-size: 0.82rem; font-weight: 700;
+}
+
+.lestvica-info { flex: 1; min-width: 0; }
+.lestvica-ime { font-weight: 700; font-size: 0.97rem; color: #2d3748; margin-bottom: 5px; }
+
+.lestvica-bar-wrap {
+  height: 5px; background: #e2e8f0; border-radius: 3px; overflow: hidden;
+}
+.lestvica-bar {
+  height: 100%; background: linear-gradient(90deg, #4299e1, #2c5282);
+  border-radius: 3px; transition: width 0.4s ease;
+  min-width: 2px;
+}
+
+.lestvica-stat {
+  display: flex; flex-direction: column; align-items: flex-end;
+  flex-shrink: 0; gap: 2px;
+}
+.lestvica-ure {
+  font-size: 1rem; font-weight: 700; color: #2c5282;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.lestvica-dni { font-size: 0.75rem; color: #a0aec0; white-space: nowrap; }

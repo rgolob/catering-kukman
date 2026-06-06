@@ -33,6 +33,7 @@
       <button class="tab" data-tab="evidenca">Evidenca</button>
       <button class="tab" data-tab="prisotnost">Prisotnost</button>
       <button class="tab" data-tab="zahtevki">Zahtevki <span id="zahtevki-badge" class="zahtevki-badge" style="display:none"></span></button>
+      <button class="tab" data-tab="lestvica">Lestvica</button>
       <button class="tab" data-tab="obracun">Obračun</button>
       <button class="tab" data-tab="nastavitve">Nastavitve</button>
     </div>
@@ -121,6 +122,22 @@
           <tbody id="zahtevki-tbody"></tbody>
         </table>
         <div id="zahtevki-prazno" class="prazno" style="display:none">Ni zahtevkov.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Lestvica -->
+    <div id="tab-lestvica" class="tab-content">
+      <div class="card">
+        <div class="lestvica-header-row">
+          <h2>Lestvica opravljenih ur</h2>
+          <div class="lestvica-obdobje" id="lestvica-obdobje">
+            <button class="btn-obdobje active" data-obdobje="mesec">Ta mesec</button>
+            <button class="btn-obdobje" data-obdobje="prej">Prejšnji mesec</button>
+            <button class="btn-obdobje" data-obdobje="vse">Vse</button>
+          </div>
+        </div>
+        <div id="lestvica-seznam"></div>
+        <div id="lestvica-prazno" class="prazno" style="display:none">Ni podatkov za izbrano obdobje.</div>
       </div>
     </div>
 
