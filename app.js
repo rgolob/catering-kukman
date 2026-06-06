@@ -58,6 +58,15 @@ async function ensureDb() {
         znesek REAL NOT NULL DEFAULT 0,
         opomba TEXT
       )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS zahtevki (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        zaposleni_id INTEGER NOT NULL,
+        tip TEXT NOT NULL,
+        cas_zahtevka TEXT NOT NULL,
+        opomba TEXT,
+        status TEXT NOT NULL DEFAULT 'CAKA',
+        ustvarjen TEXT NOT NULL
+      )`, args: [] },
     { sql: `INSERT OR IGNORE INTO config (kljuc, vrednost) VALUES ('admin_hash', ?)`,
       args: [sha256('kukman2024')] }
   ], 'write');
@@ -220,11 +229,14 @@ function createApp() {
   });
 
   app.post('/api/pin-login', async (req, res) => {
-    const { pin } = req.body;
+    const { zaposleniId, pin } = req.body;
     if (!pin || !/^\d{4}$/.test(pin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
+    if (!zaposleniId)
+      return res.status(400).json({ napaka: 'Izberite ime' });
     const { rows } = await req.db.execute({
-      sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE pin = ? AND aktiven = 1', args: [pin]
+      sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
+      args: [zaposleniId, pin]
     });
     if (!rows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
     req.session.zaposleniId = Number(rows[0].id);
@@ -249,11 +261,6 @@ function createApp() {
     const { novPin } = req.body;
     if (!novPin || !/^\d{4}$/.test(novPin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
-    const { rows } = await req.db.execute({
-      sql: 'SELECT id FROM zaposleni WHERE pin = ? AND id != ?',
-      args: [novPin, req.session.zaposleniId]
-    });
-    if (rows.length) return res.status(409).json({ napaka: 'Ta PIN je že zaseden, izberi drugega' });
     await req.db.execute({
       sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = 0 WHERE id = ?',
       args: [novPin, req.session.zaposleniId]
@@ -262,6 +269,13 @@ function createApp() {
   });
 
   // ── Public API ────────────────────────────────────────────────────────────────
+  app.get('/api/zaposleni-seznam', async (req, res) => {
+    const { rows } = await req.db.execute({
+      sql: 'SELECT id, ime FROM zaposleni WHERE aktiven = 1 ORDER BY ime'
+    });
+    res.json(rows);
+  });
+
   app.get('/api/status', async (req, res) => {
     const danes = localDate();
     const { rows } = await req.db.execute({
@@ -374,8 +388,8 @@ function createApp() {
     res.json(meseci);
   });
 
-  app.post('/api/moj-cas/naknadno', requirePinAuth, async (req, res) => {
-    const { tip, cas } = req.body;
+  app.post('/api/moj-cas/zahtevek', requirePinAuth, async (req, res) => {
+    const { tip, cas, opomba } = req.body;
     if (!['PRIHOD', 'ODHOD'].includes(tip))
       return res.status(400).json({ napaka: 'Neveljaven tip' });
     if (!cas || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(cas))
@@ -384,10 +398,18 @@ function createApp() {
     if (isNaN(casDate.getTime()) || casDate >= new Date())
       return res.status(400).json({ napaka: 'Čas mora biti v preteklosti' });
     await req.db.execute({
-      sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas, naknadno) VALUES (?, ?, ?, 1)',
-      args: [req.session.zaposleniId, tip, cas + ':00']
+      sql: `INSERT INTO zahtevki (zaposleni_id, tip, cas_zahtevka, opomba, status, ustvarjen) VALUES (?, ?, ?, ?, 'CAKA', ?)`,
+      args: [req.session.zaposleniId, tip, cas + ':00', opomba || null, localTime()]
     });
     res.json({ ok: true });
+  });
+
+  app.get('/api/moj-cas/zahtevki', requirePinAuth, async (req, res) => {
+    const { rows } = await req.db.execute({
+      sql: `SELECT id, tip, cas_zahtevka, opomba, status, ustvarjen FROM zahtevki WHERE zaposleni_id = ? ORDER BY ustvarjen DESC LIMIT 20`,
+      args: [req.session.zaposleniId]
+    });
+    res.json(rows);
   });
 
   // ── Admin API ──────────────────────────────────────────────────────────────────
@@ -419,12 +441,7 @@ function createApp() {
   });
 
   app.post('/api/admin/zaposleni/:id/ponastavi-pin', requireAuth, async (req, res) => {
-    let tempPin = String(Math.floor(1000 + Math.random() * 9000));
-    const { rows } = await req.db.execute({
-      sql: 'SELECT id FROM zaposleni WHERE pin = ? AND id != ?',
-      args: [tempPin, req.params.id]
-    });
-    if (rows.length) tempPin = String(Math.floor(1000 + Math.random() * 9000));
+    const tempPin = String(Math.floor(1000 + Math.random() * 9000));
     await req.db.execute({
       sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = 1 WHERE id = ?',
       args: [tempPin, req.params.id]
@@ -436,14 +453,10 @@ function createApp() {
     const { pin } = req.body;
     if (pin && !/^\d{4}$/.test(pin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
-    const noviPin = pin || null;
-    if (noviPin) {
-      const { rows } = await req.db.execute({
-        sql: 'SELECT id FROM zaposleni WHERE pin = ? AND id != ?', args: [noviPin, req.params.id]
-      });
-      if (rows.length) return res.status(409).json({ napaka: 'Ta PIN je že zaseden' });
-    }
-    await req.db.execute({ sql: 'UPDATE zaposleni SET pin = ? WHERE id = ?', args: [noviPin, req.params.id] });
+    await req.db.execute({
+      sql: 'UPDATE zaposleni SET pin = ? WHERE id = ?',
+      args: [pin || null, req.params.id]
+    });
     res.json({ ok: true });
   });
 
@@ -667,6 +680,43 @@ function createApp() {
       skupajMinut: Math.round(skupajMinut),
       dnevi
     });
+  });
+
+  // ── Zahtevki ──────────────────────────────────────────────────────────────────
+  app.get('/api/admin/zahtevki', requireAuth, async (req, res) => {
+    const { rows } = await req.db.execute(
+      `SELECT z.id, z.tip, z.cas_zahtevka, z.opomba, z.status, z.ustvarjen,
+              zap.ime AS ime_zaposlenega
+       FROM zahtevki z
+       JOIN zaposleni zap ON zap.id = z.zaposleni_id
+       ORDER BY z.ustvarjen DESC`
+    );
+    res.json(rows);
+  });
+
+  app.post('/api/admin/zahtevki/:id/odobri', requireAuth, async (req, res) => {
+    const { rows } = await req.db.execute({
+      sql: 'SELECT * FROM zahtevki WHERE id = ?', args: [req.params.id]
+    });
+    if (!rows.length) return res.status(404).json({ napaka: 'Zahtevek ni najden' });
+    const z = rows[0];
+    if (z.status !== 'CAKA') return res.status(400).json({ napaka: 'Zahtevek je že obravnavan' });
+    await req.db.batch([
+      { sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas, naknadno) VALUES (?, ?, ?, 1)',
+        args: [z.zaposleni_id, z.tip, z.cas_zahtevka] },
+      { sql: "UPDATE zahtevki SET status = 'ODOBREN' WHERE id = ?", args: [z.id] }
+    ], 'write');
+    res.json({ ok: true });
+  });
+
+  app.post('/api/admin/zahtevki/:id/zavrni', requireAuth, async (req, res) => {
+    const { rows } = await req.db.execute({
+      sql: 'SELECT id, status FROM zahtevki WHERE id = ?', args: [req.params.id]
+    });
+    if (!rows.length) return res.status(404).json({ napaka: 'Zahtevek ni najden' });
+    if (rows[0].status !== 'CAKA') return res.status(400).json({ napaka: 'Zahtevek je že obravnavan' });
+    await req.db.execute({ sql: "UPDATE zahtevki SET status = 'ZAVRNJEN' WHERE id = ?", args: [req.params.id] });
+    res.json({ ok: true });
   });
 
   // ── Demo seed ─────────────────────────────────────────────────────────────────

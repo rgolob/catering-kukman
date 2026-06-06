@@ -15,11 +15,18 @@
 <body>
   <header>
     <h1>Catering Kukman</h1>
-    <p>Moj čas</p>
+    <p id="header-podnaslov">Moj čas</p>
   </header>
   <main>
-    <div class="pin-card">
-      <p class="navodilo">Vnesite vaš 4-mestni PIN</p>
+    <!-- Korak 1: Izbira imena -->
+    <div class="ime-karta" id="ime-karta">
+      <p class="navodilo">Kdo si ti?</p>
+      <div id="zaposleni-seznam" class="zaposleni-seznam"></div>
+    </div>
+
+    <!-- Korak 2: PIN vnos -->
+    <div class="pin-card" id="pin-karta" style="display:none">
+      <p class="navodilo" id="pin-navodilo">Vnesite PIN</p>
       <div class="pin-prikaz">
         <div class="pin-dot" id="d0"></div>
         <div class="pin-dot" id="d1"></div>
@@ -39,10 +46,11 @@
         <button class="tipka" data-digit="9">9</button>
         <button class="tipka tipka-brisi" id="btn-brisi">⌫</button>
         <button class="tipka" data-digit="0">0</button>
-        <button class="tipka tipka-prazna"></button>
+        <button class="tipka tipka-nazaj" id="btn-nazaj">↩</button>
       </div>
     </div>
-    <a href="/" class="nazaj">← Nazaj na evidenco</a>
+
+    <a href="/" class="nazaj" id="link-nazaj">← Nazaj na evidenco</a>
   </main>
   <script src="pin.js"></script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>

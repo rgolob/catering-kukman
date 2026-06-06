@@ -151,3 +151,60 @@ main {
 }
 
 .tresenje { animation: tresenje 0.4s ease; }
+
+/* Ime selection */
+.ime-karta {
+  background: white;
+  border-radius: 20px;
+  padding: 28px 24px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.zaposleni-seznam {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ime-tipka {
+  width: 100%;
+  padding: 14px 18px;
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  text-align: left;
+}
+.ime-tipka:hover {
+  background: #ebf4ff;
+  border-color: #4299e1;
+  transform: translateX(4px);
+}
+.ime-tipka:active {
+  transform: scale(0.98);
+  background: #bee3f8;
+}
+
+/* Back button */
+.tipka-nazaj {
+  background: #edf2f7;
+  border-color: #cbd5e0;
+  color: #4a5568;
+  font-size: 1.2rem;
+}
+.tipka-nazaj:hover {
+  background: #bee3f8;
+  border-color: #4299e1;
+  color: #2c5282;
+}
