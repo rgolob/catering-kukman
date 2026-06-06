@@ -220,6 +220,7 @@ async function potrdiZapis() {
     prikaziToast(zapis.ime, izbraniTip);
 
     naloziZaposlene();
+    naloziEvidenco();
   } catch (e) {
     console.error('Napaka:', e);
     prikaziPinNapako('Napaka pri povezavi');
@@ -255,4 +256,5 @@ document.addEventListener('keydown', e => {
 
 // Začetno nalaganje in osvežitev vsako minuto
 naloziZaposlene();
-setInterval(naloziZaposlene, 60_000);
+naloziEvidenco();
+setInterval(() => { naloziZaposlene(); naloziEvidenco(); }, 60_000);

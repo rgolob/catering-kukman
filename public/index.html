@@ -17,16 +17,17 @@
     <h1>Catering Kukman</h1>
     <p class="subtitle">Evidenca prisotnosti</p>
     <div id="ura"></div>
-    <div class="header-links">
-      <a href="/pin" class="header-link">Moj čas</a>
-      <a href="/admin" class="header-link">Admin</a>
-    </div>
   </header>
 
   <main>
     <section class="zaposleni-section">
       <h2>Klikni na svoje ime</h2>
       <div id="zaposleni-grid" class="zaposleni-grid"></div>
+    </section>
+
+    <section class="evidenca-section">
+      <h2>Današnji vnosi</h2>
+      <div id="evidenca-list" class="evidenca-list"></div>
     </section>
   </main>
 
@@ -67,6 +68,12 @@
 
   <!-- Toast obvestilo -->
   <div id="toast" class="toast hidden"></div>
+
+  <footer class="footer">
+    <a href="/pin" class="footer-link">Moj čas</a>
+    <span class="footer-sep">·</span>
+    <a href="/admin" class="footer-link footer-link-admin">Admin panel</a>
+  </footer>
 
   <script src="app.js"></script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>

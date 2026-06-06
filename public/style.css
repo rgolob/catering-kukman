@@ -39,28 +39,6 @@ header h1 {
   letter-spacing: 2px;
 }
 
-.header-links {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 14px;
-}
-
-.header-link {
-  color: rgba(255,255,255,0.75);
-  text-decoration: none;
-  font-size: 0.82rem;
-  font-weight: 500;
-  padding: 5px 16px;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.25);
-  transition: all 0.15s;
-}
-.header-link:hover {
-  color: white;
-  background: rgba(255,255,255,0.15);
-  border-color: rgba(255,255,255,0.5);
-}
 
 main {
   max-width: 900px;
@@ -150,6 +128,77 @@ h2 {
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
+
+/* Evidenca */
+.evidenca-section {
+  margin-top: 4px;
+}
+
+.evidenca-section h2 {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #a0aec0;
+  margin-bottom: 8px;
+}
+
+.evidenca-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.evidenca-zapis {
+  background: white;
+  border-radius: 8px;
+  padding: 7px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.82rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.evidenca-zapis .ev-ime {
+  font-weight: 600;
+  flex: 1;
+  color: #2d3748;
+}
+
+.evidenca-zapis .ev-cas {
+  color: #a0aec0;
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.evidenca-prazno {
+  color: #a0aec0;
+  text-align: center;
+  padding: 16px;
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 16px;
+  margin-top: 4px;
+}
+
+.footer-link {
+  font-size: 0.8rem;
+  color: #a0aec0;
+  text-decoration: none;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.footer-link:hover { color: #4a5568; }
+.footer-link-admin { color: #4299e1; }
+.footer-link-admin:hover { color: #2c5282; }
+.footer-sep { color: #cbd5e0; }
 
 .evidenca-zapis .tip-pill {
   padding: 3px 12px;
@@ -377,9 +426,9 @@ h2 {
   .zaposleni-grid { grid-template-columns: 1fr 1fr; }
 
   /* Evidenca seznam pod karticami — manjša pisava */
-  .evidenca-zapis { padding: 9px 12px; font-size: 0.85rem; gap: 9px; }
-  .evidenca-zapis .ev-cas { font-size: 0.8rem; }
-  .tip-pill { font-size: 0.7rem; padding: 2px 8px; min-width: 58px; }
+  .evidenca-zapis { padding: 6px 10px; font-size: 0.78rem; gap: 7px; }
+  .evidenca-zapis .ev-cas { font-size: 0.72rem; }
+  .tip-pill { font-size: 0.66rem; padding: 2px 7px; min-width: 52px; }
 
   /* Dialog PIN numpad — ostane enak, samo padding dialogа */
   .dialog { padding: 22px 18px; }
