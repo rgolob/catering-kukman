@@ -299,6 +299,69 @@ main {
 }
 .btn-sekundarni:hover { background: #e2e8f0; }
 
+/* Zahtevki seznam */
+.zahtevki-naslov {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #4a5568;
+  margin-top: 16px;
+  margin-bottom: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+.zahtevek-vrstica {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #f7fafc;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
+}
+.zahtevek-tip {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.zahtevek-tip.prihod { background: #c6f6d5; color: #276749; }
+.zahtevek-tip.odhod  { background: #fed7d7; color: #9b2c2c; }
+.zahtevek-cas {
+  font-size: 0.84rem;
+  color: #4a5568;
+  font-variant-numeric: tabular-nums;
+  flex: 1;
+  white-space: nowrap;
+}
+.zahtevek-opomba {
+  font-size: 0.78rem;
+  color: #718096;
+  font-style: italic;
+  flex: 1;
+}
+.zahtevek-status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.zahtevek-status.caka     { background: #fefcbf; color: #975a16; }
+.zahtevek-status.odobren  { background: #c6f6d5; color: #276749; }
+.zahtevek-status.zavrnjen { background: #fed7d7; color: #9b2c2c; }
+
+.form-skupina input[type="text"] {
+  width: 100%; padding: 10px 12px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.95rem; color: #1a202c;
+  outline: none; transition: border-color 0.15s;
+}
+.form-skupina input[type="text"]:focus { border-color: #4299e1; }
+
 @media (max-width: 480px) {
   .header-inner { gap: 8px; }
   header h1 { font-size: 1.05rem; }

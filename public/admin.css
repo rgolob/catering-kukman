@@ -606,3 +606,61 @@ button:hover { background: #1a365d; }
   vertical-align: middle; margin-left: 2px;
 }
 .pris-manjka { color: #a0aec0; }
+
+/* ── Zahtevki tab ─────────────────────────────────────────────────────────── */
+.zahtevki-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.zahtevki-vse-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  color: #4a5568;
+  cursor: pointer;
+  font-weight: 500;
+}
+.zahtevki-badge {
+  background: #e53e3e;
+  color: white;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+  line-height: 1.4;
+}
+.zahtevek-status-pill {
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.zahtevek-status-pill.caka     { background: #fefcbf; color: #975a16; }
+.zahtevek-status-pill.odobren  { background: #c6f6d5; color: #276749; }
+.zahtevek-status-pill.zavrnjen { background: #fed7d7; color: #9b2c2c; }
+
+.btn-odobri {
+  background: #38a169 !important;
+  color: white !important;
+  border-color: #38a169 !important;
+}
+.btn-odobri:hover { background: #276749 !important; border-color: #276749 !important; }
+
+.td-opomba {
+  font-size: 0.82rem;
+  color: #718096;
+  font-style: italic;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.td-akcije { white-space: nowrap; display: flex; gap: 5px; }

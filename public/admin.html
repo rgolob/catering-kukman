@@ -32,6 +32,7 @@
       <button class="tab active" data-tab="zaposleni">Zaposleni</button>
       <button class="tab" data-tab="evidenca">Evidenca</button>
       <button class="tab" data-tab="prisotnost">Prisotnost</button>
+      <button class="tab" data-tab="zahtevki">Zahtevki <span id="zahtevki-badge" class="zahtevki-badge" style="display:none"></span></button>
       <button class="tab" data-tab="obracun">Obračun</button>
       <button class="tab" data-tab="nastavitve">Nastavitve</button>
     </div>
@@ -94,6 +95,32 @@
         </div>
         <div id="prisotnost-seznam" class="prisotnost-seznam"></div>
         <div id="prisotnost-prazno" class="prazno" style="display:none">Ni podatkov za ta mesec.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Zahtevki -->
+    <div id="tab-zahtevki" class="tab-content">
+      <div class="card">
+        <div class="zahtevki-header-row">
+          <h2>Zahtevki za naknaden vnos</h2>
+          <label class="zahtevki-vse-label">
+            <input type="checkbox" id="zahtevki-samo-cakajoci" checked /> Samo čakajoči
+          </label>
+        </div>
+        <table id="zahtevki-tabela" class="tabela">
+          <thead>
+            <tr>
+              <th>Zaposleni</th>
+              <th>Tip</th>
+              <th>Zahtevani čas</th>
+              <th>Opomba</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="zahtevki-tbody"></tbody>
+        </table>
+        <div id="zahtevki-prazno" class="prazno" style="display:none">Ni zahtevkov.</div>
       </div>
     </div>
 

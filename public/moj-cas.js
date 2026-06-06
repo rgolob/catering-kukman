@@ -174,6 +174,7 @@ document.getElementById('btn-naknadno').addEventListener('click', () => {
   document.getElementById('nak-datum').max = danes;
   document.getElementById('nak-datum').value = danes;
   document.getElementById('nak-ura').value = '';
+  document.getElementById('nak-opomba').value = '';
   document.getElementById('nak-napaka').textContent = '';
   document.querySelector('input[name="nak-tip"][value="PRIHOD"]').checked = true;
   document.getElementById('naknadno-overlay').classList.remove('hidden');
@@ -189,29 +190,53 @@ document.getElementById('naknadno-overlay').addEventListener('click', e => {
 });
 
 document.getElementById('nak-potrdi').addEventListener('click', async () => {
-  const datum = document.getElementById('nak-datum').value;
-  const ura   = document.getElementById('nak-ura').value;
-  const tip   = document.querySelector('input[name="nak-tip"]:checked').value;
+  const datum  = document.getElementById('nak-datum').value;
+  const ura    = document.getElementById('nak-ura').value;
+  const tip    = document.querySelector('input[name="nak-tip"]:checked').value;
+  const opomba = document.getElementById('nak-opomba').value.trim();
   const napaka = document.getElementById('nak-napaka');
 
   if (!datum || !ura) { napaka.textContent = 'Vnesite datum in uro.'; return; }
 
   const cas = `${datum} ${ura}`;
-  const res = await fetch('/api/moj-cas/naknadno', {
+  const res = await fetch('/api/moj-cas/zahtevek', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tip, cas })
+    body: JSON.stringify({ tip, cas, opomba: opomba || undefined })
   });
 
   if (res.ok) {
     document.getElementById('naknadno-overlay').classList.add('hidden');
-    naloziMesec();
-    naloziKumulativno();
+    naloziZahtevke();
   } else {
     const d = await res.json();
-    napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
+    napaka.textContent = d.napaka || 'Napaka pri pošiljanju zahtevka';
   }
 });
+
+// ── Zahtevki ─────────────────────────────────────────────────────────────────
+async function naloziZahtevke() {
+  const res = await fetch('/api/moj-cas/zahtevki');
+  if (!res.ok) return;
+  const zahtevki = await res.json();
+
+  const el = document.getElementById('zahtevki-seznam');
+  if (!zahtevki || zahtevki.length === 0) { el.innerHTML = ''; return; }
+
+  el.innerHTML = '<div class="zahtevki-naslov">Moji zahtevki</div>' + zahtevki.map(z => {
+    const casStr = String(z.cas_zahtevka).slice(0, 16).replace('T', ' ');
+    const tipTxt = z.tip === 'PRIHOD' ? 'Prihod' : 'Odhod';
+    const sc = z.status === 'CAKA' ? 'caka' : z.status === 'ODOBREN' ? 'odobren' : 'zavrnjen';
+    const st = z.status === 'CAKA' ? 'Čaka' : z.status === 'ODOBREN' ? 'Odobreno' : 'Zavrnjeno';
+    const opombaHtml = z.opomba ? `<span class="zahtevek-opomba">${z.opomba}</span>` : '';
+    return `<div class="zahtevek-vrstica">
+      <span class="zahtevek-tip ${z.tip.toLowerCase()}">${tipTxt}</span>
+      <span class="zahtevek-cas">${casStr}</span>
+      ${opombaHtml}
+      <span class="zahtevek-status ${sc}">${st}</span>
+    </div>`;
+  }).join('');
+}
 
 // Init
 const zdaj = new Date();
@@ -221,3 +246,4 @@ prikazaniMesec = zdaj.getMonth() + 1;
 naloziInfo();
 naloziMesec();
 naloziKumulativno();
+naloziZahtevke();

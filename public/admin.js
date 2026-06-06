@@ -7,6 +7,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'obracun') naloziObracunTab();
     if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
+    if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
   });
 });
 
@@ -685,6 +686,90 @@ document.getElementById('btn-seed-demo').addEventListener('click', async () => {
   btn.textContent = 'Vstavi demo podatke';
 });
 
+// ── ZAHTEVKI TAB ──────────────────────────────────────────────────────────────
+function naloziZahtevkiTab() { naloziZahtevke(); }
+
+async function naloziZahtevke() {
+  try {
+    const res = await fetch('/api/admin/zahtevki');
+    if (!res.ok) return;
+    const vsiZahtevki = await res.json();
+
+    const cakajoci = vsiZahtevki.filter(z => z.status === 'CAKA');
+    const badge = document.getElementById('zahtevki-badge');
+    if (cakajoci.length > 0) {
+      badge.textContent = cakajoci.length;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    const samoCakajoci = document.getElementById('zahtevki-samo-cakajoci')?.checked !== false;
+    const zahtevki = samoCakajoci ? cakajoci : vsiZahtevki;
+
+    const tbody = document.getElementById('zahtevki-tbody');
+    const prazno = document.getElementById('zahtevki-prazno');
+    if (!tbody) return;
+
+    if (!zahtevki.length) {
+      tbody.innerHTML = '';
+      prazno.style.display = 'block';
+      return;
+    }
+    prazno.style.display = 'none';
+
+    tbody.innerHTML = zahtevki.map(z => {
+      const casStr = String(z.cas_zahtevka).slice(0, 16).replace('T', ' ');
+      const tipTxt = z.tip === 'PRIHOD' ? 'Prihod' : 'Odhod';
+      const sc = z.status === 'CAKA' ? 'caka' : z.status === 'ODOBREN' ? 'odobren' : 'zavrnjen';
+      const st = z.status === 'CAKA' ? 'Čaka' : z.status === 'ODOBREN' ? 'Odobreno' : 'Zavrnjeno';
+      const akcije = z.status === 'CAKA'
+        ? `<button class="btn-sm btn-odobri" data-id="${z.id}">Odobri</button>
+           <button class="btn-sm btn-zavrni btn-danger" data-id="${z.id}">Zavrni</button>`
+        : '';
+      return `<tr>
+        <td>${escHtml(z.ime_zaposlenega)}</td>
+        <td><span class="tip-pill ${z.tip}">${tipTxt}</span></td>
+        <td class="td-cas">${casStr}</td>
+        <td class="td-opomba">${escHtml(z.opomba || '—')}</td>
+        <td><span class="zahtevek-status-pill ${sc}">${st}</span></td>
+        <td class="td-akcije">${akcije}</td>
+      </tr>`;
+    }).join('');
+
+    tbody.querySelectorAll('.btn-odobri').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Odobriti ta zahtevek?')) return;
+        const r = await fetch(`/api/admin/zahtevki/${btn.dataset.id}/odobri`, { method: 'POST' });
+        if (r.ok) { prikaziToast('Zahtevek odobren'); naloziZahtevke(); }
+        else { const d = await r.json(); prikaziToast(d.napaka || 'Napaka', 'napaka'); }
+      });
+    });
+    tbody.querySelectorAll('.btn-zavrni').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Zavrniti ta zahtevek?')) return;
+        const r = await fetch(`/api/admin/zahtevki/${btn.dataset.id}/zavrni`, { method: 'POST' });
+        if (r.ok) { prikaziToast('Zahtevek zavrnjen'); naloziZahtevke(); }
+        else { const d = await r.json(); prikaziToast(d.napaka || 'Napaka', 'napaka'); }
+      });
+    });
+  } catch(e) { console.error(e); }
+}
+
+document.getElementById('zahtevki-samo-cakajoci').addEventListener('change', () => naloziZahtevke());
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 naloziZaposlene();
 naloziEvidenco();
+// Check for pending requests badge on load
+(async () => {
+  try {
+    const res = await fetch('/api/admin/zahtevki');
+    if (res.ok) {
+      const z = await res.json();
+      const n = z.filter(x => x.status === 'CAKA').length;
+      const badge = document.getElementById('zahtevki-badge');
+      if (n > 0) { badge.textContent = n; badge.style.display = ''; }
+    }
+  } catch(_) {}
+})();
