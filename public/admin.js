@@ -501,6 +501,33 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ── Briši današnje vnose ──────────────────────────────────────────────────────
+document.getElementById('btn-brisi-danes').addEventListener('click', async () => {
+  const el = document.getElementById('brisi-rezultat');
+  const btn = document.getElementById('btn-brisi-danes');
+  if (!confirm('Izbrisati vse vnose za današnji dan?')) return;
+  btn.disabled = true;
+  btn.textContent = 'Brišem…';
+  el.textContent = '';
+  try {
+    const res = await fetch('/api/admin/brisi-danes', { method: 'POST' });
+    const d = await res.json();
+    if (res.ok) {
+      el.style.color = '#68d391';
+      el.textContent = `✓ Izbrisano ${d.stevilo} ${d.stevilo === 1 ? 'vnos' : 'vnosov'}`;
+      prikaziToast(`Izbrisano ${d.stevilo} vnosov za danes`);
+    } else {
+      el.style.color = '#fc8181';
+      el.textContent = d.napaka || 'Napaka';
+    }
+  } catch (e) {
+    el.style.color = '#fc8181';
+    el.textContent = 'Ni povezave s strežnikom';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Izbriši današnje vnose';
+});
+
 // ── Demo seed ─────────────────────────────────────────────────────────────────
 document.getElementById('btn-seed-demo').addEventListener('click', async () => {
   const el = document.getElementById('seed-rezultat');

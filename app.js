@@ -288,9 +288,17 @@ function createApp() {
   });
 
   app.post('/api/belezi', async (req, res) => {
-    const { zaposleni_id, tip } = req.body;
+    const { zaposleni_id, tip, pin } = req.body;
     if (!zaposleni_id || !['PRIHOD', 'ODHOD'].includes(tip))
       return res.status(400).json({ napaka: 'Neveljavni podatki' });
+    if (!pin) return res.status(400).json({ napaka: 'PIN je zahtevan' });
+
+    const { rows: zr } = await req.db.execute({
+      sql: 'SELECT pin FROM zaposleni WHERE id = ? AND aktiven = 1',
+      args: [zaposleni_id]
+    });
+    if (!zr.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
+    if (zr[0].pin !== pin) return res.status(401).json({ napaka: 'Napačen PIN' });
 
     const cas = localTime();
     const r = await req.db.execute({
@@ -553,6 +561,16 @@ function createApp() {
   app.delete('/api/admin/stimulacija/:id', requireAuth, async (req, res) => {
     await req.db.execute({ sql: 'DELETE FROM stimulacija WHERE id = ?', args: [req.params.id] });
     res.json({ ok: true });
+  });
+
+  // ── Briši današnje vnose ──────────────────────────────────────────────────────
+  app.post('/api/admin/brisi-danes', requireAuth, async (req, res) => {
+    const danes = localDate();
+    const r = await req.db.execute({
+      sql: 'DELETE FROM evidenca WHERE substr(cas,1,10) = ?',
+      args: [danes]
+    });
+    res.json({ ok: true, stevilo: Number(r.rowsAffected) });
   });
 
   // ── Demo seed ─────────────────────────────────────────────────────────────────
