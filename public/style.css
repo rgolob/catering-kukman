@@ -404,6 +404,18 @@ h2 {
 @media (max-width: 480px) {
   header h1 { font-size: 1.5rem; }
   #ura { font-size: 1.8rem; }
+
+  /* Kartice za evidentiranje — ostanejo enake (ne spreminjaš) */
   .zaposleni-grid { grid-template-columns: 1fr 1fr; }
-  .dialog { padding: 28px 24px; }
+
+  /* Evidenca seznam pod karticami — manjša pisava */
+  .evidenca-zapis { padding: 9px 12px; font-size: 0.85rem; gap: 9px; }
+  .evidenca-zapis .ev-cas { font-size: 0.8rem; }
+  .tip-pill { font-size: 0.7rem; padding: 2px 8px; min-width: 58px; }
+
+  /* Dialog PIN numpad — ostane enak, samo padding dialogа */
+  .dialog { padding: 22px 18px; }
+  .dialog h2 { font-size: 1.3rem; }
+  .dialog-cas { font-size: 1.15rem; }
+  .dialog-vprasanje { font-size: 0.88rem; margin-bottom: 0; }
 }
