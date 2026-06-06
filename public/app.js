@@ -220,7 +220,6 @@ async function potrdiZapis() {
     prikaziToast(zapis.ime, izbraniTip);
 
     naloziZaposlene();
-    naloziEvidenco();
   } catch (e) {
     console.error('Napaka:', e);
     prikaziPinNapako('Napaka pri povezavi');
@@ -254,12 +253,6 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') zapriDialog();
 });
 
-// Začetno nalaganje
+// Začetno nalaganje in osvežitev vsako minuto
 naloziZaposlene();
-naloziEvidenco();
-
-// Osvežuj vsako minuto
-setInterval(() => {
-  naloziZaposlene();
-  naloziEvidenco();
-}, 60_000);
+setInterval(naloziZaposlene, 60_000);

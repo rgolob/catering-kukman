@@ -39,6 +39,29 @@ header h1 {
   letter-spacing: 2px;
 }
 
+.header-links {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.header-link {
+  color: rgba(255,255,255,0.75);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 5px 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.25);
+  transition: all 0.15s;
+}
+.header-link:hover {
+  color: white;
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.5);
+}
+
 main {
   max-width: 900px;
   margin: 0 auto;
@@ -128,24 +151,6 @@ h2 {
   letter-spacing: 0.5px;
 }
 
-/* Evidenca */
-.evidenca-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.evidenca-zapis {
-  background: white;
-  border-radius: 10px;
-  padding: 12px 18px;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.07);
-  font-size: 0.95rem;
-}
-
 .evidenca-zapis .tip-pill {
   padding: 3px 12px;
   border-radius: 20px;
@@ -165,24 +170,6 @@ h2 {
 .tip-pill.ODHOD {
   background: #fed7d7;
   color: #9b2c2c;
-}
-
-.evidenca-zapis .ev-ime {
-  font-weight: 600;
-  flex: 1;
-}
-
-.evidenca-zapis .ev-cas {
-  color: #718096;
-  font-size: 0.9rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.evidenca-prazno {
-  color: #a0aec0;
-  text-align: center;
-  padding: 24px;
-  font-style: italic;
 }
 
 /* Dialog / Overlay */
@@ -381,25 +368,6 @@ h2 {
 
 .toast.prihod { background: #276749; }
 .toast.odhod  { background: #9b2c2c; }
-
-/* Footer */
-.footer {
-  text-align: center;
-  padding: 20px;
-  margin-top: 8px;
-}
-.admin-link, .moj-cas-link {
-  font-size: 0.8rem;
-  color: #a0aec0;
-  text-decoration: none;
-  padding: 4px 10px;
-  border-radius: 6px;
-  transition: color 0.15s;
-}
-.admin-link:hover, .moj-cas-link:hover { color: #4a5568; }
-.moj-cas-link { color: #4299e1; }
-.moj-cas-link:hover { color: #2c5282; }
-.footer-sep { color: #cbd5e0; }
 
 @media (max-width: 480px) {
   header h1 { font-size: 1.5rem; }
