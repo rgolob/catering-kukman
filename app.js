@@ -229,11 +229,14 @@ function createApp() {
   });
 
   app.post('/api/pin-login', async (req, res) => {
-    const { pin } = req.body;
+    const { zaposleniId, pin } = req.body;
     if (!pin || !/^\d{4}$/.test(pin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
+    if (!zaposleniId)
+      return res.status(400).json({ napaka: 'Izberite ime' });
     const { rows } = await req.db.execute({
-      sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE pin = ? AND aktiven = 1', args: [pin]
+      sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
+      args: [zaposleniId, pin]
     });
     if (!rows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
     req.session.zaposleniId = Number(rows[0].id);
@@ -258,11 +261,6 @@ function createApp() {
     const { novPin } = req.body;
     if (!novPin || !/^\d{4}$/.test(novPin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
-    const { rows } = await req.db.execute({
-      sql: 'SELECT id FROM zaposleni WHERE pin = ? AND id != ?',
-      args: [novPin, req.session.zaposleniId]
-    });
-    if (rows.length) return res.status(409).json({ napaka: 'Ta PIN je že zaseden, izberi drugega' });
     await req.db.execute({
       sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = 0 WHERE id = ?',
       args: [novPin, req.session.zaposleniId]
@@ -271,6 +269,13 @@ function createApp() {
   });
 
   // ── Public API ────────────────────────────────────────────────────────────────
+  app.get('/api/zaposleni-seznam', async (req, res) => {
+    const { rows } = await req.db.execute({
+      sql: 'SELECT id, ime FROM zaposleni WHERE aktiven = 1 ORDER BY ime'
+    });
+    res.json(rows);
+  });
+
   app.get('/api/status', async (req, res) => {
     const danes = localDate();
     const { rows } = await req.db.execute({
@@ -436,12 +441,7 @@ function createApp() {
   });
 
   app.post('/api/admin/zaposleni/:id/ponastavi-pin', requireAuth, async (req, res) => {
-    let tempPin = String(Math.floor(1000 + Math.random() * 9000));
-    const { rows } = await req.db.execute({
-      sql: 'SELECT id FROM zaposleni WHERE pin = ? AND id != ?',
-      args: [tempPin, req.params.id]
-    });
-    if (rows.length) tempPin = String(Math.floor(1000 + Math.random() * 9000));
+    const tempPin = String(Math.floor(1000 + Math.random() * 9000));
     await req.db.execute({
       sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = 1 WHERE id = ?',
       args: [tempPin, req.params.id]
@@ -453,14 +453,10 @@ function createApp() {
     const { pin } = req.body;
     if (pin && !/^\d{4}$/.test(pin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
-    const noviPin = pin || null;
-    if (noviPin) {
-      const { rows } = await req.db.execute({
-        sql: 'SELECT id FROM zaposleni WHERE pin = ? AND id != ?', args: [noviPin, req.params.id]
-      });
-      if (rows.length) return res.status(409).json({ napaka: 'Ta PIN je že zaseden' });
-    }
-    await req.db.execute({ sql: 'UPDATE zaposleni SET pin = ? WHERE id = ?', args: [noviPin, req.params.id] });
+    await req.db.execute({
+      sql: 'UPDATE zaposleni SET pin = ? WHERE id = ?',
+      args: [pin || null, req.params.id]
+    });
     res.json({ ok: true });
   });
 
