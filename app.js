@@ -573,6 +573,102 @@ function createApp() {
     res.json({ ok: true, stevilo: Number(r.rowsAffected) });
   });
 
+  // ── Prisotnost – seznam zaposlenih za mesec ───────────────────────────────────
+  app.get('/api/admin/prisotnost', requireAuth, async (req, res) => {
+    const zdaj = new Date();
+    const leto = parseInt(req.query.leto) || zdaj.getFullYear();
+    const mesec = parseInt(req.query.mesec) || (zdaj.getMonth() + 1);
+    const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
+    const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
+
+    const [{ rows: zaposleni }, { rows: evidenca }] = await Promise.all([
+      req.db.execute('SELECT id, ime FROM zaposleni WHERE aktiven = 1 ORDER BY ime'),
+      req.db.execute({
+        sql: `SELECT zaposleni_id, tip, cas, naknadno FROM evidenca
+              WHERE substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`,
+        args: [od, do_]
+      })
+    ]);
+
+    const seznam = zaposleni.map(z => {
+      const zid = Number(z.id);
+      const zEv = evidenca.filter(e => Number(e.zaposleni_id) === zid);
+      const dnevi = izracunajDnevneUre(zEv, zdaj);
+      const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
+      const steviloNaknadno = zEv.filter(e => Number(e.naknadno) === 1).length;
+      return {
+        id: zid, ime: z.ime,
+        skupajMinut: Math.round(skupajMinut),
+        steviloDni: dnevi.length,
+        steviloNaknadno
+      };
+    });
+    res.json({ leto, mesec, seznam });
+  });
+
+  // ── Prisotnost – detajl zaposlenega za mesec ──────────────────────────────────
+  app.get('/api/admin/prisotnost/:id', requireAuth, async (req, res) => {
+    const zdaj = new Date();
+    const leto = parseInt(req.query.leto) || zdaj.getFullYear();
+    const mesec = parseInt(req.query.mesec) || (zdaj.getMonth() + 1);
+    const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
+    const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
+
+    const [{ rows: zRows }, { rows: vnosi }] = await Promise.all([
+      req.db.execute({ sql: 'SELECT id, ime FROM zaposleni WHERE id = ?', args: [req.params.id] }),
+      req.db.execute({
+        sql: `SELECT id, tip, cas, naknadno FROM evidenca
+              WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ?
+              ORDER BY cas ASC`,
+        args: [req.params.id, od, do_]
+      })
+    ]);
+
+    if (!zRows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
+
+    const poDnevih = new Map();
+    vnosi.forEach(v => {
+      const datum = String(v.cas).slice(0, 10);
+      if (!poDnevih.has(datum)) poDnevih.set(datum, []);
+      poDnevih.get(datum).push(v);
+    });
+
+    const danes = localDate();
+    let skupajMinut = 0;
+    const dnevi = [];
+
+    for (const [datum, dayVnosi] of [...poDnevih.entries()].sort()) {
+      const sorted = dayVnosi.sort((a, b) => String(a.cas).localeCompare(String(b.cas)));
+      let minute = 0, zadnjiPrihod = null;
+      for (const v of sorted) {
+        if (v.tip === 'PRIHOD') {
+          zadnjiPrihod = new Date(String(v.cas).replace(' ', 'T'));
+        } else if (v.tip === 'ODHOD' && zadnjiPrihod) {
+          minute += (new Date(String(v.cas).replace(' ', 'T')) - zadnjiPrihod) / 60000;
+          zadnjiPrihod = null;
+        }
+      }
+      skupajMinut += minute;
+      dnevi.push({
+        datum,
+        minute: Math.round(minute),
+        nepopoln: zadnjiPrihod !== null && datum !== danes,
+        vnosi: sorted.map(v => ({
+          tip: v.tip,
+          cas: String(v.cas).slice(11, 16),
+          naknadno: Number(v.naknadno) === 1
+        }))
+      });
+    }
+
+    res.json({
+      id: Number(zRows[0].id), ime: zRows[0].ime,
+      leto, mesec,
+      skupajMinut: Math.round(skupajMinut),
+      dnevi
+    });
+  });
+
   // ── Demo seed ─────────────────────────────────────────────────────────────────
   app.post('/api/admin/seed-demo', requireAuth, async (req, res) => {
     try {

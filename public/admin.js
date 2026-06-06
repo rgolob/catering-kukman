@@ -6,6 +6,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
     if (btn.dataset.tab === 'obracun') naloziObracunTab();
+    if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
   });
 });
 
@@ -495,6 +496,134 @@ function naloziObracunTab() {
   }
   naloziObracun();
 }
+
+// ── PRISOTNOST TAB ────────────────────────────────────────────────────────────
+const MESECI_PRIS = ['Januar','Februar','Marec','April','Maj','Junij',
+                     'Julij','Avgust','September','Oktober','November','December'];
+const DNI_PRIS = ['ned','pon','tor','sre','čet','pet','sob'];
+
+let prisLeto, prisMesec;
+
+function naloziPrisotnostTab() {
+  if (!prisLeto) {
+    const zdaj = new Date();
+    prisLeto = zdaj.getFullYear();
+    prisMesec = zdaj.getMonth() + 1;
+  }
+  naloziPrisotnost();
+}
+
+async function naloziPrisotnost() {
+  const zdaj = new Date();
+  document.getElementById('pris-mesec-napis').textContent =
+    `${MESECI_PRIS[prisMesec - 1]} ${prisLeto}`;
+  document.getElementById('pris-btn-naprej').disabled =
+    prisLeto === zdaj.getFullYear() && prisMesec === zdaj.getMonth() + 1;
+
+  try {
+    const res = await fetch(`/api/admin/prisotnost?leto=${prisLeto}&mesec=${prisMesec}`);
+    if (!res.ok) return;
+    const { seznam } = await res.json();
+
+    const container = document.getElementById('prisotnost-seznam');
+    const prazno = document.getElementById('prisotnost-prazno');
+
+    if (!seznam.length) {
+      container.innerHTML = '';
+      prazno.style.display = 'block';
+      return;
+    }
+    prazno.style.display = 'none';
+
+    container.innerHTML = seznam.map(z => {
+      const ure = formatUre(z.skupajMinut);
+      const nak = z.steviloNaknadno
+        ? `<span class="pris-nak-badge">${z.steviloNaknadno} naknadno</span>` : '';
+      return `<div class="pris-kartica" data-id="${z.id}">
+        <div class="pris-ime">${escHtml(z.ime)}</div>
+        <div class="pris-ure">${ure}</div>
+        <div class="pris-stat">${z.steviloDni} dni ${nak}</div>
+      </div>`;
+    }).join('');
+
+    container.querySelectorAll('.pris-kartica').forEach(k => {
+      k.addEventListener('click', () => odpriPrisModal(Number(k.dataset.id)));
+    });
+  } catch(e) { console.error(e); }
+}
+
+async function odpriPrisModal(zaposleniId) {
+  try {
+    const res = await fetch(`/api/admin/prisotnost/${zaposleniId}?leto=${prisLeto}&mesec=${prisMesec}`);
+    if (!res.ok) return;
+    const d = await res.json();
+
+    document.getElementById('pris-modal-ime').textContent = d.ime;
+    document.getElementById('pris-modal-povzetek').textContent =
+      `${MESECI_PRIS[d.mesec - 1]} ${d.leto}  ·  Skupaj: ${formatUre(d.skupajMinut)}  ·  ${d.dnevi.length} dni`;
+
+    const vsebina = document.getElementById('pris-modal-vsebina');
+    if (!d.dnevi.length) {
+      vsebina.innerHTML = '<div class="prazno">Ni evidentiranih ur za ta mesec.</div>';
+    } else {
+      const vrstice = d.dnevi.map(dan => {
+        const dt = new Date(dan.datum + 'T00:00:00');
+        const dayName = DNI_PRIS[dt.getDay()];
+        const datStr = `${dayName} ${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.`;
+
+        const prihodiVnosi = dan.vnosi.filter(v => v.tip === 'PRIHOD');
+        const odhodiVnosi = dan.vnosi.filter(v => v.tip === 'ODHOD');
+
+        function vnosiHtml(arr) {
+          if (!arr.length) return '<span class="pris-manjka">—</span>';
+          return arr.map(v =>
+            v.naknadno
+              ? `${v.cas} <span class="pris-nak-pill" title="Naknadno vneseno">N</span>`
+              : v.cas
+          ).join('<br>');
+        }
+
+        const ureStr = dan.minute ? formatUre(dan.minute) : '—';
+        const rowClass = dan.nepopoln ? 'class="pris-row-nepopoln"' : '';
+
+        return `<tr ${rowClass}>
+          <td class="pris-td-datum">${datStr}</td>
+          <td>${vnosiHtml(prihodiVnosi)}</td>
+          <td>${vnosiHtml(odhodiVnosi)}</td>
+          <td class="td-r pris-td-ure">${ureStr}</td>
+        </tr>`;
+      }).join('');
+
+      vsebina.innerHTML = `<table class="tabela pris-tabela">
+        <thead><tr>
+          <th>Datum</th><th>Prihod</th><th>Odhod</th><th class="th-r">Ure</th>
+        </tr></thead>
+        <tbody>${vrstice}</tbody>
+      </table>`;
+    }
+
+    document.getElementById('pris-modal-overlay').classList.remove('hidden');
+  } catch(e) { console.error(e); }
+}
+
+document.getElementById('pris-btn-prej').addEventListener('click', () => {
+  prisMesec--;
+  if (prisMesec < 1) { prisMesec = 12; prisLeto--; }
+  naloziPrisotnost();
+});
+document.getElementById('pris-btn-naprej').addEventListener('click', () => {
+  prisMesec++;
+  if (prisMesec > 12) { prisMesec = 1; prisLeto++; }
+  naloziPrisotnost();
+});
+
+document.getElementById('pris-modal-zapri').addEventListener('click', () => {
+  document.getElementById('pris-modal-overlay').classList.add('hidden');
+});
+document.getElementById('pris-modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('pris-modal-overlay'))
+    document.getElementById('pris-modal-overlay').classList.add('hidden');
+});
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function escHtml(s) {

@@ -25,6 +25,7 @@
     <div class="tabs">
       <button class="tab active" data-tab="zaposleni">Zaposleni</button>
       <button class="tab" data-tab="evidenca">Evidenca</button>
+      <button class="tab" data-tab="prisotnost">Prisotnost</button>
       <button class="tab" data-tab="obracun">Obračun</button>
       <button class="tab" data-tab="nastavitve">Nastavitve</button>
     </div>
@@ -74,6 +75,19 @@
           <tbody></tbody>
         </table>
         <div id="evidenca-prazno" class="prazno" style="display:none">Ni zapisov za izbrano obdobje.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Prisotnost -->
+    <div id="tab-prisotnost" class="tab-content">
+      <div class="card">
+        <div class="obr-nav-row">
+          <button id="pris-btn-prej" class="btn-nav-obr">&#8249;</button>
+          <span id="pris-mesec-napis" class="obr-mesec-napis"></span>
+          <button id="pris-btn-naprej" class="btn-nav-obr">&#8250;</button>
+        </div>
+        <div id="prisotnost-seznam" class="prisotnost-seznam"></div>
+        <div id="prisotnost-prazno" class="prazno" style="display:none">Ni podatkov za ta mesec.</div>
       </div>
     </div>
 
@@ -155,6 +169,18 @@
       </div>
     </div>
   </main>
+
+  <!-- Prisotnost modal -->
+  <div id="pris-modal-overlay" class="pris-overlay hidden">
+    <div class="pris-modal">
+      <div class="pris-modal-header">
+        <h2 id="pris-modal-ime"></h2>
+        <button id="pris-modal-zapri" class="pris-modal-zapri">&#x2715;</button>
+      </div>
+      <p id="pris-modal-povzetek" class="pris-modal-povzetek"></p>
+      <div id="pris-modal-vsebina"></div>
+    </div>
+  </div>
 
   <!-- Toast -->
   <div id="toast" class="toast hidden"></div>
