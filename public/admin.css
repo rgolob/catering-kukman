@@ -351,8 +351,58 @@ button:hover { background: #1a365d; }
 .toast.napaka { background: #9b2c2c; }
 
 @media (max-width: 600px) {
+  main { padding: 10px 8px; }
+
+  /* Tabs — horizontal scroll, ne prelomi */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 8px 12px; font-size: 0.8rem; white-space: nowrap; }
+
+  /* Cards */
+  .card { padding: 14px 12px; margin-bottom: 14px; }
+  .card h2 { font-size: 0.82rem; margin-bottom: 12px; }
+
+  /* Tabele */
+  .tabela { font-size: 0.78rem; }
+  .tabela th { padding: 5px 7px; font-size: 0.68rem; }
+  .tabela td { padding: 6px 7px; }
+  .btn-sm { padding: 4px 8px; font-size: 0.72rem; }
+
+  /* Obračun — horizontal scroll na ozkih zaslonih */
+  #tab-obracun .card { overflow-x: auto; }
+  .obr-mesec-napis { font-size: 0.9rem; }
+
+  /* Evidenca filter */
   .form-row { flex-direction: column; }
   .filter-row { flex-direction: column; align-items: flex-start; }
+  .filter-row input[type="date"] { width: 100%; }
+
+  /* PIN celice v tabeli */
+  .td-pin { min-width: auto; }
+  .pin-koda { font-size: 0.88rem; }
+  .pin-uredi-vrstica { gap: 4px; }
+
+  /* Prisotnost kartice */
+  .prisotnost-seznam { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pris-kartica { padding: 11px 10px; gap: 4px; }
+  .pris-ime { font-size: 0.85rem; }
+  .pris-ure { font-size: 1rem; }
+  .pris-stat { font-size: 0.7rem; }
+
+  /* Prisotnost modal */
+  .pris-modal { padding: 16px 12px; max-height: 88vh; }
+  .pris-modal-header h2 { font-size: 1.05rem; }
+  .pris-modal-povzetek { font-size: 0.8rem; }
+  .pris-tabela td, .pris-tabela th { padding: 5px 6px; font-size: 0.77rem; }
+
+  /* Stim form */
+  .stim-form-row { flex-direction: column; }
+  .stim-input, .stim-input-opomba, .stim-select { width: 100%; }
 }
 
 /* NK badge (naknadno evidentiranje) */
@@ -459,3 +509,100 @@ button:hover { background: #1a365d; }
 }
 .btn-seed:hover { background: #4a5568; }
 .btn-seed:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Prisotnost tab ────────────────────────────────────────────────────────── */
+.prisotnost-seznam {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.pris-kartica {
+  background: #f7fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pris-kartica:hover {
+  border-color: #4299e1;
+  background: #ebf8ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.09);
+}
+
+.pris-ime { font-weight: 700; font-size: 0.97rem; color: #2d3748; }
+.pris-ure { font-size: 1.25rem; font-weight: 700; color: #2c5282; }
+.pris-stat { font-size: 0.78rem; color: #718096; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.pris-nak-badge {
+  background: #fef3c7; color: #92400e;
+  border-radius: 4px; padding: 1px 6px;
+  font-size: 0.73rem; font-weight: 600;
+}
+
+/* Prisotnost modal overlay */
+.pris-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(3px);
+}
+.pris-overlay.hidden { display: none; }
+
+.pris-modal {
+  background: white;
+  border-radius: 16px;
+  padding: 28px 30px;
+  width: 94%;
+  max-width: 640px;
+  max-height: 82vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  animation: prisPop 0.18s ease;
+}
+@keyframes prisPop {
+  from { transform: scale(0.93); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.pris-modal-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 4px;
+}
+.pris-modal-header h2 {
+  font-size: 1.25rem; text-transform: none; letter-spacing: 0; color: #1a202c;
+}
+.pris-modal-zapri {
+  background: none; border: none; font-size: 1.1rem;
+  color: #a0aec0; cursor: pointer; padding: 4px 8px;
+  border-radius: 6px; transition: all 0.1s;
+}
+.pris-modal-zapri:hover { color: #4a5568; background: #f7fafc; }
+
+.pris-modal-povzetek {
+  color: #718096; font-size: 0.88rem; margin-bottom: 18px;
+}
+
+.pris-tabela td, .pris-tabela th {
+  padding: 7px 10px; font-size: 0.88rem;
+}
+.pris-td-datum { color: #4a5568; white-space: nowrap; }
+.pris-td-ure { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.pris-row-nepopoln td { background: #fff5f5; color: #c53030; }
+
+.pris-nak-pill {
+  display: inline-block;
+  background: #fef3c7; color: #92400e;
+  border-radius: 3px; padding: 0 4px;
+  font-size: 0.7rem; font-weight: 700;
+  vertical-align: middle; margin-left: 2px;
+}
+.pris-manjka { color: #a0aec0; }
