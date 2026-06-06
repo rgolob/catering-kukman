@@ -351,8 +351,58 @@ button:hover { background: #1a365d; }
 .toast.napaka { background: #9b2c2c; }
 
 @media (max-width: 600px) {
+  main { padding: 10px 8px; }
+
+  /* Tabs — horizontal scroll, ne prelomi */
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 0;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab { padding: 8px 12px; font-size: 0.8rem; white-space: nowrap; }
+
+  /* Cards */
+  .card { padding: 14px 12px; margin-bottom: 14px; }
+  .card h2 { font-size: 0.82rem; margin-bottom: 12px; }
+
+  /* Tabele */
+  .tabela { font-size: 0.78rem; }
+  .tabela th { padding: 5px 7px; font-size: 0.68rem; }
+  .tabela td { padding: 6px 7px; }
+  .btn-sm { padding: 4px 8px; font-size: 0.72rem; }
+
+  /* Obračun — horizontal scroll na ozkih zaslonih */
+  #tab-obracun .card { overflow-x: auto; }
+  .obr-mesec-napis { font-size: 0.9rem; }
+
+  /* Evidenca filter */
   .form-row { flex-direction: column; }
   .filter-row { flex-direction: column; align-items: flex-start; }
+  .filter-row input[type="date"] { width: 100%; }
+
+  /* PIN celice v tabeli */
+  .td-pin { min-width: auto; }
+  .pin-koda { font-size: 0.88rem; }
+  .pin-uredi-vrstica { gap: 4px; }
+
+  /* Prisotnost kartice */
+  .prisotnost-seznam { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pris-kartica { padding: 11px 10px; gap: 4px; }
+  .pris-ime { font-size: 0.85rem; }
+  .pris-ure { font-size: 1rem; }
+  .pris-stat { font-size: 0.7rem; }
+
+  /* Prisotnost modal */
+  .pris-modal { padding: 16px 12px; max-height: 88vh; }
+  .pris-modal-header h2 { font-size: 1.05rem; }
+  .pris-modal-povzetek { font-size: 0.8rem; }
+  .pris-tabela td, .pris-tabela th { padding: 5px 6px; font-size: 0.77rem; }
+
+  /* Stim form */
+  .stim-form-row { flex-direction: column; }
+  .stim-input, .stim-input-opomba, .stim-select { width: 100%; }
 }
 
 /* NK badge (naknadno evidentiranje) */
