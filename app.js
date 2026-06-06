@@ -267,9 +267,11 @@ function createApp() {
     const { rows } = await req.db.execute({
       sql: `SELECT z.id, z.ime,
         (SELECT tip FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ?
-         ORDER BY cas DESC LIMIT 1) AS zadnji_tip
+         ORDER BY cas DESC LIMIT 1) AS zadnji_tip,
+        (SELECT cas FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ? AND tip = 'PRIHOD'
+         ORDER BY cas DESC LIMIT 1) AS zadnji_prihod
         FROM zaposleni z WHERE z.aktiven = 1 ORDER BY z.ime`,
-      args: [danes]
+      args: [danes, danes]
     });
     res.json(rows);
   });
