@@ -724,7 +724,8 @@ async function naloziZahtevke() {
       const sc = z.status === 'CAKA' ? 'caka' : z.status === 'ODOBREN' ? 'odobren' : 'zavrnjen';
       const st = z.status === 'CAKA' ? 'Čaka' : z.status === 'ODOBREN' ? 'Odobreno' : 'Zavrnjeno';
       const akcije = z.status === 'CAKA'
-        ? `<button class="btn-sm btn-odobri" data-id="${z.id}">Odobri</button>
+        ? `<button class="btn-sm btn-odobri" data-id="${z.id}" title="Dodaj vnos (obstoječ ohrani)">Odobri</button>
+           <button class="btn-sm btn-zamenjaj" data-id="${z.id}" title="Izbriši obstoječ vnos istega tipa za ta dan in vstavi novega">Zamenjaj</button>
            <button class="btn-sm btn-zavrni btn-danger" data-id="${z.id}">Zavrni</button>`
         : '';
       return `<tr>
@@ -739,9 +740,17 @@ async function naloziZahtevke() {
 
     tbody.querySelectorAll('.btn-odobri').forEach(btn => {
       btn.addEventListener('click', async () => {
-        if (!confirm('Odobriti ta zahtevek?')) return;
+        if (!confirm('Odobriti ta zahtevek? (obstoječ vnos ostane)')) return;
         const r = await fetch(`/api/admin/zahtevki/${btn.dataset.id}/odobri`, { method: 'POST' });
         if (r.ok) { prikaziToast('Zahtevek odobren'); naloziZahtevke(); }
+        else { const d = await r.json(); prikaziToast(d.napaka || 'Napaka', 'napaka'); }
+      });
+    });
+    tbody.querySelectorAll('.btn-zamenjaj').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Zamenjaj obstoječ vnos istega tipa za ta dan z zahtevano uro?\n\nObstoječ originalen vnos bo izbrisan.')) return;
+        const r = await fetch(`/api/admin/zahtevki/${btn.dataset.id}/zamenjaj`, { method: 'POST' });
+        if (r.ok) { prikaziToast('Vnos zamenjan'); naloziZahtevke(); }
         else { const d = await r.json(); prikaziToast(d.napaka || 'Napaka', 'napaka'); }
       });
     });

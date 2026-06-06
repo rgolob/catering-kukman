@@ -709,6 +709,24 @@ function createApp() {
     res.json({ ok: true });
   });
 
+  app.post('/api/admin/zahtevki/:id/zamenjaj', requireAuth, async (req, res) => {
+    const { rows } = await req.db.execute({
+      sql: 'SELECT * FROM zahtevki WHERE id = ?', args: [req.params.id]
+    });
+    if (!rows.length) return res.status(404).json({ napaka: 'Zahtevek ni najden' });
+    const z = rows[0];
+    if (z.status !== 'CAKA') return res.status(400).json({ napaka: 'Zahtevek je že obravnavan' });
+    const datum = String(z.cas_zahtevka).slice(0, 10);
+    await req.db.batch([
+      { sql: `DELETE FROM evidenca WHERE zaposleni_id = ? AND tip = ? AND substr(cas,1,10) = ? AND naknadno = 0`,
+        args: [z.zaposleni_id, z.tip, datum] },
+      { sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas, naknadno) VALUES (?, ?, ?, 1)',
+        args: [z.zaposleni_id, z.tip, z.cas_zahtevka] },
+      { sql: "UPDATE zahtevki SET status = 'ODOBREN' WHERE id = ?", args: [z.id] }
+    ], 'write');
+    res.json({ ok: true });
+  });
+
   app.post('/api/admin/zahtevki/:id/zavrni', requireAuth, async (req, res) => {
     const { rows } = await req.db.execute({
       sql: 'SELECT id, status FROM zahtevki WHERE id = ?', args: [req.params.id]

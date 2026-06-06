@@ -654,6 +654,13 @@ button:hover { background: #1a365d; }
 }
 .btn-odobri:hover { background: #276749 !important; border-color: #276749 !important; }
 
+.btn-zamenjaj {
+  background: #d69e2e !important;
+  color: white !important;
+  border-color: #d69e2e !important;
+}
+.btn-zamenjaj:hover { background: #b7791f !important; border-color: #b7791f !important; }
+
 .td-opomba {
   font-size: 0.82rem;
   color: #718096;
