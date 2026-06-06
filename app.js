@@ -553,6 +553,78 @@ function createApp() {
     res.json({ ok: true });
   });
 
+  // ── Demo seed ─────────────────────────────────────────────────────────────────
+  app.post('/api/admin/seed-demo', requireAuth, async (req, res) => {
+    try {
+      const db = req.db;
+      const { rows: zaposleni } = await db.execute('SELECT id FROM zaposleni ORDER BY id');
+      if (!zaposleni.length) return res.status(400).json({ napaka: 'Ni zaposlenih.' });
+
+      // Monthly target hours per employee slot [Jan, Feb, Mar, Apr, May] — Jun is proportional
+      const mesecneUre = [
+        [52, 60, 56, 68, 58],
+        [88, 100, 96, 108, 92],
+        [128, 140, 136, 144, 132],
+        [160, 168, 172, 160, 176],
+        [188, 196, 200, 192, 188],
+      ];
+      const urnePostavke = [10.00, 11.50, 13.00, 14.50, 16.00];
+      const prihodiBaza = [[8, 30], [7, 45], [8, 15], [7, 30], [8, 0]];
+
+      function delovniDni(leto, mesec, doKdaj) {
+        const dni = [];
+        const d = new Date(leto, mesec - 1, 1);
+        while (d.getMonth() === mesec - 1) {
+          const dow = d.getDay();
+          if (dow >= 1 && dow <= 5 && (!doKdaj || d < doKdaj)) dni.push(new Date(d));
+          d.setDate(d.getDate() + 1);
+        }
+        return dni;
+      }
+
+      const danes = new Date(); danes.setHours(0, 0, 0, 0);
+      const meseci = [[2026,1],[2026,2],[2026,3],[2026,4],[2026,5],[2026,6]];
+      const ops = [];
+
+      zaposleni.slice(0, 5).forEach((z, idx) => {
+        ops.push({ sql: 'UPDATE zaposleni SET urna_postavka = ? WHERE id = ?', args: [urnePostavke[idx] ?? 12, z.id] });
+
+        const [bUra, bMin] = prihodiBaza[idx] ?? [8, 0];
+
+        meseci.forEach(([leto, mesec], mIdx) => {
+          const targetUre = (mesecneUre[idx] ?? mesecneUre[4])[Math.min(mIdx, 4)];
+          const dni = delovniDni(leto, mesec, mesec === 6 ? danes : null);
+          if (!dni.length) return;
+
+          const minuteNaDan = Math.round((targetUre * 60) / dni.length);
+
+          dni.forEach(dan => {
+            const var_ = ((dan.getDate() * 3 + idx * 7) % 31) - 15;
+            const totalMin = bUra * 60 + bMin + var_;
+            const ph = Math.floor(totalMin / 60);
+            const pm = totalMin % 60;
+            const prihod = new Date(dan); prihod.setHours(ph, pm, 0, 0);
+            const odhod = new Date(prihod.getTime() + minuteNaDan * 60000);
+            const fmt = d => {
+              const p = n => String(n).padStart(2, '0');
+              return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:00`;
+            };
+            ops.push({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas, naknadno) VALUES (?,?,?,0)', args: [z.id, 'PRIHOD', fmt(prihod)] });
+            ops.push({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas, naknadno) VALUES (?,?,?,0)', args: [z.id, 'ODHOD', fmt(odhod)] });
+          });
+        });
+      });
+
+      for (let i = 0; i < ops.length; i += 50) await db.batch(ops.slice(i, i + 50), 'write');
+
+      const vstavljeno = ops.filter(o => o.sql.startsWith('INSERT')).length / 2;
+      res.json({ ok: true, vstavljeno, sporocilo: `Dodano ${vstavljeno} dni za ${Math.min(zaposleni.length, 5)} zaposlenih (jan–jun 2026).` });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
   app.post('/api/admin/geslo', requireAuth, async (req, res) => {
     const { staroGeslo, novoGeslo } = req.body;
     const { rows } = await req.db.execute({ sql: 'SELECT vrednost FROM config WHERE kljuc = ?', args: ['admin_hash'] });
