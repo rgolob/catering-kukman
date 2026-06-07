@@ -1062,10 +1062,31 @@ document.getElementById('btn-dodaj-delo').addEventListener('click', async () => 
 
 // ── Device tokens ─────────────────────────────────────────────────────────────
 const DEVICE_TOKEN_KEY = 'kukman_device_token';
+const DEVICE_COOKIE = 'kukman_dt';
+const COOKIE_MAX_AGE = 365 * 24 * 3600; // 1 leto
+
+function shraniBraniToken(token) {
+  localStorage.setItem(DEVICE_TOKEN_KEY, token);
+  document.cookie = `${DEVICE_COOKIE}=${token}; max-age=${COOKIE_MAX_AGE}; path=/; SameSite=Strict`;
+}
+
+function preberiToken() {
+  const ls = localStorage.getItem(DEVICE_TOKEN_KEY);
+  if (ls) return ls;
+  const m = document.cookie.match(new RegExp(`(?:^|; )${DEVICE_COOKIE}=([^;]+)`));
+  const cookie = m ? m[1] : null;
+  if (cookie) localStorage.setItem(DEVICE_TOKEN_KEY, cookie); // obnovi localStorage iz cookieja
+  return cookie;
+}
+
+function odstraniToken() {
+  localStorage.removeItem(DEVICE_TOKEN_KEY);
+  document.cookie = `${DEVICE_COOKIE}=; max-age=0; path=/`;
+}
 
 function naloziNapraveTab() {
   const statusEl = document.getElementById('naprava-status');
-  const mojeToken = localStorage.getItem(DEVICE_TOKEN_KEY);
+  const mojeToken = preberiToken();
   statusEl.textContent = mojeToken ? '✓ Ta naprava je registrirana' : '✗ Ta naprava NI registrirana';
   statusEl.style.color = mojeToken ? '#38a169' : '#e53e3e';
   naloziNaprave();
@@ -1080,7 +1101,7 @@ async function naloziNaprave() {
     container.innerHTML = '<p style="color:#a0aec0;font-size:0.88em">Nobena naprava ni registrirana.</p>';
     return;
   }
-  const mojeToken = localStorage.getItem(DEVICE_TOKEN_KEY);
+  const mojeToken = preberiToken();
   container.innerHTML = naprave.map(n => `
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0">
       <span style="flex:1;font-size:0.9em">
@@ -1094,9 +1115,7 @@ async function naloziNaprave() {
     btn.addEventListener('click', async () => {
       if (!confirm('Odstraniti napravo?')) return;
       await fetch(`/api/admin/device-tokens/${btn.dataset.token}`, { method: 'DELETE' });
-      if (btn.dataset.token === localStorage.getItem(DEVICE_TOKEN_KEY)) {
-        localStorage.removeItem(DEVICE_TOKEN_KEY);
-      }
+      if (btn.dataset.token === preberiToken()) odstraniToken();
       naloziNapraveTab();
     });
   });
@@ -1111,7 +1130,7 @@ document.getElementById('btn-registriraj-tablico').addEventListener('click', asy
   });
   if (res.ok) {
     const d = await res.json();
-    localStorage.setItem(DEVICE_TOKEN_KEY, d.token);
+    shraniBraniToken(d.token);
     prikaziToast('Tablica registrirana ✓');
     naloziNapraveTab();
   } else {

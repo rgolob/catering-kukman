@@ -203,7 +203,14 @@ async function potrdiZapis() {
   const pinZaPoslati = dialogPin;
 
   try {
-    const deviceToken = localStorage.getItem('kukman_device_token') || '';
+    const deviceToken = (() => {
+      const ls = localStorage.getItem('kukman_device_token');
+      if (ls) return ls;
+      const m = document.cookie.match(/(?:^|; )kukman_dt=([^;]+)/);
+      const c = m ? m[1] : '';
+      if (c) localStorage.setItem('kukman_device_token', c);
+      return c;
+    })();
     const res = await fetch('/api/belezi', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
