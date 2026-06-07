@@ -334,8 +334,9 @@ async function naloziQR() {
   try {
     const res = await fetch('/api/qr-info');
     const d = await res.json();
-    if (d.qrBase64) {
-      document.getElementById('qr-tablica-img').src = 'data:image/png;base64,' + d.qrBase64;
+    if (d.qrSvg) {
+      document.getElementById('qr-tablica-img').src =
+        'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(d.qrSvg);
     }
   } catch (_) {}
 }

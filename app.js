@@ -317,8 +317,12 @@ function createApp() {
     const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
     const qrUrl = `${proto}://${host}${BASE}/qr?t=${token}`;
-    const buf = await QRCode.toBuffer(qrUrl, { width: 280, margin: 2, color: { dark: '#1a365d', light: '#ffffff' } });
-    res.json({ token, datum: localDate(), qrBase64: buf.toString('base64') });
+    try {
+      const qrSvg = await QRCode.toString(qrUrl, { type: 'svg', width: 200, margin: 2 });
+      res.json({ token, datum: localDate(), qrSvg });
+    } catch (e) {
+      res.json({ token, datum: localDate() });
+    }
   });
 
   app.get('/api/qr-image', async (req, res) => {
