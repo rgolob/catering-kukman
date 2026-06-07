@@ -20,7 +20,15 @@
       <p>Prosimo, skenirajte aktualno QR kodo na tablici.</p>
     </div>
 
-    <div id="qr-seznam-wrap">
+    <!-- Personaliziran pogled (zaposleni, ki ga telefon že pozna) -->
+    <div id="qr-oseba-wrap" class="hidden">
+      <p class="qr-navodilo" id="qr-oseba-pozdrav"></p>
+      <button id="qr-oseba-btn" class="qr-oseba-btn"></button>
+      <button id="qr-nisem-jaz" class="qr-nisem-jaz">Nisem jaz</button>
+    </div>
+
+    <!-- Seznam vseh (prvič ali po resetiranju) -->
+    <div id="qr-seznam-wrap" class="hidden">
       <h2 class="qr-navodilo">Tapnite vaše ime</h2>
       <div id="qr-seznam" class="qr-seznam"></div>
     </div>

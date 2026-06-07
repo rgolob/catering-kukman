@@ -64,6 +64,45 @@ main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
 .qr-rez-tip { font-size: 1.1rem; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
 .qr-rez-cas { font-size: 2rem; font-weight: 700; color: #4299e1; }
 
+/* Personaliziran pogled */
+.qr-oseba-wrap {
+  text-align: center;
+  padding: 40px 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+.qr-oseba-btn {
+  width: 100%;
+  max-width: 300px;
+  padding: 30px 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+}
+.qr-oseba-btn.prihod { background: #276749; color: #fff; }
+.qr-oseba-btn.prihod:hover { background: #22543d; }
+.qr-oseba-btn.odhod { background: #c05621; color: #fff; }
+.qr-oseba-btn.odhod:hover { background: #9c4221; }
+.qr-oseba-btn:active { transform: scale(0.97); }
+
+.qr-nisem-jaz {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 16px;
+  text-decoration: underline;
+}
+.qr-nisem-jaz:hover { color: #718096; }
+
 /* Napaka */
 .qr-napaka {
   text-align: center; padding: 40px 20px; color: #c53030;

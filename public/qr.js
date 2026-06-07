@@ -1,5 +1,6 @@
 const params = new URLSearchParams(window.location.search);
 const token = params.get('t') || '';
+const LS_KEY = 'qr_zaposleni';
 
 const MESECI = ['januar','februar','marec','april','maj','junij',
                 'julij','avgust','september','oktober','november','december'];
@@ -11,15 +12,33 @@ function formatDatum() {
 }
 document.getElementById('qr-datum').textContent = formatDatum();
 
-async function naloziZaposlene() {
+async function init() {
   const infoRes = await fetch('/api/qr-info');
   const { token: veljavni } = await infoRes.json();
 
   if (!token || token !== veljavni) {
     document.getElementById('qr-napaka').classList.remove('hidden');
-    document.getElementById('qr-seznam-wrap').style.display = 'none';
     return;
   }
+
+  const shranjeno = localStorage.getItem(LS_KEY);
+  if (shranjeno) {
+    try {
+      const { id, ime } = JSON.parse(shranjeno);
+      await prikaziOseboView(id, ime);
+    } catch (_) {
+      localStorage.removeItem(LS_KEY);
+      await prikaziSeznam();
+    }
+  } else {
+    await prikaziSeznam();
+  }
+}
+
+async function prikaziSeznam() {
+  document.getElementById('qr-oseba-wrap').classList.add('hidden');
+  const wrap = document.getElementById('qr-seznam-wrap');
+  wrap.classList.remove('hidden');
 
   const statusRes = await fetch('/api/status');
   const zaposleni = await statusRes.json();
@@ -27,18 +46,44 @@ async function naloziZaposlene() {
   const seznam = document.getElementById('qr-seznam');
   seznam.innerHTML = zaposleni.map(z => {
     const jePrisoten = z.zadnji_tip === 'PRIHOD';
-    return `<button class="qr-ime-btn ${jePrisoten ? 'prisoten' : ''}" data-id="${z.id}">
+    return `<button class="qr-ime-btn ${jePrisoten ? 'prisoten' : ''}" data-id="${z.id}" data-ime="${z.ime}">
       <span class="qr-btn-ime">${z.ime}</span>
       <span class="qr-btn-akcija">${jePrisoten ? 'Odhod ›' : 'Prihod ›'}</span>
     </button>`;
   }).join('');
 
   seznam.querySelectorAll('.qr-ime-btn').forEach(btn => {
-    btn.addEventListener('click', () => zabelezi(Number(btn.dataset.id)));
+    btn.addEventListener('click', () => {
+      const id = Number(btn.dataset.id);
+      const ime = btn.dataset.ime;
+      localStorage.setItem(LS_KEY, JSON.stringify({ id, ime }));
+      zabelezi(id, ime);
+    });
   });
 }
 
-async function zabelezi(zaposleniId) {
+async function prikaziOseboView(id, ime) {
+  document.getElementById('qr-seznam-wrap').classList.add('hidden');
+  document.getElementById('qr-oseba-wrap').classList.remove('hidden');
+
+  const statusRes = await fetch('/api/status');
+  const zaposleni = await statusRes.json();
+  const oseba = zaposleni.find(z => z.id === id);
+  const jePrisoten = oseba?.zadnji_tip === 'PRIHOD';
+
+  const ime1 = ime.split(' ')[0];
+  document.getElementById('qr-oseba-pozdrav').textContent = `Pozdravljeni, ${ime1}!`;
+
+  const btn = document.getElementById('qr-oseba-btn');
+  btn.textContent = jePrisoten ? 'Odhod ›' : 'Prihod ›';
+  btn.className = 'qr-oseba-btn ' + (jePrisoten ? 'odhod' : 'prihod');
+  btn.onclick = () => zabelezi(id, ime);
+}
+
+async function zabelezi(zaposleniId, ime) {
+  document.getElementById('qr-oseba-wrap').classList.add('hidden');
+  document.getElementById('qr-seznam-wrap').classList.add('hidden');
+
   try {
     const res = await fetch('/api/qr-belezi', {
       method: 'POST',
@@ -46,12 +91,11 @@ async function zabelezi(zaposleniId) {
       body: JSON.stringify({ zaposleniId, token })
     });
     const d = await res.json();
-    if (!res.ok) { alert(d.napaka || 'Napaka'); return; }
+    if (!res.ok) { alert(d.napaka || 'Napaka'); init(); return; }
 
     const tipTxt = d.tip === 'PRIHOD' ? 'Prihod zabeležen ✓' : 'Odhod zabeležen ✓';
     const cas = String(d.cas).slice(11, 16);
 
-    document.getElementById('qr-seznam-wrap').style.display = 'none';
     document.getElementById('qr-rez-ime').textContent = d.ime;
     document.getElementById('qr-rez-tip').textContent = tipTxt;
     document.getElementById('qr-rez-cas').textContent = cas;
@@ -61,12 +105,25 @@ async function zabelezi(zaposleniId) {
     ikona.className = 'qr-check ' + (d.tip === 'PRIHOD' ? 'prihod' : 'odhod');
     rez.classList.remove('hidden');
 
-    setTimeout(() => {
+    setTimeout(async () => {
       rez.classList.add('hidden');
-      document.getElementById('qr-seznam-wrap').style.display = '';
-      naloziZaposlene();
+      const shranjeno = localStorage.getItem(LS_KEY);
+      if (shranjeno) {
+        const { id, ime: sime } = JSON.parse(shranjeno);
+        await prikaziOseboView(id, sime);
+      } else {
+        await prikaziSeznam();
+      }
     }, 3000);
-  } catch(_) { alert('Napaka pri povezavi'); }
+  } catch (_) {
+    alert('Napaka pri povezavi');
+    init();
+  }
 }
 
-naloziZaposlene();
+document.getElementById('qr-nisem-jaz').addEventListener('click', async () => {
+  localStorage.removeItem(LS_KEY);
+  await prikaziSeznam();
+});
+
+init();
