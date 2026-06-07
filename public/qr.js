@@ -24,8 +24,14 @@ async function init() {
   const shranjeno = localStorage.getItem(LS_KEY);
   if (shranjeno) {
     try {
-      const { id, ime } = JSON.parse(shranjeno);
-      await prikaziOseboView(id, ime);
+      const { id, ime, token: shrToken } = JSON.parse(shranjeno);
+      // Token se zamenja vsak dan — če se ne ujema, je nov dan → pozabi identiteto
+      if (shrToken !== token) {
+        localStorage.removeItem(LS_KEY);
+        await prikaziSeznam();
+      } else {
+        await prikaziOseboView(id, ime);
+      }
     } catch (_) {
       localStorage.removeItem(LS_KEY);
       await prikaziSeznam();
@@ -37,8 +43,7 @@ async function init() {
 
 async function prikaziSeznam() {
   document.getElementById('qr-oseba-wrap').classList.add('hidden');
-  const wrap = document.getElementById('qr-seznam-wrap');
-  wrap.classList.remove('hidden');
+  document.getElementById('qr-seznam-wrap').classList.remove('hidden');
 
   const statusRes = await fetch('/api/status');
   const zaposleni = await statusRes.json();
@@ -56,7 +61,8 @@ async function prikaziSeznam() {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.id);
       const ime = btn.dataset.ime;
-      localStorage.setItem(LS_KEY, JSON.stringify({ id, ime }));
+      // Shrani skupaj s tokenom — veljavno samo danes
+      localStorage.setItem(LS_KEY, JSON.stringify({ id, ime, token }));
       zabelezi(id, ime);
     });
   });
