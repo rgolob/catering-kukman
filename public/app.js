@@ -203,12 +203,18 @@ async function potrdiZapis() {
   const pinZaPoslati = dialogPin;
 
   try {
+    const deviceToken = localStorage.getItem('kukman_device_token') || '';
     const res = await fetch('/api/belezi', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
       body: JSON.stringify({ zaposleni_id: izbraniZaposleni, tip: izbraniTip, pin: pinZaPoslati })
     });
 
+    if (res.status === 403) {
+      zapriDialog();
+      prikaziToast('Tablica ni registrirana — odprite Admin panel in registrirajte to napravo', 'napaka');
+      return;
+    }
     if (res.status === 401) {
       prikaziPinNapako('Napačen PIN');
       return;
@@ -243,11 +249,17 @@ async function potrdiZapis() {
 }
 
 // Toast obvestilo
-function prikaziToast(ime, tip) {
+function prikaziToast(sporocilo, tip) {
   const toast = document.getElementById('toast');
-  toast.textContent = tip === 'PRIHOD' ? `✓ ${ime} — prihod zabeležen` : `✓ ${ime} — odhod zabeležen`;
-  toast.className = 'toast ' + tip.toLowerCase();
-  setTimeout(() => toast.classList.add('hidden'), 3000);
+  if (tip === 'napaka') {
+    toast.textContent = sporocilo;
+    toast.className = 'toast napaka';
+  } else {
+    toast.textContent = tip === 'PRIHOD' ? `✓ ${sporocilo} — prihod zabeležen` : `✓ ${sporocilo} — odhod zabeležen`;
+    toast.className = 'toast ' + tip.toLowerCase();
+  }
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 5000);
 }
 
 // ── Event listenerji ───────────────────────────────────────────────────────────

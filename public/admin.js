@@ -11,6 +11,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
     if (btn.dataset.tab === 'lestvica') naloziLestvicaTab();
     if (btn.dataset.tab === 'dela') naloziDelaTab();
+    if (btn.dataset.tab === 'nastavitve') naloziNapraveTab();
   });
 });
 
@@ -1056,6 +1057,65 @@ document.getElementById('btn-dodaj-delo').addEventListener('click', async () => 
   } else {
     const d = await res.json();
     napaka.textContent = d.napaka || 'Napaka';
+  }
+});
+
+// ── Device tokens ─────────────────────────────────────────────────────────────
+const DEVICE_TOKEN_KEY = 'kukman_device_token';
+
+function naloziNapraveTab() {
+  const statusEl = document.getElementById('naprava-status');
+  const mojeToken = localStorage.getItem(DEVICE_TOKEN_KEY);
+  statusEl.textContent = mojeToken ? '✓ Ta naprava je registrirana' : '✗ Ta naprava NI registrirana';
+  statusEl.style.color = mojeToken ? '#38a169' : '#e53e3e';
+  naloziNaprave();
+}
+
+async function naloziNaprave() {
+  const res = await fetch('/api/admin/device-tokens');
+  if (!res.ok) return;
+  const naprave = await res.json();
+  const container = document.getElementById('naprave-seznam');
+  if (!naprave.length) {
+    container.innerHTML = '<p style="color:#a0aec0;font-size:0.88em">Nobena naprava ni registrirana.</p>';
+    return;
+  }
+  const mojeToken = localStorage.getItem(DEVICE_TOKEN_KEY);
+  container.innerHTML = naprave.map(n => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #f0f0f0">
+      <span style="flex:1;font-size:0.9em">
+        ${n.label}${n.token === mojeToken ? ' <strong style="color:#38a169">(ta naprava)</strong>' : ''}
+        <span style="color:#a0aec0;font-size:0.82em;display:block">${String(n.created_at).slice(0,16)}</span>
+      </span>
+      <button class="btn-naprava-brisi" data-token="${n.token}" style="background:#fff5f5;border:1px solid #fed7d7;color:#e53e3e;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.82em">Odstrani</button>
+    </div>
+  `).join('');
+  container.querySelectorAll('.btn-naprava-brisi').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Odstraniti napravo?')) return;
+      await fetch(`/api/admin/device-tokens/${btn.dataset.token}`, { method: 'DELETE' });
+      if (btn.dataset.token === localStorage.getItem(DEVICE_TOKEN_KEY)) {
+        localStorage.removeItem(DEVICE_TOKEN_KEY);
+      }
+      naloziNapraveTab();
+    });
+  });
+}
+
+document.getElementById('btn-registriraj-tablico').addEventListener('click', async () => {
+  const label = document.getElementById('naprava-label').value.trim() || 'Tablica';
+  const res = await fetch('/api/admin/registriraj-tablico', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ label })
+  });
+  if (res.ok) {
+    const d = await res.json();
+    localStorage.setItem(DEVICE_TOKEN_KEY, d.token);
+    prikaziToast('Tablica registrirana ✓');
+    naloziNapraveTab();
+  } else {
+    prikaziToast('Napaka pri registraciji', 'napaka');
   }
 });
 

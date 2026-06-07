@@ -87,6 +87,11 @@ async function ensureDb() {
         cas_od TEXT NOT NULL,
         cas_do TEXT NOT NULL
       )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS device_tokens (
+        token TEXT PRIMARY KEY,
+        label TEXT NOT NULL DEFAULT 'Tablica',
+        created_at TEXT NOT NULL
+      )`, args: [] },
     { sql: `INSERT OR IGNORE INTO config (kljuc, vrednost) VALUES ('admin_hash', ?)`,
       args: [sha256('kukman2024')] }
   ], 'write');
@@ -269,6 +274,14 @@ function createApp() {
   function requirePinAuth(req, res, next) {
     if (req.session.zaposleniId) return next();
     res.status(401).json({ napaka: 'Ni prijavljen' });
+  }
+
+  async function requireDeviceToken(req, res, next) {
+    const token = req.headers['x-device-token'];
+    if (!token) return res.status(403).json({ napaka: 'Ta naprava ni registrirana kot tablica. Prosite admina.' });
+    const { rows } = await req.db.execute({ sql: 'SELECT token FROM device_tokens WHERE token = ?', args: [token] });
+    if (!rows.length) return res.status(403).json({ napaka: 'Ta naprava ni registrirana kot tablica. Prosite admina.' });
+    next();
   }
 
   // Block direct .html access
@@ -472,7 +485,7 @@ function createApp() {
     res.json(rows);
   });
 
-  app.post('/api/belezi', async (req, res) => {
+  app.post('/api/belezi', requireDeviceToken, async (req, res) => {
     const { zaposleni_id, tip, pin } = req.body;
     if (!zaposleni_id || !['PRIHOD', 'ODHOD'].includes(tip))
       return res.status(400).json({ napaka: 'Neveljavni podatki' });
@@ -792,6 +805,24 @@ function createApp() {
     if (Number(rows[0].n) > 0)
       return res.status(400).json({ napaka: 'Vrsta dela je privzeta za vsaj enega zaposlenega' });
     await req.db.execute({ sql: 'DELETE FROM dela WHERE id = ?', args: [req.params.id] });
+    res.json({ ok: true });
+  });
+
+  // ── Device tokens ─────────────────────────────────────────────────────────────
+  app.post('/api/admin/registriraj-tablico', requireAuth, async (req, res) => {
+    const token = crypto.randomBytes(32).toString('hex');
+    const label = String(req.body.label || 'Tablica').slice(0, 60);
+    await req.db.execute({ sql: 'INSERT INTO device_tokens(token, label, created_at) VALUES(?, ?, ?)', args: [token, label, localTime()] });
+    res.json({ token });
+  });
+
+  app.get('/api/admin/device-tokens', requireAuth, async (req, res) => {
+    const { rows } = await req.db.execute('SELECT token, label, created_at FROM device_tokens ORDER BY created_at DESC');
+    res.json(rows);
+  });
+
+  app.delete('/api/admin/device-tokens/:token', requireAuth, async (req, res) => {
+    await req.db.execute({ sql: 'DELETE FROM device_tokens WHERE token = ?', args: [req.params.token] });
     res.json({ ok: true });
   });
 
