@@ -426,15 +426,13 @@ async function naloziObracun() {
       skupajVse += z.skupaj || 0;
       return `<tr>
         <td>${escHtml(z.ime)}</td>
-        <td class="td-r">${formatUre(z.minute)}</td>
-        <td class="td-r">${formatEur(z.osnova)}</td>
+        <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span></td>
         <td class="td-r">${z.stimulacija ? formatEur(z.stimulacija) : '—'}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
-        <td class="td-r"><strong>${formatUre(skupajMin)}</strong></td>
-        <td class="td-r"><strong>${formatEur(skupajOsnova)}</strong></td>
+        <td class="td-r td-osnova"><strong>${formatEur(skupajOsnova)}</strong><br><span class="td-ure-sub">${formatUre(skupajMin)}</span></td>
         <td class="td-r"><strong>${skupajStim ? formatEur(skupajStim) : '—'}</strong></td>
         <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong></td>
       </tr>` : '');
