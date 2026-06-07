@@ -427,7 +427,6 @@ async function naloziObracun() {
       return `<tr>
         <td>${escHtml(z.ime)}</td>
         <td class="td-r">${formatUre(z.minute)}</td>
-        <td class="td-r">${z.urnaPostavka ? `€${parseFloat(z.urnaPostavka).toFixed(2)}` : '—'}</td>
         <td class="td-r">${formatEur(z.osnova)}</td>
         <td class="td-r">${z.stimulacija ? formatEur(z.stimulacija) : '—'}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}</td>
@@ -435,7 +434,6 @@ async function naloziObracun() {
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
         <td class="td-r"><strong>${formatUre(skupajMin)}</strong></td>
-        <td class="td-r">—</td>
         <td class="td-r"><strong>${formatEur(skupajOsnova)}</strong></td>
         <td class="td-r"><strong>${skupajStim ? formatEur(skupajStim) : '—'}</strong></td>
         <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong></td>
