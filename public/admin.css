@@ -842,3 +842,37 @@ button:hover { background: #1a365d; }
 }
 .rv-select:focus, .rv-input:focus { border-color: #4299e1; }
 input[type="time"].rv-input { min-width: 110px; }
+
+/* ── Dela tab ─────────────────────────────────────────────────────────────── */
+.dela-dodaj-form {
+  display: flex; align-items: center; gap: 8px;
+  margin-top: 16px; flex-wrap: wrap;
+}
+.dela-dodaj-form input[type="text"] {
+  flex: 2; min-width: 140px; padding: 8px 12px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.92rem; outline: none; color: #1a202c;
+}
+.dela-dodaj-form input[type="text"]:focus { border-color: #4299e1; }
+.dela-up-wrap {
+  display: flex; align-items: center; gap: 4px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  padding: 6px 10px; background: #fff;
+}
+.dela-up-wrap input[type="number"] {
+  width: 70px; border: none; outline: none;
+  font-size: 0.92rem; color: #1a202c; background: transparent;
+}
+.dela-edit-input {
+  padding: 4px 8px; border: 1.5px solid #4299e1; border-radius: 6px;
+  font-size: 0.88rem; color: #1a202c;
+}
+
+/* ── Privzeto delo select in employee card ────────────────────────────────── */
+.privzeto-delo-select {
+  flex: 1; padding: 6px 10px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.88rem; color: #1a202c; background: #fff;
+  cursor: pointer;
+}
+.privzeto-delo-select:focus { border-color: #4299e1; outline: none; }

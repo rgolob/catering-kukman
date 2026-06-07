@@ -67,6 +67,19 @@ async function ensureDb() {
         status TEXT NOT NULL DEFAULT 'CAKA',
         ustvarjen TEXT NOT NULL
       )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS dela (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        naziv TEXT NOT NULL UNIQUE,
+        urna_postavka REAL NOT NULL DEFAULT 0
+      )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS evidenca_razporeditev (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        zaposleni_id INTEGER NOT NULL,
+        datum TEXT NOT NULL,
+        delo_id INTEGER NOT NULL,
+        cas_od TEXT NOT NULL,
+        cas_do TEXT NOT NULL
+      )`, args: [] },
     { sql: `INSERT OR IGNORE INTO config (kljuc, vrednost) VALUES ('admin_hash', ?)`,
       args: [sha256('kukman2024')] }
   ], 'write');
@@ -75,6 +88,17 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE zaposleni ADD COLUMN pin_setup_required INTEGER DEFAULT 0'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca ADD COLUMN naknadno INTEGER DEFAULT 0'); } catch(_) {}
   try { await db.execute('ALTER TABLE zaposleni ADD COLUMN urna_postavka REAL DEFAULT 0'); } catch(_) {}
+  try { await db.execute('ALTER TABLE zaposleni ADD COLUMN privzeto_delo_id INTEGER'); } catch(_) {}
+  try { await db.execute('ALTER TABLE evidenca ADD COLUMN delo_id INTEGER'); } catch(_) {}
+
+  // Seed work types
+  await db.batch([
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Pomivalec', 9)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Priprava', 10)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Organizator', 11)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Teren', 11)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Koordinator', 12)", args: [] },
+  ], 'write');
 
   const { rows } = await db.execute('SELECT COUNT(*) as n FROM zaposleni');
   if (Number(rows[0].n) === 0) {
@@ -144,6 +168,12 @@ function izracunajMesecneUre(vsiZapisi) {
       minute: izracunajDnevneUre(zapisi).reduce((s, d) => s + d.minute, 0)
     }))
     .sort((a, b) => b.mesec.localeCompare(a.mesec));
+}
+
+function casOdDoMinute(casOd, casDo) {
+  const [oh, om] = String(casOd).split(':').map(Number);
+  const [dh, dm] = String(casDo).split(':').map(Number);
+  return Math.max(0, (dh * 60 + dm) - (oh * 60 + om));
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────
@@ -355,7 +385,27 @@ function createApp() {
             JOIN zaposleni z ON z.id = e.zaposleni_id WHERE e.id = ?`,
       args: [Number(r.lastInsertRowid)]
     });
-    res.json(rows[0]);
+    const zapis = rows[0];
+
+    if (tip === 'ODHOD') {
+      const [{ rows: zd }, { rows: vsaDela }] = await Promise.all([
+        req.db.execute({
+          sql: `SELECT z.privzeto_delo_id, d.naziv, d.urna_postavka
+                FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`,
+          args: [zaposleni_id]
+        }),
+        req.db.execute('SELECT id, naziv, urna_postavka FROM dela ORDER BY urna_postavka, naziv')
+      ]);
+      const privzetoDelo = zd[0]?.privzeto_delo_id
+        ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
+        : null;
+      const ostala_dela = privzetoDelo
+        ? vsaDela.filter(d => Number(d.id) !== privzetoDelo.id)
+        : vsaDela;
+      return res.json({ ...zapis, privzetoDelo, ostala_dela });
+    }
+
+    res.json(zapis);
   });
 
   // ── Moj čas API ───────────────────────────────────────────────────────────────
@@ -380,21 +430,34 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows }, { rows: zRows }, { rows: stimRows }] = await Promise.all([
+    const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }] = await Promise.all([
       req.db.execute({ sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [req.session.zaposleniId, od, do_] }),
-      req.db.execute({ sql: 'SELECT urna_postavka FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId] }),
-      req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] })
+      req.db.execute({ sql: `SELECT z.urna_postavka, z.privzeto_delo_id, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
+      req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] }),
+      req.db.execute({ sql: `SELECT r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] })
     ]);
 
-    const urnaPostavka = parseFloat(zRows[0]?.urna_postavka) || 0;
+    const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
     const stimulacija = parseFloat(stimRows[0]?.skupaj) || 0;
     const dnevi = izracunajDnevneUre(rows, zdaj);
     const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
-    const osnova = urnaPostavka > 0 ? Math.round(skupajMinut / 60 * urnaPostavka * 100) / 100 : null;
+
+    let dodatnaMinute = 0, dodatnaOsnova = 0;
+    for (const r of razRows) {
+      const min = casOdDoMinute(r.cas_od, r.cas_do);
+      dodatnaMinute += min;
+      const up = parseFloat(r.delo_up) || 0;
+      if (up > 0) dodatnaOsnova += Math.round(min / 60 * up * 100) / 100;
+    }
+    const privzetaMinuta = Math.max(0, skupajMinut - dodatnaMinute);
+    const privzetaOsnova = privzetaUp > 0 ? Math.round(privzetaMinuta / 60 * privzetaUp * 100) / 100 : 0;
+    const hasRate = privzetaUp > 0 || razRows.length > 0;
+    const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
 
     res.json({
       leto, mesec, dnevi,
-      urnaPostavka: urnaPostavka || null,
+      urnaPostavka: privzetaUp || null,
+      imaDodatnaDela: razRows.length > 0,
       osnova,
       stimulacija: stimulacija || null,
       skupajPlacilo: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
@@ -402,18 +465,38 @@ function createApp() {
   });
 
   app.get('/api/moj-cas/kumulativno', requirePinAuth, async (req, res) => {
-    const [{ rows }, { rows: zRows }, { rows: stimRows }] = await Promise.all([
+    const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }] = await Promise.all([
       req.db.execute({ sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas ASC', args: [req.session.zaposleniId] }),
-      req.db.execute({ sql: 'SELECT urna_postavka FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId] }),
-      req.db.execute({ sql: 'SELECT mesec, SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? GROUP BY mesec', args: [req.session.zaposleniId] })
+      req.db.execute({ sql: `SELECT z.urna_postavka, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
+      req.db.execute({ sql: 'SELECT mesec, SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? GROUP BY mesec', args: [req.session.zaposleniId] }),
+      req.db.execute({ sql: `SELECT r.datum, r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? ORDER BY r.datum ASC`, args: [req.session.zaposleniId] })
     ]);
-    const urnaPostavka = parseFloat(zRows[0]?.urna_postavka) || 0;
+    const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
     const stimPoMesecih = new Map(stimRows.map(r => [r.mesec, parseFloat(r.skupaj) || 0]));
+
+    // Group razporeditev by month
+    const razPoMesecih = new Map();
+    for (const r of razRows) {
+      const mesec = String(r.datum).slice(0, 7);
+      if (!razPoMesecih.has(mesec)) razPoMesecih.set(mesec, []);
+      razPoMesecih.get(mesec).push(r);
+    }
 
     const meseci = izracunajMesecneUre(rows).map(m => {
       const stim = stimPoMesecih.get(m.mesec) || 0;
-      const osnova = urnaPostavka > 0 ? Math.round(m.minute / 60 * urnaPostavka * 100) / 100 : null;
-      return { ...m, urnaPostavka: urnaPostavka || null, osnova, stimulacija: stim || null,
+      const mRaz = razPoMesecih.get(m.mesec) || [];
+      let dodatnaMinute = 0, dodatnaOsnova = 0;
+      for (const r of mRaz) {
+        const min = casOdDoMinute(r.cas_od, r.cas_do);
+        dodatnaMinute += min;
+        const up = parseFloat(r.delo_up) || 0;
+        if (up > 0) dodatnaOsnova += Math.round(min / 60 * up * 100) / 100;
+      }
+      const privzetaMinuta = Math.max(0, m.minute - dodatnaMinute);
+      const privzetaOsnova = privzetaUp > 0 ? Math.round(privzetaMinuta / 60 * privzetaUp * 100) / 100 : 0;
+      const hasRate = privzetaUp > 0 || mRaz.length > 0;
+      const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
+      return { ...m, urnaPostavka: privzetaUp || null, osnova, stimulacija: stim || null,
         skupajPlacilo: (osnova !== null || stim > 0) ? Math.round(((osnova || 0) + stim) * 100) / 100 : null };
     });
     res.json(meseci);
@@ -445,8 +528,20 @@ function createApp() {
 
   // ── Admin API ──────────────────────────────────────────────────────────────────
   app.get('/api/admin/zaposleni', requireAuth, async (req, res) => {
-    const { rows } = await req.db.execute('SELECT * FROM zaposleni ORDER BY ime');
+    const { rows } = await req.db.execute(
+      `SELECT z.*, d.naziv AS privzeto_delo_naziv, d.urna_postavka AS privzeto_delo_up
+       FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id ORDER BY z.ime`
+    );
     res.json(rows);
+  });
+
+  app.patch('/api/admin/zaposleni/:id/privzeto-delo', requireAuth, async (req, res) => {
+    const deloId = req.body.deloId ? Number(req.body.deloId) : null;
+    await req.db.execute({
+      sql: 'UPDATE zaposleni SET privzeto_delo_id = ? WHERE id = ?',
+      args: [deloId, req.params.id]
+    });
+    res.json({ ok: true });
   });
 
   app.post('/api/admin/zaposleni', requireAuth, async (req, res) => {
@@ -488,6 +583,104 @@ function createApp() {
       sql: 'UPDATE zaposleni SET pin = ? WHERE id = ?',
       args: [pin || null, req.params.id]
     });
+    res.json({ ok: true });
+  });
+
+  // ── Dela API ──────────────────────────────────────────────────────────────────
+  app.get('/api/dela', async (req, res) => {
+    const { rows } = await req.db.execute('SELECT id, naziv, urna_postavka FROM dela ORDER BY urna_postavka, naziv');
+    res.json(rows);
+  });
+
+  app.get('/api/admin/dela', requireAuth, async (req, res) => {
+    const { rows } = await req.db.execute('SELECT id, naziv, urna_postavka FROM dela ORDER BY urna_postavka, naziv');
+    res.json(rows);
+  });
+
+  app.post('/api/admin/dela', requireAuth, async (req, res) => {
+    const { naziv, urnaPostavka } = req.body;
+    if (!naziv?.trim()) return res.status(400).json({ napaka: 'Naziv je obvezen' });
+    const up = parseFloat(urnaPostavka);
+    if (isNaN(up) || up <= 0) return res.status(400).json({ napaka: 'Urna postavka mora biti pozitivno število' });
+    try {
+      const r = await req.db.execute({
+        sql: 'INSERT INTO dela (naziv, urna_postavka) VALUES (?, ?)',
+        args: [naziv.trim(), up]
+      });
+      res.json({ id: Number(r.lastInsertRowid), naziv: naziv.trim(), urna_postavka: up });
+    } catch(_) {
+      res.status(409).json({ napaka: 'Vrsta dela s tem imenom že obstaja' });
+    }
+  });
+
+  app.patch('/api/admin/dela/:id', requireAuth, async (req, res) => {
+    const { naziv, urnaPostavka } = req.body;
+    const up = parseFloat(urnaPostavka);
+    if (naziv !== undefined && !naziv.trim()) return res.status(400).json({ napaka: 'Naziv je obvezen' });
+    if (!isNaN(up) && up <= 0) return res.status(400).json({ napaka: 'Urna postavka mora biti pozitivno število' });
+    try {
+      await req.db.execute({
+        sql: 'UPDATE dela SET naziv = COALESCE(?, naziv), urna_postavka = COALESCE(?, urna_postavka) WHERE id = ?',
+        args: [naziv?.trim() || null, isNaN(up) ? null : up, req.params.id]
+      });
+      res.json({ ok: true });
+    } catch(_) {
+      res.status(409).json({ napaka: 'Vrsta dela s tem imenom že obstaja' });
+    }
+  });
+
+  app.delete('/api/admin/dela/:id', requireAuth, async (req, res) => {
+    const { rows } = await req.db.execute({
+      sql: 'SELECT COUNT(*) as n FROM zaposleni WHERE privzeto_delo_id = ?', args: [req.params.id]
+    });
+    if (Number(rows[0].n) > 0)
+      return res.status(400).json({ napaka: 'Vrsta dela je privzeta za vsaj enega zaposlenega' });
+    await req.db.execute({ sql: 'DELETE FROM dela WHERE id = ?', args: [req.params.id] });
+    res.json({ ok: true });
+  });
+
+  // ── Razporeditev API ──────────────────────────────────────────────────────────
+  app.post('/api/razporeditev', async (req, res) => {
+    const { zaposleniId, pin, datum, deloId, casOd, casDo } = req.body;
+    if (!zaposleniId || !pin) return res.status(401).json({ napaka: 'Ni pooblastil' });
+    const { rows: zr } = await req.db.execute({
+      sql: 'SELECT id FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
+      args: [zaposleniId, pin]
+    });
+    if (!zr.length) return res.status(401).json({ napaka: 'Napačen PIN' });
+    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
+    if (!deloId) return res.status(400).json({ napaka: 'Izberi vrsto dela' });
+    if (!casOd || !casDo || !/^\d{2}:\d{2}$/.test(casOd) || !/^\d{2}:\d{2}$/.test(casDo))
+      return res.status(400).json({ napaka: 'Neveljaven čas' });
+    if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
+    const r = await req.db.execute({
+      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
+      args: [zaposleniId, datum, deloId, casOd, casDo]
+    });
+    res.json({ ok: true, id: Number(r.lastInsertRowid) });
+  });
+
+  app.get('/api/admin/razporeditev', requireAuth, async (req, res) => {
+    const { zaposleniId, od, do: do_ } = req.query;
+    const args = [];
+    let where = 'WHERE 1=1';
+    if (zaposleniId) { where += ' AND r.zaposleni_id = ?'; args.push(zaposleniId); }
+    if (od) { where += ' AND r.datum >= ?'; args.push(od); }
+    if (do_) { where += ' AND r.datum <= ?'; args.push(do_); }
+    const { rows } = await req.db.execute({
+      sql: `SELECT r.id, r.zaposleni_id, z.ime, r.datum, r.delo_id, d.naziv AS delo_naziv,
+            d.urna_postavka AS delo_up, r.cas_od, r.cas_do
+            FROM evidenca_razporeditev r
+            JOIN zaposleni z ON z.id = r.zaposleni_id
+            JOIN dela d ON d.id = r.delo_id
+            ${where} ORDER BY r.datum DESC, r.cas_od ASC`,
+      args
+    });
+    res.json(rows);
+  });
+
+  app.delete('/api/admin/razporeditev/:id', requireAuth, async (req, res) => {
+    await req.db.execute({ sql: 'DELETE FROM evidenca_razporeditev WHERE id = ?', args: [req.params.id] });
     res.json({ ok: true });
   });
 
@@ -566,10 +759,21 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }] = await Promise.all([
-      req.db.execute('SELECT id, ime, urna_postavka FROM zaposleni WHERE aktiven = 1 ORDER BY ime'),
+    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }] = await Promise.all([
+      req.db.execute(
+        `SELECT z.id, z.ime, z.urna_postavka, z.privzeto_delo_id,
+                d.naziv AS priv_naziv, d.urna_postavka AS priv_up
+         FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id
+         WHERE z.aktiven = 1 ORDER BY z.ime`
+      ),
       req.db.execute({ sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [od, do_] }),
-      req.db.execute({ sql: 'SELECT zaposleni_id, SUM(znesek) as skupaj FROM stimulacija WHERE mesec = ? GROUP BY zaposleni_id', args: [mesecStr] })
+      req.db.execute({ sql: 'SELECT zaposleni_id, SUM(znesek) as skupaj FROM stimulacija WHERE mesec = ? GROUP BY zaposleni_id', args: [mesecStr] }),
+      req.db.execute({
+        sql: `SELECT r.zaposleni_id, r.delo_id, d.naziv AS delo_naziv, d.urna_postavka AS delo_up, r.cas_od, r.cas_do
+              FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
+              WHERE r.datum BETWEEN ? AND ?`,
+        args: [od, do_]
+      })
     ]);
 
     const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
@@ -577,14 +781,40 @@ function createApp() {
     const obracun = zaposleni.map(z => {
       const zid = Number(z.id);
       const zEv = evidenca.filter(e => Number(e.zaposleni_id) === zid);
+      const zRaz = razporeditev.filter(r => Number(r.zaposleni_id) === zid);
+
       const dnevi = izracunajDnevneUre(zEv, zdaj);
       const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
-      const urnaPostavka = parseFloat(z.urna_postavka) || 0;
-      const osnova = urnaPostavka > 0 ? Math.round(skupajMinut / 60 * urnaPostavka * 100) / 100 : null;
+
+      const privzetaUp = parseFloat(z.priv_up) || parseFloat(z.urna_postavka) || 0;
+
+      const delaMap = new Map();
+      for (const r of zRaz) {
+        const min = casOdDoMinute(r.cas_od, r.cas_do);
+        if (!delaMap.has(r.delo_id)) {
+          delaMap.set(r.delo_id, { naziv: r.delo_naziv, urna_postavka: parseFloat(r.delo_up) || 0, minute: 0 });
+        }
+        delaMap.get(r.delo_id).minute += min;
+      }
+      const dodatnaMinute = [...delaMap.values()].reduce((s, d) => s + d.minute, 0);
+      const privzetaMinuta = Math.max(0, skupajMinut - dodatnaMinute);
+
+      const privzetaOsnova = privzetaUp > 0 ? Math.round(privzetaMinuta / 60 * privzetaUp * 100) / 100 : 0;
+      const dodatnaOsnova = [...delaMap.values()].reduce((s, d) =>
+        s + (d.urna_postavka > 0 ? Math.round(d.minute / 60 * d.urna_postavka * 100) / 100 : 0), 0);
+
+      const hasRate = privzetaUp > 0 || delaMap.size > 0;
+      const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
       const stimulacija = stimMap.get(zid) || 0;
+
       return {
-        id: zid, ime: z.ime, urnaPostavka,
-        minute: skupajMinut, osnova, stimulacija: stimulacija || null,
+        id: zid, ime: z.ime,
+        privzetoDelo: z.privzeto_delo_id ? { id: Number(z.privzeto_delo_id), naziv: z.priv_naziv, urna_postavka: parseFloat(z.priv_up) } : null,
+        urnaPostavka: privzetaUp,
+        minute: skupajMinut,
+        privzetaMinuta,
+        dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
+        osnova, stimulacija: stimulacija || null,
         skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
       };
     });

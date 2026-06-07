@@ -2,6 +2,12 @@ let izbraniZaposleni = null;
 let izbraniTip = null;
 let dialogPin = '';
 
+// State for the "additional work" overlay after ODHOD
+let odhodZaposleniId = null;
+let odhodPin = null;
+let odhodDatum = null;
+let odhodDela = [];
+
 // Ura v headerju
 function posodobiUro() {
   const zdaj = new Date();
@@ -214,10 +220,19 @@ async function potrdiZapis() {
       return;
     }
 
+    // Save before zapriDialog() resets them
+    const tipZaDodatno = izbraniTip;
+    const idZaDodatno = izbraniZaposleni;
+    const pinZaDodatno = pinZaPoslati;
+
     // Takoj posodobi kartico
     posodobiKarticoTakoj(izbraniZaposleni, izbraniTip, new Date(zapis.cas));
     zapriDialog();
-    prikaziToast(zapis.ime, izbraniTip);
+    prikaziToast(zapis.ime, tipZaDodatno);
+
+    if (tipZaDodatno === 'ODHOD' && zapis.privzetoDelo && zapis.ostala_dela?.length > 0) {
+      prikaziDodatnoDeloOverlay(idZaDodatno, pinZaDodatno, String(zapis.cas).slice(0, 10), zapis.privzetoDelo, zapis.ostala_dela);
+    }
 
     naloziZaposlene();
     naloziEvidenco();
@@ -252,6 +267,67 @@ document.addEventListener('keydown', e => {
   if (e.key >= '0' && e.key <= '9') dodajDialogCifro(e.key);
   else if (e.key === 'Backspace') brisiDialogPin();
   else if (e.key === 'Escape') zapriDialog();
+});
+
+// ── Dodatno delo overlay ───────────────────────────────────────────────────────
+
+function prikaziDodatnoDeloOverlay(zaposleniId, pin, datum, privzetoDelo, ostala_dela) {
+  odhodZaposleniId = zaposleniId;
+  odhodPin = pin;
+  odhodDatum = datum;
+  odhodDela = ostala_dela;
+
+  const sel = document.getElementById('dodatno-delo-select');
+  sel.innerHTML = ostala_dela.map(d =>
+    `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
+  ).join('');
+
+  document.getElementById('dodatno-od').value = '';
+  document.getElementById('dodatno-do').value = '';
+  document.getElementById('dodatno-segmenti').innerHTML = '';
+  document.getElementById('dodatno-napaka').textContent = '';
+  document.getElementById('dodatno-podnaslov').textContent =
+    `Odhod zabeležen. Ste delali katero drugo delo poleg ${privzetoDelo.naziv}?`;
+
+  document.getElementById('dodatno-overlay').classList.remove('hidden');
+}
+
+async function dodajSegment() {
+  const deloId = document.getElementById('dodatno-delo-select').value;
+  const casOd = document.getElementById('dodatno-od').value;
+  const casDo = document.getElementById('dodatno-do').value;
+  const napaka = document.getElementById('dodatno-napaka');
+
+  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do.'; return; }
+  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do".'; return; }
+  napaka.textContent = '';
+
+  const res = await fetch('/api/razporeditev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zaposleniId: odhodZaposleniId, pin: odhodPin, datum: odhodDatum, deloId, casOd, casDo })
+  });
+
+  if (res.ok) {
+    const deloNaziv = odhodDela.find(d => String(d.id) === String(deloId))?.naziv || '?';
+    const seg = document.getElementById('dodatno-segmenti');
+    const div = document.createElement('div');
+    div.className = 'dodatno-segment';
+    div.textContent = `✓ ${deloNaziv}: ${casOd}–${casDo}`;
+    seg.appendChild(div);
+    document.getElementById('dodatno-od').value = '';
+    document.getElementById('dodatno-do').value = '';
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
+  }
+}
+
+document.getElementById('btn-dodaj-segment').addEventListener('click', dodajSegment);
+document.getElementById('btn-dodatno-zakljuci').addEventListener('click', () => {
+  document.getElementById('dodatno-overlay').classList.add('hidden');
+  odhodZaposleniId = null;
+  odhodPin = null;
 });
 
 // Začetno nalaganje in osvežitev vsako minuto

@@ -436,3 +436,38 @@ h2 {
   .dialog-cas { font-size: 1.15rem; }
   .dialog-vprasanje { font-size: 0.88rem; margin-bottom: 0; }
 }
+
+/* ── Dodatno delo overlay ─────────────────────────────────────────────────── */
+.dialog-dodatno { max-width: 420px; text-align: left; }
+.dialog-dodatno h2 { text-align: center; margin-bottom: 6px; }
+.dialog-dodatno .dialog-vprasanje { text-align: center; margin-bottom: 16px; font-size: 0.88rem; }
+.dodatno-form { display: flex; flex-direction: column; gap: 10px; }
+.dodatno-select {
+  width: 100%; padding: 9px 12px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.93rem; color: #1a202c; background: #fff;
+}
+.dodatno-cas-row {
+  display: flex; gap: 10px;
+}
+.dodatno-cas-row label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; color: #718096; flex: 1;
+}
+.dodatno-cas-row input[type="time"] {
+  flex: 1; padding: 8px 10px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.9rem; color: #1a202c;
+}
+.btn-dodaj-seg {
+  padding: 10px 16px; border: none; border-radius: 8px;
+  background: #3182ce; color: #fff; font-weight: 600;
+  cursor: pointer; font-size: 0.92rem;
+}
+.btn-dodaj-seg:hover { background: #2b6cb0; }
+.dodatno-segmenti { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
+.dodatno-segment {
+  background: #f0fff4; border: 1px solid #9ae6b4;
+  border-radius: 6px; padding: 6px 10px;
+  font-size: 0.88rem; color: #276749;
+}

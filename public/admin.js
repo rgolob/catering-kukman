@@ -10,6 +10,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
     if (btn.dataset.tab === 'lestvica') naloziLestvicaTab();
+    if (btn.dataset.tab === 'dela') naloziDelaTab();
   });
 });
 
@@ -65,6 +66,12 @@ async function naloziZaposlene() {
       </div>
       <div class="zap-kartica-podrobnosti">
         <div class="zap-podrobnosti-vrstica">
+          <span class="zap-podrobnosti-oznaka">Privzeto delo</span>
+          <select class="privzeto-delo-select" data-id="${z.id}">
+            <option value="">— Brez —</option>
+          </select>
+        </div>
+        <div class="zap-podrobnosti-vrstica">
           <span class="zap-podrobnosti-oznaka">Urna postavka</span>
           <div class="up-celica">
             <span class="up-euro-znak">€</span>
@@ -106,6 +113,32 @@ async function naloziZaposlene() {
     // Toggle expand/collapse on header click
     kartica.querySelector('.zap-kartica-glava').addEventListener('click', () => {
       kartica.classList.toggle('zap-odprta');
+    });
+  });
+
+  // Privzeto delo — naloži opcije in nastavi vrednost
+  const delaRes = await fetch('/api/dela');
+  const vsaDela = delaRes.ok ? await delaRes.json() : [];
+  seznam.querySelectorAll('.privzeto-delo-select').forEach(sel => {
+    sel.addEventListener('click', e => e.stopPropagation());
+    const zId = Number(sel.dataset.id);
+    const zaposlen = zaposleni.find(z => Number(z.id) === zId);
+    vsaDela.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = `${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)`;
+      if (Number(zaposlen?.privzeto_delo_id) === Number(d.id)) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    sel.addEventListener('change', async () => {
+      const deloId = sel.value || null;
+      const res = await fetch(`/api/admin/zaposleni/${zId}/privzeto-delo`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ deloId })
+      });
+      if (res.ok) prikaziToast('Privzeto delo shranjeno');
+      else prikaziToast('Napaka pri shranjevanju', 'napaka');
     });
   });
 
@@ -424,9 +457,12 @@ async function naloziObracun() {
       skupajOsnova += z.osnova || 0;
       skupajStim += z.stimulacija || 0;
       skupajVse += z.skupaj || 0;
+      const delaBreakdown = z.dodatnaDela?.length
+        ? '<br><span class="td-ure-sub">' + z.dodatnaDela.map(d => `${formatUre(d.minute)} ${d.naziv}`).join(' + ') + '</span>'
+        : '';
       return `<tr>
         <td>${escHtml(z.ime)}</td>
-        <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span></td>
+        <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
@@ -922,6 +958,92 @@ document.getElementById('btn-rv-shrani').addEventListener('click', async () => {
     const d = await res.json();
     napaka.textContent = d.napaka || 'Napaka pri vnosu';
     napaka.style.display = 'block';
+  }
+});
+
+// ── DELA TAB ──────────────────────────────────────────────────────────────────
+function naloziDelaTab() { naloziDela(); }
+
+async function naloziDela() {
+  try {
+    const res = await fetch('/api/admin/dela');
+    if (!res.ok) return;
+    const dela = await res.json();
+
+    const tbody = document.getElementById('dela-tbody');
+    const prazno = document.getElementById('dela-prazno');
+    if (!dela.length) { tbody.innerHTML = ''; prazno.style.display = 'block'; return; }
+    prazno.style.display = 'none';
+
+    tbody.innerHTML = dela.map(d => `
+      <tr data-id="${d.id}">
+        <td><span class="dela-naziv">${escHtml(d.naziv)}</span><input class="dela-edit-naziv dela-edit-input" value="${escHtml(d.naziv)}" maxlength="40" style="display:none" /></td>
+        <td class="td-r"><span class="dela-up">€${parseFloat(d.urna_postavka).toFixed(2)}</span><input type="number" class="dela-edit-up dela-edit-input" value="${parseFloat(d.urna_postavka).toFixed(2)}" min="0.01" step="0.01" style="display:none;width:70px" /></td>
+        <td class="td-akcije">
+          <button class="btn-sm btn-dela-uredi">Uredi</button>
+          <button class="btn-sm btn-dela-shrani" style="display:none">Shrani</button>
+          <button class="btn-sm btn-dela-preklic" style="display:none">Prekliči</button>
+          <button class="btn-sm btn-danger btn-dela-brisi">Zbriši</button>
+        </td>
+      </tr>`).join('');
+
+    tbody.querySelectorAll('tr[data-id]').forEach(tr => {
+      const id = tr.dataset.id;
+      tr.querySelector('.btn-dela-uredi').addEventListener('click', () => {
+        tr.querySelector('.dela-naziv').style.display = 'none';
+        tr.querySelector('.dela-up').style.display = 'none';
+        tr.querySelectorAll('.dela-edit-input').forEach(i => i.style.display = '');
+        tr.querySelector('.btn-dela-uredi').style.display = 'none';
+        tr.querySelector('.btn-dela-brisi').style.display = 'none';
+        tr.querySelector('.btn-dela-shrani').style.display = '';
+        tr.querySelector('.btn-dela-preklic').style.display = '';
+      });
+      tr.querySelector('.btn-dela-preklic').addEventListener('click', () => naloziDela());
+      tr.querySelector('.btn-dela-shrani').addEventListener('click', async () => {
+        const naziv = tr.querySelector('.dela-edit-naziv').value.trim();
+        const urnaPostavka = parseFloat(tr.querySelector('.dela-edit-up').value);
+        if (!naziv || isNaN(urnaPostavka) || urnaPostavka <= 0) {
+          prikaziToast('Preveri vnos', 'napaka'); return;
+        }
+        const r = await fetch(`/api/admin/dela/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ naziv, urnaPostavka })
+        });
+        if (r.ok) { prikaziToast('Vrsta dela posodobljena'); naloziDela(); naloziZaposlene(); }
+        else { const d = await r.json(); prikaziToast(d.napaka || 'Napaka', 'napaka'); }
+      });
+      tr.querySelector('.btn-dela-brisi').addEventListener('click', async () => {
+        if (!confirm(`Zbrisati vrsto dela "${tr.querySelector('.dela-naziv').textContent}"?`)) return;
+        const r = await fetch(`/api/admin/dela/${id}`, { method: 'DELETE' });
+        if (r.ok) { prikaziToast('Vrsta dela zbrisana'); naloziDela(); naloziZaposlene(); }
+        else { const d = await r.json(); prikaziToast(d.napaka || 'Napaka', 'napaka'); }
+      });
+    });
+  } catch(e) { console.error(e); }
+}
+
+document.getElementById('btn-dodaj-delo').addEventListener('click', async () => {
+  const naziv = document.getElementById('novo-delo-naziv').value.trim();
+  const urnaPostavka = parseFloat(document.getElementById('novo-delo-up').value);
+  const napaka = document.getElementById('dela-napaka');
+  napaka.textContent = '';
+  if (!naziv) { napaka.textContent = 'Vnesite naziv'; return; }
+  if (isNaN(urnaPostavka) || urnaPostavka <= 0) { napaka.textContent = 'Vnesite urno postavko'; return; }
+  const res = await fetch('/api/admin/dela', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ naziv, urnaPostavka })
+  });
+  if (res.ok) {
+    document.getElementById('novo-delo-naziv').value = '';
+    document.getElementById('novo-delo-up').value = '';
+    prikaziToast('Vrsta dela dodana');
+    naloziDela();
+    naloziZaposlene();
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka';
   }
 });
 

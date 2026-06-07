@@ -66,6 +66,25 @@
     </div>
   </div>
 
+  <!-- Dodatno delo overlay (po odhodu) -->
+  <div id="dodatno-overlay" class="overlay hidden">
+    <div class="dialog dialog-dodatno">
+      <h2>Dodatno delo</h2>
+      <p id="dodatno-podnaslov" class="dialog-vprasanje"></p>
+      <div class="dodatno-form">
+        <select id="dodatno-delo-select" class="dodatno-select"></select>
+        <div class="dodatno-cas-row">
+          <label>Od<input type="time" id="dodatno-od" /></label>
+          <label>Do<input type="time" id="dodatno-do" /></label>
+        </div>
+        <button id="btn-dodaj-segment" class="btn-dodaj-seg">Dodaj segment</button>
+      </div>
+      <div id="dodatno-napaka" class="dialog-pin-napaka"></div>
+      <div id="dodatno-segmenti" class="dodatno-segmenti"></div>
+      <button id="btn-dodatno-zakljuci" class="btn-preklic" style="margin-top:16px">Zaključi</button>
+    </div>
+  </div>
+
   <!-- Toast obvestilo -->
   <div id="toast" class="toast hidden"></div>
 
