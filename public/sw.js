@@ -1,11 +1,11 @@
-const CACHE = 'kukman-v6';
+const CACHE = 'kukman-v7';
 
 const STATIC = [
-  '/',
-  '/pin',
-  '/moj-cas',
-  '/admin',
-  '/login',
+  '/prisotnost',
+  '/prisotnost/pin',
+  '/prisotnost/moj-cas',
+  '/prisotnost/admin',
+  '/prisotnost/login',
   '/style.css',
   '/app.js',
   '/admin.css',

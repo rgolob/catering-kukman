@@ -2,7 +2,7 @@
   "name": "Catering Kukman",
   "short_name": "Kukman",
   "description": "Evidenca prisotnosti zaposlenih",
-  "start_url": "/",
+  "start_url": "/prisotnost",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#1a365d",

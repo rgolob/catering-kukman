@@ -26,10 +26,10 @@ function formatirajDatum(datum) {
 
 async function naloziInfo() {
   const res = await fetch('/api/moj-cas/info');
-  if (res.status === 401) { window.location.href = '/pin'; return; }
+  if (res.status === 401) { window.location.href = '/prisotnost/pin'; return; }
   const data = await res.json();
 
-  if (data.pinSetupRequired) { window.location.href = '/pin-setup'; return; }
+  if (data.pinSetupRequired) { window.location.href = '/prisotnost/pin-setup'; return; }
 
   document.getElementById('pozdrav').textContent = data.ime;
 
@@ -165,7 +165,7 @@ document.getElementById('btn-naprej').addEventListener('click', () => {
 // Odjava
 document.getElementById('btn-odjava').addEventListener('click', async () => {
   await fetch('/api/pin-logout', { method: 'POST' });
-  window.location.href = '/pin';
+  window.location.href = '/prisotnost/pin';
 });
 
 // ── Naknadno evidentiranje ────────────────────────────────────────────────────

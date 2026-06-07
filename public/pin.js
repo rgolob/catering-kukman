@@ -55,7 +55,7 @@ async function preveriPin() {
 
   if (res.ok) {
     const data = await res.json();
-    window.location.href = data.pinSetupRequired ? '/pin-setup' : '/moj-cas';
+    window.location.href = data.pinSetupRequired ? '/prisotnost/pin-setup' : '/prisotnost/moj-cas';
   } else {
     const prikaz = document.querySelector('.pin-prikaz');
     prikaz.classList.remove('tresenje');

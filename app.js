@@ -172,10 +172,12 @@ function createApp() {
     }
   });
 
+  const BASE = '/prisotnost';
+
   function requireAuth(req, res, next) {
     if (req.session.admin) return next();
     if (req.path.startsWith('/api/')) return res.status(401).json({ napaka: 'Ni prijavljen' });
-    res.redirect('/login');
+    res.redirect(BASE + '/login');
   }
 
   function requirePinAuth(req, res, next) {
@@ -185,31 +187,40 @@ function createApp() {
 
   // Block direct .html access
   app.use((req, res, next) => {
-    if (req.path === '/admin.html') return res.redirect('/admin');
-    if (req.path === '/moj-cas.html') return res.redirect('/pin');
+    if (req.path === '/admin.html') return res.redirect(BASE + '/admin');
+    if (req.path === '/moj-cas.html') return res.redirect(BASE + '/pin');
     next();
   });
 
   app.use(express.static(path.join(__dirname, 'public')));
 
+  // ── Root redirect ────────────────────────────────────────────────────────────
+  app.get('/', (req, res) => res.redirect(BASE));
+
   // ── Pages ───────────────────────────────────────────────────────────────────
-  app.get('/login', (req, res) => {
-    if (req.session.admin) return res.redirect('/admin');
+  app.get(BASE, (req, res) =>
+    res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+  app.get(BASE + '/login', (req, res) => {
+    if (req.session.admin) return res.redirect(BASE + '/admin');
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
   });
 
-  app.get('/admin', requireAuth, (req, res) =>
+  app.get(BASE + '/admin', requireAuth, (req, res) =>
     res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
-  app.get('/pin', (req, res) => {
-    if (req.session.zaposleniId) return res.redirect('/moj-cas');
+  app.get(BASE + '/pin', (req, res) => {
+    if (req.session.zaposleniId) return res.redirect(BASE + '/moj-cas');
     res.sendFile(path.join(__dirname, 'public', 'pin.html'));
   });
 
-  app.get('/moj-cas', (req, res) => {
-    if (!req.session.zaposleniId) return res.redirect('/pin');
+  app.get(BASE + '/moj-cas', (req, res) => {
+    if (!req.session.zaposleniId) return res.redirect(BASE + '/pin');
     res.sendFile(path.join(__dirname, 'public', 'moj-cas.html'));
   });
+
+  app.get(BASE + '/pin-setup', (req, res) =>
+    res.sendFile(path.join(__dirname, 'public', 'pin-setup.html')));
 
   // ── Auth API ─────────────────────────────────────────────────────────────────
   app.post('/api/login', async (req, res) => {

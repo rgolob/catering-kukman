@@ -79,7 +79,7 @@
     <label for="geslo">Geslo</label>
     <input type="password" id="geslo" placeholder="Vnesite geslo" autofocus />
     <button id="btn-prijava">Prijava</button>
-    <a href="/" class="nazaj">← Nazaj na evidenco</a>
+    <a href="/prisotnost" class="nazaj">← Nazaj na evidenco</a>
   </div>
   <script>
     async function prijava() {
@@ -94,7 +94,7 @@
       });
 
       if (res.ok) {
-        window.location.href = '/admin';
+        window.location.href = '/prisotnost/admin';
       } else {
         const data = await res.json();
         napaka.textContent = data.napaka || 'Napaka pri prijavi';

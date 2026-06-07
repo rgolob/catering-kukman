@@ -18,28 +18,65 @@
   status = 200
   force = true
 
-# Strani → HTML datoteke (auth je na JS strani)
+# Root → prisotnost
 [[redirects]]
-  from = "/login"
+  from = "/"
+  to = "/prisotnost"
+  status = 302
+
+# Prisotnost strani
+[[redirects]]
+  from = "/prisotnost"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/prisotnost/login"
   to = "/login.html"
   status = 200
 
 [[redirects]]
-  from = "/admin"
+  from = "/prisotnost/admin"
   to = "/admin.html"
   status = 200
 
 [[redirects]]
-  from = "/pin"
+  from = "/prisotnost/pin"
   to = "/pin.html"
   status = 200
 
 [[redirects]]
-  from = "/moj-cas"
+  from = "/prisotnost/moj-cas"
   to = "/moj-cas.html"
   status = 200
 
 [[redirects]]
-  from = "/pin-setup"
+  from = "/prisotnost/pin-setup"
   to = "/pin-setup.html"
   status = 200
+
+# Stare poti → novi URL-ji (301 preusmeritev)
+[[redirects]]
+  from = "/login"
+  to = "/prisotnost/login"
+  status = 301
+
+[[redirects]]
+  from = "/admin"
+  to = "/prisotnost/admin"
+  status = 301
+
+[[redirects]]
+  from = "/pin"
+  to = "/prisotnost/pin"
+  status = 301
+
+[[redirects]]
+  from = "/moj-cas"
+  to = "/prisotnost/moj-cas"
+  status = 301
+
+[[redirects]]
+  from = "/pin-setup"
+  to = "/prisotnost/pin-setup"
+  status = 301

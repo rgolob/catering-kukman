@@ -16,7 +16,7 @@ document.querySelectorAll('.tab').forEach(btn => {
 // ── Odjava ────────────────────────────────────────────────────────────────────
 document.getElementById('btn-odjava').addEventListener('click', async () => {
   await fetch('/api/logout', { method: 'POST' });
-  window.location.href = '/login';
+  window.location.href = '/prisotnost/login';
 });
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -31,7 +31,7 @@ function prikaziToast(besedilo, tip = 'uspeh') {
 async function naloziZaposlene() {
   try {
     const res = await fetch('/api/admin/zaposleni');
-    if (res.status === 401 || res.redirected || res.url.includes('/login')) { window.location.href = '/login'; return; }
+    if (res.status === 401 || res.redirected || res.url.includes('/login')) { window.location.href = '/prisotnost/login'; return; }
     if (!res.ok) {
       prikaziToast(`Napaka strežnika (${res.status}) — preveri nastavitve baze`, 'napaka');
       return;
@@ -251,7 +251,7 @@ document.getElementById('btn-dodaj').addEventListener('click', async () => {
     });
 
     if (res.redirected || res.url.includes('/login')) {
-      window.location.href = '/login'; return;
+      window.location.href = '/prisotnost/login'; return;
     }
 
     if (res.ok) {
@@ -287,7 +287,7 @@ async function naloziEvidenco() {
 
   try {
     const res = await fetch(`/api/admin/evidenca?od=${od}&do=${do_}`);
-    if (res.status === 401 || res.redirected || res.url.includes('/login')) { window.location.href = '/login'; return; }
+    if (res.status === 401 || res.redirected || res.url.includes('/login')) { window.location.href = '/prisotnost/login'; return; }
     if (!res.ok) { prikaziToast(`Napaka strežnika (${res.status})`, 'napaka'); return; }
     const zapisi = await res.json();
     if (!Array.isArray(zapisi)) { prikaziToast('Napaka pri nalaganju evidenc', 'napaka'); return; }
