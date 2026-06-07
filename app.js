@@ -5,12 +5,19 @@ const path = require('path');
 const crypto = require('node:crypto');
 const cookieSession = require('cookie-session');
 const XLSX = require('xlsx');
+const QRCode = require('qrcode');
 const { createClient } = require('@libsql/client');
 
 const TZ = 'Europe/Ljubljana';
 
 function sha256(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
+}
+
+function generateDailyToken() {
+  const date = localDate();
+  const secret = process.env.SESSION_SECRET || 'kukman-evidenca-tajna-kljuc-2024';
+  return crypto.createHash('sha256').update(`qr-${date}-${secret}`).digest('hex').slice(0, 20);
 }
 
 function localTime() {
@@ -300,6 +307,51 @@ function createApp() {
 
   app.get(BASE + '/pin-setup', (req, res) =>
     res.sendFile(path.join(__dirname, 'public', 'pin-setup.html')));
+
+  app.get(BASE + '/qr', (req, res) =>
+    res.sendFile(path.join(__dirname, 'public', 'qr.html')));
+
+  // ── QR API ───────────────────────────────────────────────────────────────────
+  app.get('/api/qr-info', async (req, res) => {
+    res.json({ token: generateDailyToken(), datum: localDate() });
+  });
+
+  app.get('/api/qr-image', async (req, res) => {
+    const token = generateDailyToken();
+    const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+    const qrUrl = `${proto}://${host}${BASE}/qr?t=${token}`;
+    const buf = await QRCode.toBuffer(qrUrl, {
+      width: 280, margin: 2,
+      color: { dark: '#1a365d', light: '#ffffff' }
+    });
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(buf);
+  });
+
+  app.post('/api/qr-belezi', async (req, res) => {
+    const { zaposleniId, token } = req.body;
+    if (!token || token !== generateDailyToken())
+      return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
+    const { rows } = await req.db.execute({
+      sql: 'SELECT id, ime FROM zaposleni WHERE id = ? AND aktiven = 1',
+      args: [zaposleniId]
+    });
+    if (!rows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
+    const danes = localDate();
+    const { rows: zadnji } = await req.db.execute({
+      sql: 'SELECT tip FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
+      args: [zaposleniId, danes]
+    });
+    const tip = zadnji[0]?.tip === 'PRIHOD' ? 'ODHOD' : 'PRIHOD';
+    const cas = localTime();
+    await req.db.execute({
+      sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)',
+      args: [zaposleniId, tip, cas]
+    });
+    res.json({ ok: true, ime: rows[0].ime, tip, cas });
+  });
 
   // ── Auth API ─────────────────────────────────────────────────────────────────
   app.post('/api/login', async (req, res) => {

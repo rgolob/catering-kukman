@@ -437,6 +437,19 @@ h2 {
   .dialog-vprasanje { font-size: 0.88rem; margin-bottom: 0; }
 }
 
+/* ── QR koda na tablici ───────────────────────────────────────────────────── */
+.qr-tablica-section {
+  display: flex; justify-content: center; padding: 16px 16px 8px;
+}
+.qr-tablica-card {
+  background: #fff; border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+  padding: 16px 20px; text-align: center;
+  display: inline-flex; flex-direction: column; align-items: center; gap: 10px;
+}
+.qr-tablica-img { width: 160px; height: 160px; display: block; border-radius: 8px; }
+.qr-tablica-napis { font-size: 0.82rem; color: #718096; }
+
 /* ── Dodatno delo overlay ─────────────────────────────────────────────────── */
 .dialog-dodatno { max-width: 420px; text-align: left; }
 .dialog-dodatno h2 { text-align: center; margin-bottom: 6px; }

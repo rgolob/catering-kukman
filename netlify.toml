@@ -4,7 +4,7 @@
 
 [functions]
   node_bundler = "esbuild"
-  external_node_modules = ["@libsql/client", "xlsx"]
+  external_node_modules = ["@libsql/client", "xlsx", "qrcode"]
 
 [dev]
   command = "node server.js"
@@ -53,6 +53,11 @@
 [[redirects]]
   from = "/prisotnost/pin-setup"
   to = "/pin-setup.html"
+  status = 200
+
+[[redirects]]
+  from = "/prisotnost/qr"
+  to = "/qr.html"
   status = 200
 
 # Stare poti → novi URL-ji (301 preusmeritev)

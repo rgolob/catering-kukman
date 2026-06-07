@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prijava – Catering Kukman</title>
+  <meta name="theme-color" content="#1a365d" />
+  <link rel="stylesheet" href="/qr.css" />
+</head>
+<body>
+  <header>
+    <h1>Catering Kukman</h1>
+    <p class="qr-datum" id="qr-datum"></p>
+  </header>
+
+  <main>
+    <div id="qr-napaka" class="qr-napaka hidden">
+      <div class="qr-napaka-ikona">⚠</div>
+      <h2>QR koda ni veljavna</h2>
+      <p>Prosimo, skenirajte aktualno QR kodo na tablici.</p>
+    </div>
+
+    <div id="qr-seznam-wrap">
+      <h2 class="qr-navodilo">Tapnite vaše ime</h2>
+      <div id="qr-seznam" class="qr-seznam"></div>
+    </div>
+
+    <div id="qr-rezultat" class="qr-rezultat hidden">
+      <div class="qr-check" id="qr-check-ikona">✓</div>
+      <h2 id="qr-rez-ime"></h2>
+      <p class="qr-rez-tip" id="qr-rez-tip"></p>
+      <p class="qr-rez-cas" id="qr-rez-cas"></p>
+    </div>
+  </main>
+
+  <script src="/qr.js"></script>
+</body>
+</html>

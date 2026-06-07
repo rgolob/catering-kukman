@@ -1,0 +1,75 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f0f4f8;
+  color: #1a202c;
+  min-height: 100vh;
+}
+
+header {
+  background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
+  color: #fff;
+  text-align: center;
+  padding: 20px 16px 16px;
+}
+header h1 { font-size: 1.4rem; }
+.qr-datum { font-size: 0.88rem; opacity: 0.8; margin-top: 4px; }
+
+main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
+
+.qr-navodilo {
+  text-align: center; font-size: 1.1rem; color: #4a5568;
+  margin-bottom: 16px; font-weight: 600;
+}
+
+.qr-seznam {
+  display: flex; flex-direction: column; gap: 10px;
+}
+
+.qr-ime-btn {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #fff; border: 2px solid #e2e8f0; border-radius: 14px;
+  padding: 16px 20px; cursor: pointer; transition: all 0.15s;
+  text-align: left; width: 100%;
+}
+.qr-ime-btn:hover { border-color: #4299e1; background: #ebf8ff; }
+.qr-ime-btn.prisoten { border-color: #9ae6b4; background: #f0fff4; }
+.qr-ime-btn.prisoten:hover { border-color: #48bb78; background: #c6f6d5; }
+
+.qr-btn-ime { font-size: 1.05rem; font-weight: 600; color: #1a202c; }
+.qr-btn-akcija {
+  font-size: 0.82rem; font-weight: 700; color: #4299e1;
+  white-space: nowrap; margin-left: 10px;
+}
+.qr-ime-btn.prisoten .qr-btn-akcija { color: #38a169; }
+
+/* Rezultat */
+.qr-rezultat {
+  text-align: center; padding: 40px 20px;
+  animation: fadeIn 0.3s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+.qr-check {
+  font-size: 4rem; margin-bottom: 16px; display: block;
+  width: 90px; height: 90px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 20px;
+}
+.qr-check.prihod { background: #c6f6d5; color: #22543d; }
+.qr-check.odhod  { background: #feebc8; color: #7b341e; }
+
+.qr-rezultat h2 { font-size: 1.8rem; margin-bottom: 10px; }
+.qr-rez-tip { font-size: 1.1rem; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+.qr-rez-cas { font-size: 2rem; font-weight: 700; color: #4299e1; }
+
+/* Napaka */
+.qr-napaka {
+  text-align: center; padding: 40px 20px; color: #c53030;
+}
+.qr-napaka-ikona { font-size: 3rem; margin-bottom: 12px; }
+.qr-napaka h2 { margin-bottom: 8px; }
+.qr-napaka p { color: #718096; font-size: 0.95rem; }
+
+.hidden { display: none !important; }
