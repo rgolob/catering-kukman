@@ -1,4 +1,4 @@
-const CACHE = 'kukman-v4';
+const CACHE = 'kukman-v5';
 
 const STATIC = [
   '/',

@@ -5,6 +5,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'evidenca') naloziEvidenco();
     if (btn.dataset.tab === 'obracun') naloziObracunTab();
     if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
@@ -274,10 +275,10 @@ document.getElementById('novo-ime').addEventListener('keydown', e => {
 
 // ── EVIDENCA TAB ──────────────────────────────────────────────────────────────
 
-// Default date range: last 30 days
+// Default date range: current month (1st to today)
 const danes = new Date();
-const pred30 = new Date(danes); pred30.setDate(pred30.getDate() - 30);
-document.getElementById('filter-od').value = pred30.toISOString().slice(0, 10);
+const prviDan = new Date(danes.getFullYear(), danes.getMonth(), 1);
+document.getElementById('filter-od').value = prviDan.toISOString().slice(0, 10);
 document.getElementById('filter-do').value = danes.toISOString().slice(0, 10);
 
 async function naloziEvidenco() {
