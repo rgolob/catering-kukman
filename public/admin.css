@@ -293,13 +293,7 @@ button:hover { background: #1a365d; }
 
 .pin-ni { color: #a0aec0; }
 
-.pin-uredi-vrstica {
-  margin-top: 6px;
-  display: flex;
-  gap: 6px;
-  align-items: center;
-  flex-wrap: wrap;
-}
+
 
 .pin-input {
   width: 70px;
@@ -376,38 +370,45 @@ button:hover { background: #1a365d; }
 
 .zap-kartica-podrobnosti {
   display: none;
-  padding: 16px 18px;
+  padding: 12px 18px 14px;
   border-top: 1px solid #e2e8f0;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 .zap-odprta .zap-kartica-podrobnosti { display: flex; }
 
 .zap-podrobnosti-vrstica {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  flex-wrap: wrap;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 .zap-podrobnosti-oznaka {
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: #718096;
-  min-width: 110px;
-  padding-top: 6px;
+  min-width: 78px;
+  width: 78px;
+  flex-shrink: 0;
+  padding-top: 5px;
+  line-height: 1.3;
 }
 
 .zap-podrobnosti-akcije {
   display: flex;
   gap: 8px;
-  padding-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f4f8;
 }
 
+.pin-celica { flex: 1; min-width: 0; }
+
 .pin-prikaz-vrstica,
-.pin-razkrit-vrstica {
-  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+.pin-razkrit-vrstica,
+.pin-uredi-vrstica {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
 }
 .pin-zvezdice {
   font-size: 1rem;
