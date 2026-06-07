@@ -5,7 +5,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'evidenca') naloziEvidenco();
+    if (btn.dataset.tab === 'evidenca') { naloziEvidenco(); naloziRvZaposlene(); }
     if (btn.dataset.tab === 'obracun') naloziObracunTab();
     if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
@@ -882,9 +882,53 @@ document.getElementById('lestvica-obdobje').querySelectorAll('.btn-obdobje').for
   });
 });
 
+// ── ROČNI VNOS ────────────────────────────────────────────────────────────────
+async function naloziRvZaposlene() {
+  const res = await fetch('/api/admin/zaposleni');
+  if (!res.ok) return;
+  const zaposleni = await res.json();
+  const sel = document.getElementById('rv-zaposleni');
+  sel.innerHTML = zaposleni
+    .filter(z => z.aktiven === 1)
+    .map(z => `<option value="${z.id}">${escHtml(z.ime)}</option>`)
+    .join('');
+}
+
+document.getElementById('rv-datum').value = new Date().toISOString().slice(0, 10);
+
+document.getElementById('btn-rv-shrani').addEventListener('click', async () => {
+  const napaka = document.getElementById('rv-napaka');
+  napaka.style.display = 'none';
+  const zaposleniId = document.getElementById('rv-zaposleni').value;
+  const datum = document.getElementById('rv-datum').value;
+  const casPrihoda = document.getElementById('rv-prihod').value;
+  const casOdhoda = document.getElementById('rv-odhod').value;
+
+  if (!zaposleniId || !datum) { napaka.textContent = 'Izberi zaposlenega in datum.'; napaka.style.display = 'block'; return; }
+  if (!casPrihoda && !casOdhoda) { napaka.textContent = 'Vnesi vsaj en čas (prihod ali odhod).'; napaka.style.display = 'block'; return; }
+
+  const res = await fetch('/api/admin/rocni-vnos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zaposleniId, datum, casPrihoda, casOdhoda })
+  });
+  if (res.ok) {
+    const d = await res.json();
+    prikaziToast(`Vnešeno: ${d.vstavljeno} zapis${d.vstavljeno === 1 ? '' : 'a'}`);
+    document.getElementById('rv-prihod').value = '';
+    document.getElementById('rv-odhod').value = '';
+    naloziEvidenco();
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka pri vnosu';
+    napaka.style.display = 'block';
+  }
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 naloziZaposlene();
 naloziEvidenco();
+naloziRvZaposlene();
 // Check for pending requests badge on load
 (async () => {
   try {

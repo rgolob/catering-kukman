@@ -507,6 +507,23 @@ function createApp() {
     res.json({ ok: true });
   });
 
+  app.post('/api/admin/rocni-vnos', requireAuth, async (req, res) => {
+    const { zaposleniId, datum, casPrihoda, casOdhoda } = req.body;
+    if (!zaposleniId || !datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
+      return res.status(400).json({ napaka: 'Manjkajo podatki' });
+    const timeRe = /^\d{2}:\d{2}$/;
+    const batch = [];
+    if (casPrihoda && timeRe.test(casPrihoda))
+      batch.push({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas, naknadno) VALUES (?, ?, ?, 1)',
+        args: [zaposleniId, 'PRIHOD', `${datum} ${casPrihoda}:00`] });
+    if (casOdhoda && timeRe.test(casOdhoda))
+      batch.push({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas, naknadno) VALUES (?, ?, ?, 1)',
+        args: [zaposleniId, 'ODHOD', `${datum} ${casOdhoda}:00`] });
+    if (!batch.length) return res.status(400).json({ napaka: 'Vnesi vsaj en čas' });
+    await req.db.batch(batch, 'write');
+    res.json({ ok: true, vstavljeno: batch.length });
+  });
+
   app.get('/api/admin/izvoz', requireAuth, async (req, res) => {
     const od = req.query.od || '1970-01-01', do_ = req.query.do || '9999-12-31';
     const { rows } = await req.db.execute({

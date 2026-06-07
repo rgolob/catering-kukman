@@ -826,3 +826,19 @@ button:hover { background: #1a365d; }
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .lestvica-dni { font-size: 0.75rem; color: #a0aec0; white-space: nowrap; }
+
+/* ── Ročni vnos ───────────────────────────────────────────────────────────── */
+.rv-form { display: flex; flex-direction: column; gap: 10px; max-width: 420px; }
+.rv-vrstica { display: flex; align-items: center; gap: 12px; }
+.rv-label {
+  font-size: 0.8rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: #718096;
+  min-width: 72px; flex-shrink: 0;
+}
+.rv-select, .rv-input {
+  flex: 1; padding: 8px 12px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.92rem; outline: none; color: #1a202c;
+}
+.rv-select:focus, .rv-input:focus { border-color: #4299e1; }
+input[type="time"].rv-input { min-width: 110px; }

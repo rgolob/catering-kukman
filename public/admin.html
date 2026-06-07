@@ -58,6 +58,35 @@
     <!-- Tab: Evidenca -->
     <div id="tab-evidenca" class="tab-content">
       <div class="card">
+        <h2>Ročni vnos</h2>
+        <div class="rv-form">
+          <div class="rv-vrstica">
+            <label class="rv-label">Zaposleni</label>
+            <select id="rv-zaposleni" class="rv-select"></select>
+          </div>
+          <div class="rv-vrstica">
+            <label class="rv-label">Datum</label>
+            <input type="date" id="rv-datum" class="rv-input" />
+          </div>
+          <div class="rv-vrstica">
+            <label class="rv-label">Prihod</label>
+            <input type="time" id="rv-prihod" class="rv-input" />
+          </div>
+          <div class="rv-vrstica">
+            <label class="rv-label">Odhod</label>
+            <input type="time" id="rv-odhod" class="rv-input" />
+          </div>
+          <div class="rv-vrstica">
+            <label class="rv-label"></label>
+            <div>
+              <button id="btn-rv-shrani">Shrani vnos</button>
+              <div id="rv-napaka" class="inline-napaka" style="margin-top:8px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
         <h2>Filtriraj evidenco</h2>
         <div class="filter-row">
           <label>Od: <input type="date" id="filter-od" /></label>
