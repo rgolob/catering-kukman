@@ -109,6 +109,55 @@ async function ensureDb() {
     );
   }
 
+  // Seed real employees — INSERT OR IGNORE, safe to run multiple times
+  const realni = [
+    // Pomivalci
+    { ime: 'Magda Golob',      delo: 'Pomivalec' },
+    { ime: 'Tončka Krevs',     delo: 'Pomivalec' },
+    { ime: 'Milena Zore',      delo: 'Pomivalec' },
+    { ime: 'Mari Gole',        delo: 'Pomivalec' },
+    { ime: 'Joži Krevs',       delo: 'Pomivalec' },
+    // Koordinatorji (višja postavka, prednost pred ostalimi vlogami)
+    { ime: 'Aljoša Bohte',     delo: 'Koordinator' },
+    { ime: 'Matej Kukman',     delo: 'Koordinator' },
+    { ime: 'Rok Kreme',        delo: 'Koordinator' },
+    { ime: 'Alou Muhić',       delo: 'Koordinator' },
+    { ime: 'Marvia Lumbot',    delo: 'Koordinator' },
+    { ime: 'Mojca Štravs',     delo: 'Koordinator' },
+    { ime: 'Eva Colarič',      delo: 'Koordinator' },
+    { ime: 'Anja Janžič',      delo: 'Koordinator' },
+    // Strežaj / Organizator
+    { ime: 'Manica Vdovič',    delo: 'Organizator' },
+    { ime: 'Lidija Popovič',   delo: 'Organizator' },
+    { ime: 'Ana Ozeman',       delo: 'Organizator' },
+    { ime: 'Helena Vdovič',    delo: 'Organizator' },
+    { ime: 'Lato Muhić',       delo: 'Organizator' },
+    { ime: 'Anja Cesar',       delo: 'Organizator' },
+    { ime: 'Kamouta Koš',      delo: 'Organizator' },
+    { ime: 'Julija Juštpalje', delo: 'Organizator' },
+    // Kuhinja / Priprava
+    { ime: 'Aljoša Rohte',     delo: 'Priprava' },
+    { ime: 'Davio Matoh',      delo: 'Priprava' },
+    { ime: 'Blaž Turk',        delo: 'Priprava' },
+    { ime: 'Matic Turk',       delo: 'Priprava' },
+    { ime: 'Ivan Rošič',       delo: 'Priprava' },
+    { ime: 'Andraž Cesar',     delo: 'Priprava' },
+  ];
+  const { rows: delaRows } = await db.execute('SELECT id, naziv FROM dela');
+  const delaMap = new Map(delaRows.map(d => [d.naziv, Number(d.id)]));
+  for (const z of realni) {
+    const r = await db.execute({
+      sql: 'INSERT OR IGNORE INTO zaposleni (ime, pin, pin_setup_required) VALUES (?, ?, 1)',
+      args: [z.ime, '1234']
+    });
+    if (Number(r.rowsAffected) > 0 && delaMap.has(z.delo)) {
+      await db.execute({
+        sql: 'UPDATE zaposleni SET privzeto_delo_id = ? WHERE ime = ?',
+        args: [delaMap.get(z.delo), z.ime]
+      });
+    }
+  }
+
   _initialized = true;
   return db;
 }
