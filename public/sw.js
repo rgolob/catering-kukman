@@ -1,11 +1,6 @@
-const CACHE = 'kukman-v7';
+const CACHE = 'kukman-v8';
 
 const STATIC = [
-  '/prisotnost',
-  '/prisotnost/pin',
-  '/prisotnost/moj-cas',
-  '/prisotnost/admin',
-  '/prisotnost/login',
   '/style.css',
   '/app.js',
   '/admin.css',
@@ -48,7 +43,7 @@ self.addEventListener('fetch', e => {
     e.respondWith(
       fetch(e.request)
         .then(res => { caches.open(CACHE).then(c => c.put(e.request, res.clone())); return res; })
-        .catch(() => caches.match(e.request).then(c => c || caches.match('/')))
+        .catch(() => caches.match(e.request).then(c => c || caches.match('/prisotnost')))
     );
     return;
   }
