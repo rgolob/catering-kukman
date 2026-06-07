@@ -876,3 +876,22 @@ input[type="time"].rv-input { min-width: 110px; }
   cursor: pointer;
 }
 .privzeto-delo-select:focus { border-color: #4299e1; outline: none; }
+
+/* ── Urejanje imena zaposlenega ───────────────────────────────────────────── */
+.zap-pencil {
+  background: transparent; border: none; color: #a0aec0;
+  font-size: 1rem; padding: 2px 5px; cursor: pointer; line-height: 1;
+  flex-shrink: 0;
+}
+.zap-pencil:hover { color: #4299e1; }
+.zap-ime-uredi-vrstica {
+  display: flex; align-items: center; gap: 4px; flex-wrap: nowrap;
+}
+.zap-ime-input {
+  padding: 3px 8px; border: 1.5px solid #4299e1; border-radius: 6px;
+  font-size: 0.95rem; font-weight: 600; color: #1a202c;
+  min-width: 0; flex: 1;
+}
+.zap-kartica-desno {
+  display: flex; align-items: center; gap: 4px;
+}

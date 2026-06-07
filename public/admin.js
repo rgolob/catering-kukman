@@ -57,10 +57,16 @@ async function naloziZaposlene() {
       <div class="zap-kartica-glava">
         <div class="zap-kartica-levo">
           <span class="zap-kartica-ime">${escHtml(z.ime)}</span>
+          <div class="zap-ime-uredi-vrstica" style="display:none">
+            <input class="zap-ime-input" value="${escHtml(z.ime)}" maxlength="60" />
+            <button class="btn-sm btn-zap-ime-shrani" data-id="${z.id}">✓</button>
+            <button class="btn-sm btn-zap-ime-preklic">✕</button>
+          </div>
           ${pinOpozorilo}
         </div>
         <div class="zap-kartica-desno">
           <span class="status-pill ${jeAktiven ? 'aktiven' : 'neaktiven'}">${jeAktiven ? 'Aktiven' : 'Neaktiven'}</span>
+          <button class="btn-sm btn-zap-ime-uredi zap-pencil" title="Uredi ime" data-id="${z.id}">✎</button>
           <span class="zap-chevron">›</span>
         </div>
       </div>
@@ -114,6 +120,40 @@ async function naloziZaposlene() {
     kartica.querySelector('.zap-kartica-glava').addEventListener('click', () => {
       kartica.classList.toggle('zap-odprta');
     });
+
+    // Uredi ime
+    kartica.querySelector('.btn-zap-ime-uredi').addEventListener('click', e => {
+      e.stopPropagation();
+      kartica.querySelector('.zap-kartica-ime').style.display = 'none';
+      const v = kartica.querySelector('.zap-ime-uredi-vrstica');
+      v.style.display = 'flex';
+      v.querySelector('.zap-ime-input').focus();
+      kartica.querySelector('.btn-zap-ime-uredi').style.display = 'none';
+    });
+    kartica.querySelector('.btn-zap-ime-preklic').addEventListener('click', e => {
+      e.stopPropagation();
+      kartica.querySelector('.zap-kartica-ime').style.display = '';
+      kartica.querySelector('.zap-ime-uredi-vrstica').style.display = 'none';
+      kartica.querySelector('.btn-zap-ime-uredi').style.display = '';
+    });
+    kartica.querySelector('.btn-zap-ime-shrani').addEventListener('click', async e => {
+      e.stopPropagation();
+      const input = kartica.querySelector('.zap-ime-input');
+      const novoIme = input.value.trim();
+      if (!novoIme) return;
+      const res = await fetch(`/api/admin/zaposleni/${z.id}/ime`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ime: novoIme })
+      });
+      if (res.ok) { prikaziToast('Ime posodobljeno'); naloziZaposlene(); }
+      else { const d = await res.json(); prikaziToast(d.napaka || 'Napaka', 'napaka'); }
+    });
+    kartica.querySelector('.zap-ime-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') kartica.querySelector('.btn-zap-ime-shrani').click();
+      if (e.key === 'Escape') kartica.querySelector('.btn-zap-ime-preklic').click();
+    });
+    kartica.querySelector('.zap-ime-input').addEventListener('click', e => e.stopPropagation());
   });
 
   // Privzeto delo — naloži opcije in nastavi vrednost

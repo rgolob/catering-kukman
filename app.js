@@ -558,6 +558,52 @@ function createApp() {
     }
   });
 
+  app.post('/api/admin/zaposleni/bulk', requireAuth, async (req, res) => {
+    const { zaposleni } = req.body;
+    if (!Array.isArray(zaposleni) || !zaposleni.length)
+      return res.status(400).json({ napaka: 'Prazna lista' });
+    let dodani = 0, napake = [];
+    for (const z of zaposleni) {
+      if (!z.ime?.trim()) continue;
+      try {
+        const r = await req.db.execute({
+          sql: 'INSERT OR IGNORE INTO zaposleni (ime, pin, pin_setup_required) VALUES (?, ?, 1)',
+          args: [z.ime.trim(), '1234']
+        });
+        if (Number(r.rowsAffected) > 0 && z.privzetoDelo) {
+          const { rows: delaRows } = await req.db.execute({
+            sql: 'SELECT id FROM dela WHERE naziv = ?', args: [z.privzetoDelo]
+          });
+          if (delaRows.length) {
+            const zapId = Number(r.lastInsertRowid);
+            await req.db.execute({
+              sql: 'UPDATE zaposleni SET privzeto_delo_id = ? WHERE id = ?',
+              args: [delaRows[0].id, zapId]
+            });
+          }
+          dodani++;
+        } else if (Number(r.rowsAffected) > 0) {
+          dodani++;
+        }
+      } catch(e) { napake.push(z.ime); }
+    }
+    res.json({ ok: true, dodani, napake });
+  });
+
+  app.patch('/api/admin/zaposleni/:id/ime', requireAuth, async (req, res) => {
+    const { ime } = req.body;
+    if (!ime?.trim()) return res.status(400).json({ napaka: 'Ime je obvezno' });
+    try {
+      await req.db.execute({
+        sql: 'UPDATE zaposleni SET ime = ? WHERE id = ?',
+        args: [ime.trim(), req.params.id]
+      });
+      res.json({ ok: true });
+    } catch(_) {
+      res.status(409).json({ napaka: 'Zaposleni s tem imenom že obstaja' });
+    }
+  });
+
   app.patch('/api/admin/zaposleni/:id', requireAuth, async (req, res) => {
     await req.db.execute({
       sql: 'UPDATE zaposleni SET aktiven = ? WHERE id = ?',
