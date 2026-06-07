@@ -330,7 +330,20 @@ document.getElementById('btn-dodatno-zakljuci').addEventListener('click', () => 
   odhodPin = null;
 });
 
+async function naloziQR() {
+  try {
+    const res = await fetch('/api/qr-info');
+    const d = await res.json();
+    if (d.qrBase64) {
+      document.getElementById('qr-tablica-img').src = 'data:image/png;base64,' + d.qrBase64;
+    }
+  } catch (_) {}
+}
+
 // Začetno nalaganje in osvežitev vsako minuto
 naloziZaposlene();
 naloziEvidenco();
+naloziQR();
+// QR se obnovi ob polnoči — preverimo vsako uro
 setInterval(() => { naloziZaposlene(); naloziEvidenco(); }, 60_000);
+setInterval(naloziQR, 3_600_000);

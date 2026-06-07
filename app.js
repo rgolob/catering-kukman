@@ -313,7 +313,12 @@ function createApp() {
 
   // ── QR API ───────────────────────────────────────────────────────────────────
   app.get('/api/qr-info', async (req, res) => {
-    res.json({ token: generateDailyToken(), datum: localDate() });
+    const token = generateDailyToken();
+    const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+    const qrUrl = `${proto}://${host}${BASE}/qr?t=${token}`;
+    const buf = await QRCode.toBuffer(qrUrl, { width: 280, margin: 2, color: { dark: '#1a365d', light: '#ffffff' } });
+    res.json({ token, datum: localDate(), qrBase64: buf.toString('base64') });
   });
 
   app.get('/api/qr-image', async (req, res) => {
