@@ -427,14 +427,12 @@ async function naloziObracun() {
       return `<tr>
         <td>${escHtml(z.ime)}</td>
         <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span></td>
-        <td class="td-r">${z.stimulacija ? formatEur(z.stimulacija) : '—'}</td>
-        <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}</td>
+        <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
         <td class="td-r td-osnova"><strong>${formatEur(skupajOsnova)}</strong><br><span class="td-ure-sub">${formatUre(skupajMin)}</span></td>
-        <td class="td-r"><strong>${skupajStim ? formatEur(skupajStim) : '—'}</strong></td>
-        <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong></td>
+        <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong>${skupajStim ? `<br><span class="td-ure-sub">+ ${formatEur(skupajStim)} stim</span>` : ''}</td>
       </tr>` : '');
 
     prazno.style.display = obracun.length ? 'none' : 'block';
