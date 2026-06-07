@@ -78,14 +78,6 @@ async function naloziZaposlene() {
           </select>
         </div>
         <div class="zap-podrobnosti-vrstica">
-          <span class="zap-podrobnosti-oznaka">Urna postavka</span>
-          <div class="up-celica">
-            <span class="up-euro-znak">€</span>
-            <input type="number" class="up-input" value="${parseFloat(z.urna_postavka || 0).toFixed(2)}" min="0" step="0.10" placeholder="0.00" data-id="${z.id}" />
-            <span class="up-unit">/h</span>
-          </div>
-        </div>
-        <div class="zap-podrobnosti-vrstica">
           <span class="zap-podrobnosti-oznaka">PIN</span>
           <div class="pin-celica">
             <div class="pin-prikaz-vrstica" id="pin-prikaz-${z.id}">
@@ -179,26 +171,6 @@ async function naloziZaposlene() {
       });
       if (res.ok) prikaziToast('Privzeto delo shranjeno');
       else prikaziToast('Napaka pri shranjevanju', 'napaka');
-    });
-  });
-
-  // Urna postavka — shrani ob spremembi
-  seznam.querySelectorAll('.up-input').forEach(input => {
-    input.addEventListener('click', e => e.stopPropagation());
-    input.addEventListener('change', async () => {
-      const vrednost = parseFloat(input.value);
-      if (isNaN(vrednost) || vrednost < 0) { input.value = '0.00'; return; }
-      const res = await fetch(`/api/admin/zaposleni/${input.dataset.id}/urna-postavka`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ urnaPostavka: vrednost })
-      });
-      if (res.ok) {
-        prikaziToast(`Urna postavka shranjena`);
-        input.value = vrednost.toFixed(2);
-      } else {
-        prikaziToast('Napaka pri shranjevanju', 'napaka');
-      }
     });
   });
 
