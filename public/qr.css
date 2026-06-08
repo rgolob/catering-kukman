@@ -103,6 +103,14 @@ main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
 }
 .qr-nisem-jaz:hover { color: #718096; }
 
+.qr-rez-link {
+  display: block;
+  margin-top: 20px;
+  color: #4299e1;
+  font-size: 0.88rem;
+  text-decoration: underline;
+}
+
 /* Napaka */
 .qr-napaka {
   text-align: center; padding: 40px 20px; color: #c53030;

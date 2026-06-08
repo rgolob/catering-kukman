@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moj prihod/odhod – Catering Kukman</title>
+  <meta name="theme-color" content="#1a365d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kukman" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="stylesheet" href="/qr.css" />
+</head>
+<body>
+  <header>
+    <h1>Catering Kukman</h1>
+    <p class="qr-datum" id="mp-datum"></p>
+  </header>
+
+  <main>
+    <!-- Ni identitete ali je zastarela -->
+    <div id="mp-napotilo" class="hidden">
+      <div style="text-align:center;padding:60px 20px">
+        <div style="font-size:3rem;margin-bottom:16px">📱</div>
+        <h2 style="margin-bottom:10px;color:#1a202c">Skenirajte QR kodo</h2>
+        <p style="color:#718096;font-size:0.95rem">Zjutraj skenirajte QR kodo na tablici.<br>Ta stran bo potem delovala cel dan.</p>
+      </div>
+    </div>
+
+    <!-- Personaliziran pogled -->
+    <div id="mp-oseba-wrap" class="hidden">
+      <p class="qr-navodilo" id="mp-pozdrav"></p>
+      <button id="mp-akcija-btn" class="qr-oseba-btn"></button>
+      <button id="mp-nisem-jaz" class="qr-nisem-jaz">Nisem jaz</button>
+    </div>
+
+    <!-- Rezultat -->
+    <div id="mp-rezultat" class="qr-rezultat hidden">
+      <div class="qr-check" id="mp-check-ikona">✓</div>
+      <h2 id="mp-rez-ime"></h2>
+      <p class="qr-rez-tip" id="mp-rez-tip"></p>
+      <p class="qr-rez-cas" id="mp-rez-cas"></p>
+    </div>
+  </main>
+
+  <script src="/moj-prihod.js"></script>
+</body>
+</html>

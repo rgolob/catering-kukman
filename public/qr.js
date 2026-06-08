@@ -112,6 +112,15 @@ async function zabelezi(zaposleniId, ime) {
     const rez = document.getElementById('qr-rezultat');
     const ikona = document.getElementById('qr-check-ikona');
     ikona.className = 'qr-check ' + (d.tip === 'PRIHOD' ? 'prihod' : 'odhod');
+
+    // Po prvem PRIHODU pokaži link za shranitev strani
+    const link = document.getElementById('qr-rez-link');
+    if (d.tip === 'PRIHOD') {
+      link.classList.remove('hidden');
+    } else {
+      link.classList.add('hidden');
+    }
+
     rez.classList.remove('hidden');
 
     setTimeout(async () => {
@@ -123,7 +132,7 @@ async function zabelezi(zaposleniId, ime) {
       } else {
         await prikaziSeznam();
       }
-    }, 3000);
+    }, 5000);
   } catch (_) {
     alert('Napaka pri povezavi');
     init();
