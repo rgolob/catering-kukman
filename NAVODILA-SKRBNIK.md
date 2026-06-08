@@ -8,8 +8,7 @@
 |---|---|
 | Tablica (evidentiranje) | /prisotnost |
 | Admin panel | /prisotnost/admin |
-| Pregled ur (zaposleni) | /prisotnost/pin |
-| Hitri odhod (telefon) | /prisotnost/moj-prihod |
+| Aplikacija za zaposlene | /prisotnost/moj |
 
 **Admin geslo:** `kukman2024`
 *(Geslo zamenjajte takoj po prvem vpisu — Admin panel → Nastavitve → Sprememba gesla)*
@@ -58,16 +57,17 @@ QR koda je prikazana na vrhu tablice in se samodejno zamenja vsakih 15 minut.
 1. Zaposleni s telefonom **skenira QR kodo** na tablici
 2. Tapne **svoje ime** na seznamu
 3. Prihod je zabeležen ✓
-4. Prikaže se sporočilo: *"Shranite to stran za hitri odhod"*
-   → zaposleni klikne in **shrani stran na domači zaslon** telefona
+4. Prikaže se gumb: *"Shranite to stran za evidenco in pregled ur →"*
+   → zaposleni klikne in **shrani stran `/prisotnost/moj` na domači zaslon** telefona
 
 **Naslednjič (odhod in naprej):**
-1. Odpre shranjeno ikono `/prisotnost/moj-prihod`
-2. Prikaže se njegovo ime + velik gumb **Odhod ›** (ali Prihod ›)
-3. En tap → zabeleženo ✓
+1. Odpre shranjeno ikono `/prisotnost/moj`
+2. Na vrhu: njegovo ime + velik gumb **Odhod ›** (ali Prihod ›) → En tap → zabeleženo ✓
+3. Spodaj: prijava s PIN-om za pregled lastnih ur in oddajo zahtevkov
 
-> Identiteta na telefonu velja samo za tekoči dan.
+> Identiteta (prihod/odhod gumb) velja samo za tekoči dan.
 > Naslednje jutro stran zahteva novo skeniranje QR kode.
+> Pregled ur in zahtevki so dostopni kadarkoli s PIN-om.
 
 ### Vnos dodatnega dela
 

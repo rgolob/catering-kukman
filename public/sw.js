@@ -1,4 +1,4 @@
-const CACHE = 'kukman-v24';
+const CACHE = 'kukman-v25';
 
 const STATIC = [
   '/style.css',
@@ -14,6 +14,9 @@ const STATIC = [
   '/qr.js',
   '/moj-prihod.html',
   '/moj-prihod.js',
+  '/moj.html',
+  '/moj.js',
+  '/moj.css',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',

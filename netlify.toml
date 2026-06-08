@@ -65,6 +65,11 @@
   to = "/moj-prihod.html"
   status = 200
 
+[[redirects]]
+  from = "/prisotnost/moj"
+  to = "/moj.html"
+  status = 200
+
 # Stare poti → novi URL-ji (301 preusmeritev)
 [[redirects]]
   from = "/login"
