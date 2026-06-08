@@ -1108,9 +1108,17 @@ async function naloziNaprave() {
         ${n.label}${n.token === mojeToken ? ' <strong style="color:#38a169">(ta naprava)</strong>' : ''}
         <span style="color:#a0aec0;font-size:0.82em;display:block">${String(n.created_at).slice(0,16)}</span>
       </span>
+      ${n.token !== mojeToken ? `<button class="btn-naprava-povrni" data-token="${n.token}" style="background:#ebf8ff;border:1px solid #bee3f8;color:#2b6cb0;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.82em">Povrnitev</button>` : ''}
       <button class="btn-naprava-brisi" data-token="${n.token}" style="background:#fff5f5;border:1px solid #fed7d7;color:#e53e3e;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:0.82em">Odstrani</button>
     </div>
   `).join('');
+  container.querySelectorAll('.btn-naprava-povrni').forEach(btn => {
+    btn.addEventListener('click', () => {
+      shraniBraniToken(btn.dataset.token);
+      prikaziToast('Token povrnjen ✓');
+      naloziNapraveTab();
+    });
+  });
   container.querySelectorAll('.btn-naprava-brisi').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Odstraniti napravo?')) return;
