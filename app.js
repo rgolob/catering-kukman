@@ -379,7 +379,43 @@ function createApp() {
       sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)',
       args: [zaposleniId, tip, cas]
     });
-    res.json({ ok: true, ime: rows[0].ime, tip, cas });
+
+    if (tip === 'ODHOD') {
+      const [{ rows: zd }, { rows: vsaDela }] = await Promise.all([
+        req.db.execute({
+          sql: 'SELECT z.privzeto_delo_id, d.naziv, d.urna_postavka FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?',
+          args: [zaposleniId]
+        }),
+        req.db.execute('SELECT id, naziv, urna_postavka FROM dela ORDER BY urna_postavka, naziv')
+      ]);
+      const privzetoDelo = zd[0]?.privzeto_delo_id
+        ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
+        : null;
+      const ostala_dela = privzetoDelo ? vsaDela.filter(d => Number(d.id) !== privzetoDelo.id) : vsaDela;
+      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela });
+    }
+
+    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes });
+  });
+
+  app.post('/api/qr-razporeditev', async (req, res) => {
+    const { zaposleniId, token, datum, deloId, casOd, casDo } = req.body;
+    if (!token || !validQrTokens().includes(token))
+      return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
+    const { rows } = await req.db.execute({
+      sql: 'SELECT id FROM zaposleni WHERE id = ? AND aktiven = 1', args: [zaposleniId]
+    });
+    if (!rows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
+    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
+    if (!deloId) return res.status(400).json({ napaka: 'Izberi vrsto dela' });
+    if (!casOd || !casDo || !/^\d{2}:\d{2}$/.test(casOd) || !/^\d{2}:\d{2}$/.test(casDo))
+      return res.status(400).json({ napaka: 'Neveljaven čas' });
+    if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
+    const r = await req.db.execute({
+      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
+      args: [zaposleniId, datum, deloId, casOd, casDo]
+    });
+    res.json({ ok: true, id: Number(r.lastInsertRowid) });
   });
 
   // ── Auth API ─────────────────────────────────────────────────────────────────

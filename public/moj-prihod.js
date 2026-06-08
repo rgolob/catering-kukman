@@ -11,6 +11,9 @@ function formatDatum() {
 document.getElementById('mp-datum').textContent = formatDatum();
 
 let aktivniToken = '';
+let dodatnoZaposleniId = null;
+let dodatnoDatum = '';
+let dodatnoOstala = [];
 
 async function init() {
   const shranjeno = localStorage.getItem(LS_KEY);
@@ -74,22 +77,76 @@ async function zabelezi(zaposleniId, ime) {
     document.getElementById('mp-check-ikona').className = 'qr-check ' + (d.tip === 'PRIHOD' ? 'prihod' : 'odhod');
     rez.classList.remove('hidden');
 
-    setTimeout(async () => {
-      rez.classList.add('hidden');
-      const shranjeno = localStorage.getItem(LS_KEY);
-      if (shranjeno) {
-        const { id, ime: sime } = JSON.parse(shranjeno);
-        // Osveži token pred prikazom
-        const infoRes = await fetch('/api/qr-info');
-        aktivniToken = (await infoRes.json()).token;
-        await prikaziOsebo(id, sime);
-      } else {
-        prikaziNapotilo();
-      }
-    }, 3000);
+    // Po odhodu ponudi vnos dodatnega dela
+    if (d.tip === 'ODHOD' && d.ostala_dela?.length > 0) {
+      dodatnoZaposleniId = zaposleniId;
+      dodatnoDatum = d.datum;
+      dodatnoOstala = d.ostala_dela;
+      setTimeout(() => {
+        rez.classList.add('hidden');
+        prikaziDodatnoDeloOverlay();
+      }, 2000);
+    } else {
+      setTimeout(async () => {
+        rez.classList.add('hidden');
+        await osvezi();
+      }, 3000);
+    }
   } catch (_) {
     alert('Napaka pri povezavi');
     init();
+  }
+}
+
+function prikaziDodatnoDeloOverlay() {
+  const select = document.getElementById('mp-dodatno-select');
+  select.innerHTML = dodatnoOstala.map(d =>
+    `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
+  ).join('');
+  document.getElementById('mp-dodatno-napaka').textContent = '';
+  document.getElementById('mp-dodatno-segmenti').innerHTML = '';
+  document.getElementById('mp-dodatno-overlay').classList.remove('hidden');
+}
+
+async function dodajSegment() {
+  const napaka = document.getElementById('mp-dodatno-napaka');
+  const deloId = Number(document.getElementById('mp-dodatno-select').value);
+  const casOd = document.getElementById('mp-dodatno-od').value;
+  const casDo = document.getElementById('mp-dodatno-do').value;
+
+  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do'; return; }
+  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do"'; return; }
+  napaka.textContent = '';
+
+  const res = await fetch('/api/qr-razporeditev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zaposleniId: dodatnoZaposleniId, token: aktivniToken, datum: dodatnoDatum, deloId, casOd, casDo })
+  });
+
+  if (res.ok) {
+    const naziv = document.getElementById('mp-dodatno-select').selectedOptions[0].text;
+    const seg = document.createElement('div');
+    seg.className = 'dodatno-segment';
+    seg.textContent = `${naziv}: ${casOd}–${casDo}`;
+    document.getElementById('mp-dodatno-segmenti').appendChild(seg);
+    document.getElementById('mp-dodatno-od').value = '';
+    document.getElementById('mp-dodatno-do').value = '';
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
+  }
+}
+
+async function osvezi() {
+  const shranjeno = localStorage.getItem(LS_KEY);
+  if (shranjeno) {
+    const { id, ime } = JSON.parse(shranjeno);
+    const infoRes = await fetch('/api/qr-info');
+    aktivniToken = (await infoRes.json()).token;
+    await prikaziOsebo(id, ime);
+  } else {
+    prikaziNapotilo();
   }
 }
 
@@ -101,6 +158,13 @@ function prikaziNapotilo() {
 document.getElementById('mp-nisem-jaz').addEventListener('click', () => {
   localStorage.removeItem(LS_KEY);
   prikaziNapotilo();
+});
+
+document.getElementById('mp-btn-dodaj-seg').addEventListener('click', dodajSegment);
+
+document.getElementById('mp-btn-zakljuci').addEventListener('click', async () => {
+  document.getElementById('mp-dodatno-overlay').classList.add('hidden');
+  await osvezi();
 });
 
 init();

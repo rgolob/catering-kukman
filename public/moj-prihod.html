@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="Kukman" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <link rel="stylesheet" href="/qr.css" />
+  <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
   <header>
@@ -42,6 +43,25 @@
       <p class="qr-rez-cas" id="mp-rez-cas"></p>
     </div>
   </main>
+
+  <!-- Dodatno delo overlay -->
+  <div id="mp-dodatno-overlay" class="overlay hidden">
+    <div class="dialog dialog-dodatno">
+      <h2>Dodatno delo</h2>
+      <p class="dialog-vprasanje" style="text-align:center;margin-bottom:16px;font-size:0.88rem">Dodajte čas, ko ste delali drugo vrsto dela</p>
+      <div class="dodatno-form">
+        <select id="mp-dodatno-select" class="dodatno-select"></select>
+        <div class="dodatno-cas-row">
+          <label>Od<input type="time" id="mp-dodatno-od" /></label>
+          <label>Do<input type="time" id="mp-dodatno-do" /></label>
+        </div>
+        <button id="mp-btn-dodaj-seg" class="btn-dodaj-seg">Dodaj segment</button>
+      </div>
+      <div id="mp-dodatno-napaka" class="dialog-pin-napaka"></div>
+      <div id="mp-dodatno-segmenti" class="dodatno-segmenti"></div>
+      <button id="mp-btn-zakljuci" class="btn-preklic" style="margin-top:16px">Zaključi</button>
+    </div>
+  </div>
 
   <script src="/moj-prihod.js"></script>
 </body>
