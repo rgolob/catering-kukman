@@ -349,7 +349,10 @@ document.getElementById('btn-dodatno-zakljuci').addEventListener('click', () => 
   odhodPin = null;
 });
 
+let _qrRotacijaTimeout = null;
+
 async function naloziQR() {
+  clearTimeout(_qrRotacijaTimeout);
   try {
     const res = await fetch('/api/qr-info');
     const d = await res.json();
@@ -357,13 +360,18 @@ async function naloziQR() {
       document.getElementById('qr-tablica-img').src =
         'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(d.qrSvg);
     }
-  } catch (_) {}
+    // Osveži točno ob naslednji rotaciji (+ 1s zamika)
+    if (d.msDoRotacije) {
+      _qrRotacijaTimeout = setTimeout(naloziQR, d.msDoRotacije + 1000);
+    }
+  } catch (_) {
+    // Ob napaki poskusi čez 30s
+    _qrRotacijaTimeout = setTimeout(naloziQR, 30_000);
+  }
 }
 
 // Začetno nalaganje in osvežitev vsako minuto
 naloziZaposlene();
 naloziEvidenco();
 naloziQR();
-// QR se obnovi ob polnoči — preverimo vsako uro
 setInterval(() => { naloziZaposlene(); naloziEvidenco(); }, 60_000);
-setInterval(naloziQR, 3_600_000);

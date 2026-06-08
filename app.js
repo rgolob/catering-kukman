@@ -14,10 +14,15 @@ function sha256(s) {
   return crypto.createHash('sha256').update(s).digest('hex');
 }
 
-function generateDailyToken() {
-  const date = localDate();
+// Token se menja vsakih 15 minut; sprejmemo trenutni in prejšnji slot (grace period)
+function generateQrToken(slotOffset = 0) {
   const secret = process.env.SESSION_SECRET || 'kukman-evidenca-tajna-kljuc-2024';
-  return crypto.createHash('sha256').update(`qr-${date}-${secret}`).digest('hex').slice(0, 20);
+  const slot = Math.floor(Date.now() / (15 * 60 * 1000)) + slotOffset;
+  return crypto.createHash('sha256').update(`qr-${slot}-${secret}`).digest('hex').slice(0, 20);
+}
+
+function validQrTokens() {
+  return [generateQrToken(0), generateQrToken(-1)];
 }
 
 function localTime() {
@@ -326,15 +331,17 @@ function createApp() {
 
   // ── QR API ───────────────────────────────────────────────────────────────────
   app.get('/api/qr-info', async (req, res) => {
-    const token = generateDailyToken();
+    const token = generateQrToken();
     const proto = req.headers['x-forwarded-proto'] || req.protocol || 'https';
     const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
     const qrUrl = `${proto}://${host}${BASE}/qr?t=${token}`;
+    // Sekunde do naslednje rotacije (za avtomatsko osvežitev na tablici)
+    const msDoRotacije = (15 * 60 * 1000) - (Date.now() % (15 * 60 * 1000));
     try {
       const qrSvg = await QRCode.toString(qrUrl, { type: 'svg', width: 200, margin: 2 });
-      res.json({ token, datum: localDate(), qrSvg });
+      res.json({ token, datum: localDate(), qrSvg, msDoRotacije });
     } catch (e) {
-      res.json({ token, datum: localDate() });
+      res.json({ token, datum: localDate(), msDoRotacije });
     }
   });
 
@@ -354,7 +361,7 @@ function createApp() {
 
   app.post('/api/qr-belezi', async (req, res) => {
     const { zaposleniId, token } = req.body;
-    if (!token || token !== generateDailyToken())
+    if (!token || !validQrTokens().includes(token))
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     const { rows } = await req.db.execute({
       sql: 'SELECT id, ime FROM zaposleni WHERE id = ? AND aktiven = 1',

@@ -1,6 +1,7 @@
 const params = new URLSearchParams(window.location.search);
 const token = params.get('t') || '';
 const LS_KEY = 'qr_zaposleni';
+let danesDatum = '';
 
 const MESECI = ['januar','februar','marec','april','maj','junij',
                 'julij','avgust','september','oktober','november','december'];
@@ -14,7 +15,9 @@ document.getElementById('qr-datum').textContent = formatDatum();
 
 async function init() {
   const infoRes = await fetch('/api/qr-info');
-  const { token: veljavni } = await infoRes.json();
+  const info = await infoRes.json();
+  const { token: veljavni, datum: danes } = info;
+  danesDatum = danes || '';
 
   if (!token || token !== veljavni) {
     document.getElementById('qr-napaka').classList.remove('hidden');
@@ -24,9 +27,9 @@ async function init() {
   const shranjeno = localStorage.getItem(LS_KEY);
   if (shranjeno) {
     try {
-      const { id, ime, token: shrToken } = JSON.parse(shranjeno);
-      // Token se zamenja vsak dan — če se ne ujema, je nov dan → pozabi identiteto
-      if (shrToken !== token) {
+      const { id, ime, datum: shrDatum } = JSON.parse(shranjeno);
+      // Datum se zamenja vsak dan → pozabi identiteto
+      if (shrDatum !== danes) {
         localStorage.removeItem(LS_KEY);
         await prikaziSeznam();
       } else {
@@ -61,8 +64,8 @@ async function prikaziSeznam() {
     btn.addEventListener('click', () => {
       const id = Number(btn.dataset.id);
       const ime = btn.dataset.ime;
-      // Shrani skupaj s tokenom — veljavno samo danes
-      localStorage.setItem(LS_KEY, JSON.stringify({ id, ime, token }));
+      // Shrani skupaj z datumom — veljavno samo danes
+      localStorage.setItem(LS_KEY, JSON.stringify({ id, ime, datum: danesDatum }));
       zabelezi(id, ime);
     });
   });
