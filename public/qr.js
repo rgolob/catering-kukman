@@ -1,6 +1,10 @@
 const params = new URLSearchParams(window.location.search);
 const token = params.get('t') || '';
 const LS_KEY = 'qr_zaposleni';
+
+let qrDodatnoZaposleniId = null;
+let qrDodatnoDatum = '';
+let qrDodatnoOstala = [];
 let danesDatum = '';
 
 const MESECI = ['januar','februar','marec','april','maj','junij',
@@ -123,21 +127,74 @@ async function zabelezi(zaposleniId, ime) {
 
     rez.classList.remove('hidden');
 
-    setTimeout(async () => {
-      rez.classList.add('hidden');
-      const shranjeno = localStorage.getItem(LS_KEY);
-      if (shranjeno) {
-        const { id, ime: sime } = JSON.parse(shranjeno);
-        await prikaziOseboView(id, sime);
-      } else {
-        await prikaziSeznam();
-      }
-    }, 5000);
+    if (d.tip === 'ODHOD' && d.ostala_dela?.length > 0) {
+      qrDodatnoZaposleniId = zaposleniId;
+      qrDodatnoDatum = d.datum;
+      qrDodatnoOstala = d.ostala_dela;
+      setTimeout(() => {
+        rez.classList.add('hidden');
+        prikaziDodatnoOverlay();
+      }, 2000);
+    } else {
+      setTimeout(async () => {
+        rez.classList.add('hidden');
+        const shranjeno = localStorage.getItem(LS_KEY);
+        if (shranjeno) {
+          const { id, ime: sime } = JSON.parse(shranjeno);
+          await prikaziOseboView(id, sime);
+        } else {
+          await prikaziSeznam();
+        }
+      }, 5000);
+    }
   } catch (_) {
     alert('Napaka pri povezavi');
     init();
   }
 }
+
+function prikaziDodatnoOverlay() {
+  const select = document.getElementById('qr-dodatno-select');
+  select.innerHTML = qrDodatnoOstala.map(d =>
+    `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
+  ).join('');
+  document.getElementById('qr-dodatno-napaka').textContent = '';
+  document.getElementById('qr-dodatno-segmenti').innerHTML = '';
+  document.getElementById('qr-dodatno-overlay').classList.remove('hidden');
+}
+
+async function dodajSegment() {
+  const napaka = document.getElementById('qr-dodatno-napaka');
+  const deloId = Number(document.getElementById('qr-dodatno-select').value);
+  const casOd = document.getElementById('qr-dodatno-od').value;
+  const casDo = document.getElementById('qr-dodatno-do').value;
+  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do'; return; }
+  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do"'; return; }
+  napaka.textContent = '';
+  const res = await fetch('/api/qr-razporeditev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zaposleniId: qrDodatnoZaposleniId, token, datum: qrDodatnoDatum, deloId, casOd, casDo })
+  });
+  if (res.ok) {
+    const naziv = document.getElementById('qr-dodatno-select').selectedOptions[0].text;
+    const seg = document.createElement('div');
+    seg.className = 'dodatno-segment';
+    seg.textContent = `${naziv}: ${casOd}–${casDo}`;
+    document.getElementById('qr-dodatno-segmenti').appendChild(seg);
+    document.getElementById('qr-dodatno-od').value = '';
+    document.getElementById('qr-dodatno-do').value = '';
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
+  }
+}
+
+document.getElementById('qr-btn-dodaj-seg').addEventListener('click', dodajSegment);
+document.getElementById('qr-btn-zakljuci').addEventListener('click', async () => {
+  document.getElementById('qr-dodatno-overlay').classList.add('hidden');
+  await prikaziSeznam();
+});
 
 document.getElementById('qr-nisem-jaz').addEventListener('click', async () => {
   localStorage.removeItem(LS_KEY);

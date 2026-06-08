@@ -13,11 +13,6 @@ document.getElementById('moj-datum').textContent =
   `${DNEVI_CEL[_d.getDay()]}, ${_d.getDate()}. ${MESECI_GEN[_d.getMonth()]} ${_d.getFullYear()}`;
 
 // ── STATE ──
-let aktivniToken = '';
-let dodatnoZaposleniId = null;
-let dodatnoDatum = '';
-let dodatnoOstala = [];
-
 let pinZaposleniId = null;
 let pinVnos = '';
 let prikazanoLeto, prikazaniMesec;
@@ -28,133 +23,55 @@ async function init() {
   prikazanoLeto = zdaj.getFullYear();
   prikazaniMesec = zdaj.getMonth() + 1;
 
-  initEvid();
+  initStatus();
   initPinSekcija();
 }
 
 // ─────────────────────────────────────────────
-// EVIDENTIRANJE (QR)
+// STATUS (samo prikaz, brez snemanja)
 // ─────────────────────────────────────────────
 
-async function initEvid() {
+async function initStatus() {
   const shranjeno = localStorage.getItem(LS_KEY);
-  if (!shranjeno) { prikaziNapotilo(); return; }
+  if (!shranjeno) { prikaziStatusBrez(); return; }
 
-  let id, ime, shrDatum;
-  try { ({ id, ime, datum: shrDatum } = JSON.parse(shranjeno)); }
-  catch (_) { localStorage.removeItem(LS_KEY); prikaziNapotilo(); return; }
+  let id, shrDatum;
+  try { ({ id, datum: shrDatum } = JSON.parse(shranjeno)); }
+  catch (_) { localStorage.removeItem(LS_KEY); prikaziStatusBrez(); return; }
 
-  const { token, datum: danes } = await fetch('/api/qr-info').then(r => r.json());
-  if (shrDatum !== danes) { localStorage.removeItem(LS_KEY); prikaziNapotilo(); return; }
-
-  aktivniToken = token;
-  await prikaziOsebo(id, ime);
-}
-
-function prikaziNapotilo() {
-  document.getElementById('mp-napotilo').classList.remove('hidden');
-  document.getElementById('mp-oseba-wrap').classList.add('hidden');
-  document.getElementById('mp-rezultat').classList.add('hidden');
-}
-
-async function prikaziOsebo(id, ime) {
-  document.getElementById('mp-napotilo').classList.add('hidden');
-  document.getElementById('mp-rezultat').classList.add('hidden');
-  document.getElementById('mp-oseba-wrap').classList.remove('hidden');
+  const { datum: danes } = await fetch('/api/qr-info').then(r => r.json());
+  if (shrDatum !== danes) { localStorage.removeItem(LS_KEY); prikaziStatusBrez(); return; }
 
   const zaposleni = await fetch('/api/status').then(r => r.json());
   const oseba = zaposleni.find(z => z.id === id);
-  const jePrisoten = oseba?.zadnji_tip === 'PRIHOD';
 
-  document.getElementById('mp-pozdrav').textContent = `Pozdravljeni, ${ime.split(' ')[0]}!`;
-  const btn = document.getElementById('mp-akcija-btn');
-  btn.textContent = jePrisoten ? 'Odhod ›' : 'Prihod ›';
-  btn.className = 'qr-oseba-btn ' + (jePrisoten ? 'odhod' : 'prihod');
-  btn.onclick = () => zabelezi(id, ime);
-}
+  const znacka = document.getElementById('status-znacka');
+  const opisEl = document.getElementById('status-opis');
 
-async function zabelezi(zaposleniId, ime) {
-  document.getElementById('mp-oseba-wrap').classList.add('hidden');
-  try {
-    const res = await fetch('/api/qr-belezi', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ zaposleniId, token: aktivniToken })
-    });
-    const d = await res.json();
-    if (!res.ok) { alert(d.napaka || 'Napaka'); initEvid(); return; }
-
-    document.getElementById('mp-rez-ime').textContent = d.ime;
-    document.getElementById('mp-rez-tip').textContent = d.tip === 'PRIHOD' ? 'Prihod zabeležen ✓' : 'Odhod zabeležen ✓';
-    document.getElementById('mp-rez-cas').textContent = String(d.cas).slice(11, 16);
-    document.getElementById('mp-check-ikona').className = 'qr-check ' + (d.tip === 'PRIHOD' ? 'prihod' : 'odhod');
-    document.getElementById('mp-rezultat').classList.remove('hidden');
-
-    if (d.tip === 'ODHOD' && d.ostala_dela?.length > 0) {
-      dodatnoZaposleniId = zaposleniId;
-      dodatnoDatum = d.datum;
-      dodatnoOstala = d.ostala_dela;
-      setTimeout(() => {
-        document.getElementById('mp-rezultat').classList.add('hidden');
-        prikaziDodatnoDeloOverlay();
-      }, 2000);
-    } else {
-      setTimeout(async () => {
-        document.getElementById('mp-rezultat').classList.add('hidden');
-        await initEvid();
-      }, 3000);
-    }
-  } catch (_) {
-    alert('Napaka pri povezavi');
-    initEvid();
-  }
-}
-
-function prikaziDodatnoDeloOverlay() {
-  const select = document.getElementById('mp-dodatno-select');
-  select.innerHTML = dodatnoOstala.map(d =>
-    `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
-  ).join('');
-  document.getElementById('mp-dodatno-napaka').textContent = '';
-  document.getElementById('mp-dodatno-segmenti').innerHTML = '';
-  document.getElementById('mp-dodatno-overlay').classList.remove('hidden');
-}
-
-async function dodajSegment() {
-  const napaka = document.getElementById('mp-dodatno-napaka');
-  const deloId = Number(document.getElementById('mp-dodatno-select').value);
-  const casOd = document.getElementById('mp-dodatno-od').value;
-  const casDo = document.getElementById('mp-dodatno-do').value;
-  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do'; return; }
-  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do"'; return; }
-  napaka.textContent = '';
-  const res = await fetch('/api/qr-razporeditev', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ zaposleniId: dodatnoZaposleniId, token: aktivniToken, datum: dodatnoDatum, deloId, casOd, casDo })
-  });
-  if (res.ok) {
-    const naziv = document.getElementById('mp-dodatno-select').selectedOptions[0].text;
-    const seg = document.createElement('div');
-    seg.className = 'dodatno-segment';
-    seg.textContent = `${naziv}: ${casOd}–${casDo}`;
-    document.getElementById('mp-dodatno-segmenti').appendChild(seg);
-    document.getElementById('mp-dodatno-od').value = '';
-    document.getElementById('mp-dodatno-do').value = '';
+  if (oseba?.zadnji_tip === 'PRIHOD') {
+    znacka.textContent = '● Prisoten danes';
+    znacka.className = 'status-znacka status-zelena';
+    opisEl.textContent = 'Za odhod obiščite tablico in skenirajte QR kodo.';
+  } else if (oseba?.zadnji_tip === 'ODHOD') {
+    znacka.textContent = '○ Odsoten danes';
+    znacka.className = 'status-znacka status-siva';
+    opisEl.textContent = 'Naslednji prihod: jutri skenirajte QR kodo na tablici.';
   } else {
-    const d = await res.json();
-    napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
+    znacka.textContent = '○ Ni vnosa danes';
+    znacka.className = 'status-znacka status-siva';
+    opisEl.textContent = 'Za evidentiranje prihoda obiščite tablico.';
   }
+  document.getElementById('status-z-identiteto').classList.remove('hidden');
+}
+
+function prikaziStatusBrez() {
+  document.getElementById('status-brez').classList.remove('hidden');
 }
 
 document.getElementById('mp-nisem-jaz').addEventListener('click', () => {
   localStorage.removeItem(LS_KEY);
-  prikaziNapotilo();
-});
-document.getElementById('mp-btn-dodaj-seg').addEventListener('click', dodajSegment);
-document.getElementById('mp-btn-zakljuci').addEventListener('click', async () => {
-  document.getElementById('mp-dodatno-overlay').classList.add('hidden');
-  await initEvid();
+  document.getElementById('status-z-identiteto').classList.add('hidden');
+  prikaziStatusBrez();
 });
 
 // ─────────────────────────────────────────────

@@ -19,32 +19,24 @@
   </header>
 
   <main>
-    <!-- ── EVIDENTIRANJE PRIHOD / ODHOD ── -->
+    <!-- ── STATUS EVIDENTIRANJE ── -->
     <section class="card">
-      <!-- Ni QR identitete -->
-      <div id="mp-napotilo" class="hidden">
+      <!-- Ni QR identitete za danes -->
+      <div id="status-brez" class="hidden">
         <div class="evid-napotilo">
           <span class="evid-ikona">📱</span>
           <div>
             <div class="evid-napotilo-naslov">Skenirajte QR kodo</div>
-            <div class="evid-napotilo-opis">Zjutraj skenirajte QR kodo na tablici za evidenco prihoda.</div>
+            <div class="evid-napotilo-opis">Za evidentiranje prihoda in odhoda obiščite tablico.</div>
           </div>
         </div>
       </div>
 
-      <!-- Personaliziran gumb -->
-      <div id="mp-oseba-wrap" class="hidden">
-        <p class="evid-pozdrav" id="mp-pozdrav"></p>
-        <button id="mp-akcija-btn" class="qr-oseba-btn"></button>
+      <!-- Status zaposlenega (ko je skeniral QR danes) -->
+      <div id="status-z-identiteto" class="hidden">
+        <div id="status-znacka" class="status-znacka"></div>
+        <div id="status-opis" class="status-opis"></div>
         <button id="mp-nisem-jaz" class="qr-nisem-jaz">Nisem jaz</button>
-      </div>
-
-      <!-- Rezultat -->
-      <div id="mp-rezultat" class="qr-rezultat hidden">
-        <div class="qr-check" id="mp-check-ikona">✓</div>
-        <h2 id="mp-rez-ime"></h2>
-        <p class="qr-rez-tip" id="mp-rez-tip"></p>
-        <p class="qr-rez-cas" id="mp-rez-cas"></p>
       </div>
     </section>
 
@@ -165,25 +157,6 @@
       </div>
     </section>
   </main>
-
-  <!-- Overlay: Dodatno delo -->
-  <div id="mp-dodatno-overlay" class="overlay hidden">
-    <div class="dialog dialog-dodatno">
-      <h2>Dodatno delo</h2>
-      <p class="dialog-opis">Dodajte čas, ko ste delali drugo vrsto dela</p>
-      <div class="dodatno-form">
-        <select id="mp-dodatno-select" class="dodatno-select"></select>
-        <div class="dodatno-cas-row">
-          <label>Od<input type="time" id="mp-dodatno-od" /></label>
-          <label>Do<input type="time" id="mp-dodatno-do" /></label>
-        </div>
-        <button id="mp-btn-dodaj-seg" class="btn-dodaj-seg">Dodaj segment</button>
-      </div>
-      <div id="mp-dodatno-napaka" class="dialog-napaka"></div>
-      <div id="mp-dodatno-segmenti" class="dodatno-segmenti"></div>
-      <button id="mp-btn-zakljuci" class="btn-sekundarni" style="margin-top:16px;width:100%">Zaključi</button>
-    </div>
-  </div>
 
   <!-- Modal: Naknadno evidentiranje -->
   <div id="naknadno-overlay" class="modal-overlay hidden">

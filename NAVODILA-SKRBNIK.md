@@ -52,20 +52,27 @@ Zaposleni pridejo do tablice in:
 ### Evidentiranje z QR kodo (telefon)
 
 QR koda je prikazana na vrhu tablice in se samodejno zamenja vsakih 15 minut.
+**Prihod in odhod sta možna SAMO s fizičnim skeniranjem QR kode na tablici** — s tem preprečimo oddaljeno evidentiranje od doma.
 
-**Prvič (zjutraj):**
+**Zjutraj (prihod):**
 1. Zaposleni s telefonom **skenira QR kodo** na tablici
 2. Tapne **svoje ime** na seznamu
 3. Prihod je zabeležen ✓
 4. Prikaže se gumb: *"Shranite to stran za evidenco in pregled ur →"*
    → zaposleni klikne in **shrani stran `/prisotnost/moj` na domači zaslon** telefona
 
-**Naslednjič (odhod in naprej):**
-1. Odpre shranjeno ikono `/prisotnost/moj`
-2. Na vrhu: njegovo ime + velik gumb **Odhod ›** (ali Prihod ›) → En tap → zabeleženo ✓
-3. Spodaj: prijava s PIN-om za pregled lastnih ur in oddajo zahtevkov
+**Odhod:**
+1. Zaposleni pride do tablice in **skenira QR kodo** (enako kot zjutraj)
+2. Sistem prepozna, da je prisoten → prikaže gumb **Odhod ›**
+3. Tapne odhod → zabeleženo ✓
+4. Če je delal tudi na drugem delovnem mestu, se na tablici prikaže dialog za vnos dodatnih segmentov
 
-> Identiteta (prihod/odhod gumb) velja samo za tekoči dan.
+**Shranjena stran `/prisotnost/moj` (ves dan):**
+- Prikazuje trenutni status (prisoten/odsoten) za informacijo
+- Omogoča pregled lastnih ur in oddajo zahtevkov s PIN-om
+- **Ne omogoča** evidentiranja brez fizičnega skeniranja QR kode
+
+> Identiteta na telefonu velja samo za tekoči dan.
 > Naslednje jutro stran zahteva novo skeniranje QR kode.
 > Pregled ur in zahtevki so dostopni kadarkoli s PIN-om.
 

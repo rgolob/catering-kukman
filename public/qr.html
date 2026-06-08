@@ -44,6 +44,25 @@
     </div>
   </main>
 
+  <!-- Overlay: Dodatno delo (po odhodu) -->
+  <div id="qr-dodatno-overlay" class="overlay hidden">
+    <div class="dialog dialog-dodatno">
+      <h2>Dodatno delo</h2>
+      <p class="dialog-vprasanje">Dodajte čas, ko ste delali drugo vrsto dela</p>
+      <div class="dodatno-form">
+        <select id="qr-dodatno-select" class="dodatno-select"></select>
+        <div class="dodatno-cas-row">
+          <label>Od<input type="time" id="qr-dodatno-od" /></label>
+          <label>Do<input type="time" id="qr-dodatno-do" /></label>
+        </div>
+        <button id="qr-btn-dodaj-seg" class="btn-dodaj-seg">Dodaj segment</button>
+      </div>
+      <div id="qr-dodatno-napaka" class="dialog-pin-napaka"></div>
+      <div id="qr-dodatno-segmenti" class="dodatno-segmenti"></div>
+      <button id="qr-btn-zakljuci" class="btn-preklic">Zaključi</button>
+    </div>
+  </div>
+
   <script src="/qr.js"></script>
 </body>
 </html>

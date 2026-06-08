@@ -48,67 +48,22 @@ main {
 .evid-napotilo-naslov { font-weight: 600; color: #2d3748; margin-bottom: 2px; }
 .evid-napotilo-opis { font-size: 0.83rem; color: #718096; }
 
-.evid-pozdrav {
-  text-align: center;
-  font-size: 1.05rem;
-  color: #4a5568;
-  font-weight: 600;
-  margin-bottom: 14px;
-}
-
-.qr-oseba-btn {
-  display: block;
-  width: 100%;
-  padding: 26px 20px;
-  border: none;
-  border-radius: 16px;
-  font-size: 1.75rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.15s;
-  letter-spacing: 0.5px;
-  margin-bottom: 10px;
-}
-.qr-oseba-btn.prihod { background: #276749; color: #fff; }
-.qr-oseba-btn.prihod:hover { background: #22543d; }
-.qr-oseba-btn.odhod  { background: #c05621; color: #fff; }
-.qr-oseba-btn.odhod:hover  { background: #9c4221; }
-.qr-oseba-btn:active { transform: scale(0.97); }
+/* Status znacka */
+.status-znacka { font-size: 1rem; font-weight: 700; margin-bottom: 5px; }
+.status-zelena { color: #276749; }
+.status-siva   { color: #718096; }
+.status-opis   { font-size: 0.84rem; color: #718096; margin-bottom: 8px; }
 
 .qr-nisem-jaz {
-  display: block;
-  width: 100%;
   background: none;
   border: none;
-  color: #a0aec0;
-  font-size: 0.88rem;
+  color: #cbd5e0;
+  font-size: 0.82rem;
   cursor: pointer;
-  padding: 6px;
+  padding: 4px 0;
   text-decoration: underline;
-  text-align: center;
 }
-.qr-nisem-jaz:hover { color: #718096; }
-
-.qr-rezultat {
-  text-align: center;
-  padding: 20px 16px;
-  animation: fadeIn 0.3s ease;
-}
-@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; } }
-
-.qr-check {
-  width: 76px; height: 76px;
-  border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 14px;
-  font-size: 2.8rem;
-}
-.qr-check.prihod { background: #c6f6d5; color: #22543d; }
-.qr-check.odhod  { background: #feebc8; color: #7b341e; }
-
-.qr-rezultat h2 { font-size: 1.5rem; margin-bottom: 6px; }
-.qr-rez-tip { font-size: 1rem; font-weight: 600; color: #2d3748; margin-bottom: 4px; }
-.qr-rez-cas { font-size: 1.7rem; font-weight: 700; color: #4299e1; }
+.qr-nisem-jaz:hover { color: #a0aec0; }
 
 /* ── MOJE URE: NASLOV ── */
 .ure-kartica-naslov {
@@ -450,46 +405,6 @@ main {
 .btn-sekundarni { flex: 1; padding: 10px; background: #edf2f7; color: #4a5568; border: none; border-radius: 9px; font-size: 0.93rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
 .btn-sekundarni:hover { background: #e2e8f0; }
 
-/* ── OVERLAY DODATNO DELO ── */
-.overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex; align-items: center; justify-content: center;
-  z-index: 200; padding: 16px;
-}
-.overlay.hidden { display: none; }
-.dialog {
-  background: white;
-  border-radius: 18px;
-  padding: 26px 22px;
-  width: 100%; max-width: 380px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-}
-.dialog h2 { font-size: 1.15rem; font-weight: 700; text-align: center; margin-bottom: 6px; }
-.dialog-opis { text-align: center; font-size: 0.85rem; color: #718096; margin-bottom: 14px; }
-
-.dodatno-form { margin-bottom: 10px; }
-.dodatno-select {
-  width: 100%; padding: 9px 11px;
-  border: 1.5px solid #e2e8f0; border-radius: 8px;
-  font-size: 0.93rem; margin-bottom: 10px; outline: none;
-}
-.dodatno-cas-row { display: flex; gap: 12px; margin-bottom: 12px; }
-.dodatno-cas-row label {
-  flex: 1; display: flex; flex-direction: column;
-  font-size: 0.75rem; font-weight: 600; color: #4a5568;
-  text-transform: uppercase; letter-spacing: 0.5px; gap: 5px;
-}
-.dodatno-cas-row input[type="time"] { padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.93rem; outline: none; }
-.btn-dodaj-seg { width: 100%; padding: 10px; background: #3182ce; color: white; border: none; border-radius: 9px; font-size: 0.93rem; font-weight: 600; cursor: pointer; }
-.btn-dodaj-seg:hover { background: #2c5282; }
-.dialog-napaka { color: #e53e3e; font-size: 0.82rem; min-height: 18px; margin: 6px 0; }
-.dodatno-segmenti { margin-top: 6px; }
-.dodatno-segment {
-  background: #f0fff4; border: 1px solid #9ae6b4;
-  border-radius: 8px; padding: 7px 11px;
-  font-size: 0.86rem; margin-bottom: 5px; color: #276749;
-}
 
 @media (max-width: 480px) {
   header { padding: 14px 16px; }

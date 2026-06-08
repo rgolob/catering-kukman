@@ -62,8 +62,8 @@
 
 [[redirects]]
   from = "/prisotnost/moj-prihod"
-  to = "/moj-prihod.html"
-  status = 200
+  to = "/prisotnost/moj"
+  status = 301
 
 [[redirects]]
   from = "/prisotnost/moj"
