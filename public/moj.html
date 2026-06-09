@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moj čas – Catering Kukman</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1a365d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kukman" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="stylesheet" href="/moj.css" />
+</head>
+<body>
+  <header>
+    <h1>Catering Kukman</h1>
+    <p id="moj-datum" class="moj-datum"></p>
+  </header>
+
+  <main>
+    <!-- ── STATUS EVIDENTIRANJE ── -->
+    <section class="card">
+      <!-- Ni QR identitete za danes -->
+      <div id="status-brez" class="hidden">
+        <div class="evid-napotilo">
+          <span class="evid-ikona">📱</span>
+          <div>
+            <div class="evid-napotilo-naslov">Skenirajte QR kodo</div>
+            <div class="evid-napotilo-opis">Za evidentiranje prihoda in odhoda obiščite tablico.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status zaposlenega (ko je skeniral QR danes) -->
+      <div id="status-z-identiteto" class="hidden">
+        <div id="status-znacka" class="status-znacka"></div>
+        <div id="status-opis" class="status-opis"></div>
+        <button id="mp-nisem-jaz" class="qr-nisem-jaz">Nisem jaz</button>
+      </div>
+    </section>
+
+    <!-- ── MOJE URE ── -->
+    <section class="card">
+      <!-- PIN prijava -->
+      <div id="pin-sekcija">
+        <div class="ure-kartica-naslov">Moje ure</div>
+
+        <!-- Korak 1: Izbira zaposlenega -->
+        <div id="pin-ime-wrap">
+          <p class="pin-navodilo-txt">Kdo si ti?</p>
+          <div id="pin-zaposleni-seznam" class="zaposleni-seznam"></div>
+        </div>
+
+        <!-- Korak 2: PIN vnos -->
+        <div id="pin-vnos-wrap" class="hidden">
+          <p class="pin-navodilo-txt" id="pin-navodilo-txt">Vnesite PIN</p>
+          <div class="pin-prikaz">
+            <div class="pin-dot" id="pd0"></div>
+            <div class="pin-dot" id="pd1"></div>
+            <div class="pin-dot" id="pd2"></div>
+            <div class="pin-dot" id="pd3"></div>
+          </div>
+          <div id="pin-napaka" class="pin-napaka-txt"></div>
+          <div class="tipkovnica">
+            <button class="tipka" data-digit="1">1</button>
+            <button class="tipka" data-digit="2">2</button>
+            <button class="tipka" data-digit="3">3</button>
+            <button class="tipka" data-digit="4">4</button>
+            <button class="tipka" data-digit="5">5</button>
+            <button class="tipka" data-digit="6">6</button>
+            <button class="tipka" data-digit="7">7</button>
+            <button class="tipka" data-digit="8">8</button>
+            <button class="tipka" data-digit="9">9</button>
+            <button class="tipka tipka-brisi" id="pin-brisi">⌫</button>
+            <button class="tipka" data-digit="0">0</button>
+            <button class="tipka tipka-nazaj" id="pin-nazaj">↩</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Vsebina po prijavi -->
+      <div id="ure-vsebina" class="hidden">
+        <div class="ure-header-row">
+          <div>
+            <div class="ure-zaposleni-ime" id="ure-ime"></div>
+            <div id="ure-status-danes" class="status-danes"></div>
+          </div>
+          <button id="btn-odjava" class="btn-odjava-inline">Odjava</button>
+        </div>
+
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="ure">Moje ure</button>
+          <button class="tab-btn" data-tab="zahtevki">Zahtevki</button>
+        </div>
+
+        <!-- Tab: Moje ure -->
+        <div id="tab-ure">
+          <div class="mesec-navigacija">
+            <button id="btn-prej" class="btn-nav">&#8249;</button>
+            <h2 id="mesec-naslov"></h2>
+            <button id="btn-naprej" class="btn-nav">&#8250;</button>
+          </div>
+
+          <div class="skupaj-mesec">
+            <span class="skupaj-label">Skupaj ta mesec</span>
+            <span id="skupaj-ure" class="skupaj-vrednost">—</span>
+          </div>
+
+          <table class="tabela" id="tabela-dni">
+            <thead>
+              <tr>
+                <th>Dan</th><th>Prihod</th><th>Odhod</th><th class="th-ure">Ure</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-dni"></tbody>
+          </table>
+          <div id="mesec-prazno" class="prazno" style="display:none">Ni zapisov za ta mesec.</div>
+
+          <div id="placilo-box" class="placilo-box" style="display:none">
+            <div class="placilo-naslov">Obračun</div>
+            <div class="placilo-vrstica">
+              <span id="placilo-osnova-napis"></span>
+              <span id="placilo-osnova-znesek"></span>
+            </div>
+            <div class="placilo-vrstica" id="placilo-stim-row" style="display:none">
+              <span>Stimulacija</span>
+              <span id="placilo-stim-znesek"></span>
+            </div>
+            <div class="placilo-vrstica placilo-skupaj-row">
+              <span>Skupaj</span>
+              <span id="placilo-skupaj-znesek"></span>
+            </div>
+          </div>
+
+          <div class="kumulativno-razdelek">
+            <h3 class="kum-naslov">Kumulativno po mesecih</h3>
+            <table class="tabela" id="tabela-meseci">
+              <thead>
+                <tr>
+                  <th>Mesec</th>
+                  <th class="th-ure">Ure skupaj</th>
+                  <th class="th-ure" id="th-placilo" style="display:none">Plačilo</th>
+                </tr>
+              </thead>
+              <tbody id="tbody-meseci"></tbody>
+            </table>
+            <div id="kum-prazno" class="prazno" style="display:none">Še ni podatkov.</div>
+          </div>
+        </div>
+
+        <!-- Tab: Zahtevki -->
+        <div id="tab-zahtevki" class="hidden">
+          <button id="btn-naknadno" class="btn-naknadno">+ Zahtevaj naknaden vnos</button>
+          <div id="zahtevki-seznam"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Naknadno evidentiranje -->
+  <div id="naknadno-overlay" class="modal-overlay hidden">
+    <div class="modal-karta">
+      <h3>Zahtevek za naknaden vnos</h3>
+      <p class="modal-opomba">Vodja bo vaš zahtevek pregledal in odobril.</p>
+      <div class="form-skupina">
+        <label>Datum</label>
+        <input type="date" id="nak-datum" />
+      </div>
+      <div class="form-skupina">
+        <label>Ura</label>
+        <input type="time" id="nak-ura" />
+      </div>
+      <div class="form-skupina">
+        <label>Tip</label>
+        <div class="radio-skupina">
+          <label><input type="radio" name="nak-tip" value="PRIHOD" checked /> Prihod</label>
+          <label><input type="radio" name="nak-tip" value="ODHOD" /> Odhod</label>
+        </div>
+      </div>
+      <div class="form-skupina">
+        <label>Opomba (neobvezno)</label>
+        <input type="text" id="nak-opomba" placeholder="Razlog za naknaden vnos…" maxlength="80" />
+      </div>
+      <div id="nak-napaka" class="nak-napaka"></div>
+      <div class="modal-gumbi">
+        <button id="nak-potrdi" class="btn-primarni">Shrani</button>
+        <button id="nak-preklic" class="btn-sekundarni">Prekliči</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/moj.js"></script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>

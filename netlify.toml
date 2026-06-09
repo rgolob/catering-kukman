@@ -62,7 +62,12 @@
 
 [[redirects]]
   from = "/prisotnost/moj-prihod"
-  to = "/moj-prihod.html"
+  to = "/prisotnost/moj"
+  status = 301
+
+[[redirects]]
+  from = "/prisotnost/moj"
+  to = "/moj.html"
   status = 200
 
 # Stare poti → novi URL-ji (301 preusmeritev)
