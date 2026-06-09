@@ -192,6 +192,11 @@ h2 {
   color: #cbd5e0;
   letter-spacing: 0.02em;
 }
+.copyright-link {
+  color: #a0aec0;
+  text-decoration: none;
+}
+.copyright-link:hover { color: #4a5568; text-decoration: underline; }
 
 .footer-link {
   font-size: 0.8rem;
