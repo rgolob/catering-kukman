@@ -791,6 +791,35 @@ function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 
+// ── Briši vse zaposlene in ure ────────────────────────────────────────────────
+document.getElementById('btn-brisi-vse').addEventListener('click', async () => {
+  const el = document.getElementById('brisi-vse-rezultat');
+  const btn = document.getElementById('btn-brisi-vse');
+  if (!confirm('POZOR: Izbrisati VSE zaposlene in VSE evidence ur?\n\nTe akcije ni mogoče razveljaviti.')) return;
+  if (!confirm('Si prepričan? Vsi podatki bodo trajno izgubljeni.')) return;
+  btn.disabled = true;
+  btn.textContent = 'Brišem…';
+  el.textContent = '';
+  try {
+    const res = await fetch('/api/admin/brisi-vse-zaposlene', { method: 'POST' });
+    const d = await res.json();
+    if (res.ok) {
+      el.style.color = '#68d391';
+      el.textContent = `✓ ${d.sporocilo}`;
+      prikaziToast('Vsi podatki izbrisani');
+      naloziZaposlene();
+    } else {
+      el.style.color = '#fc8181';
+      el.textContent = d.napaka || 'Napaka';
+    }
+  } catch (e) {
+    el.style.color = '#fc8181';
+    el.textContent = 'Ni povezave s strežnikom';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Briši vse zaposlene in ure';
+});
+
 // ── Briši današnje vnose ──────────────────────────────────────────────────────
 document.getElementById('btn-brisi-danes').addEventListener('click', async () => {
   const el = document.getElementById('brisi-rezultat');

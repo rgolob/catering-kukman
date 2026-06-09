@@ -1328,6 +1328,26 @@ function createApp() {
     }
   });
 
+  // ── Briši vse zaposlene in ure ────────────────────────────────────────────────
+  app.post('/api/admin/brisi-vse-zaposlene', requireAuth, async (req, res) => {
+    try {
+      const db = req.db;
+      await db.batch([
+        { sql: 'DELETE FROM zaposleni_dela', args: [] },
+        { sql: 'DELETE FROM kilometrina', args: [] },
+        { sql: 'DELETE FROM evidenca_razporeditev', args: [] },
+        { sql: 'DELETE FROM evidenca', args: [] },
+        { sql: 'DELETE FROM zahtevki', args: [] },
+        { sql: 'DELETE FROM stimulacija', args: [] },
+        { sql: 'DELETE FROM zaposleni', args: [] },
+      ], 'write');
+      res.json({ ok: true, sporocilo: 'Vsi zaposleni in evidence so izbrisani.' });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
   // ── Uvoz zaposlenih iz vnos-zaposleni.txt ─────────────────────────────────────
   app.post('/api/admin/uvozi-zaposlene', requireAuth, async (req, res) => {
     try {
