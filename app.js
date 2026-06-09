@@ -1143,6 +1143,7 @@ function createApp() {
         steviloNaknadno
       };
     });
+    seznam.sort((a, b) => b.skupajMinut - a.skupajMinut);
     res.json({ leto, mesec, seznam });
   });
 
