@@ -27,6 +27,7 @@ function formatirajDatum(datum) {
 async function naloziInfo() {
   const res = await fetch('/api/moj-cas/info');
   if (res.status === 401) { window.location.href = '/prisotnost/pin'; return; }
+  if (res.status === 403) { window.location.href = '/prisotnost/pin-setup'; return; }
   const data = await res.json();
 
   if (data.pinSetupRequired) { window.location.href = '/prisotnost/pin-setup'; return; }
