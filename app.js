@@ -146,43 +146,56 @@ async function ensureDb() {
 
 // ── Hours calculation ─────────────────────────────────────────────────────────
 function izracunajDnevneUre(zapisi, zdaj = new Date()) {
-  const poDnevih = new Map();
-  zapisi.forEach(z => {
-    const datum = String(z.cas).slice(0, 10);
-    if (!poDnevih.has(datum)) poDnevih.set(datum, []);
-    poDnevih.get(datum).push({ tip: z.tip, cas: new Date(String(z.cas).replace(' ', 'T')) });
-  });
-
   const danasnji = localDate();
-  const rezultati = [];
 
-  for (const [datum, vnosi] of poDnevih) {
-    vnosi.sort((a, b) => a.cas - b.cas);
-    let minute = 0, zadnjiPrihod = null, prvPrihod = null, zadnjiOdhod = null;
+  // Sortiraj vse zapise kronološko in jih pari: vsak ODHOD gre k zadnjemu PRIHODU
+  // Izmena se pripiše datumu PRIHODA (ne ODHODA) — pravilno za izmene čez polnoč
+  const sorted = [...zapisi]
+    .map(z => ({ tip: z.tip, naknadno: z.naknadno, cas: new Date(String(z.cas).replace(' ', 'T')), datum: String(z.cas).slice(0, 10) }))
+    .sort((a, b) => a.cas - b.cas);
 
-    for (const v of vnosi) {
-      if (v.tip === 'PRIHOD') {
-        if (!prvPrihod) prvPrihod = v.cas;
-        zadnjiPrihod = v.cas;
-      } else if (v.tip === 'ODHOD' && zadnjiPrihod) {
-        minute += (v.cas - zadnjiPrihod) / 60000;
-        zadnjiOdhod = v.cas;
-        zadnjiPrihod = null;
+  const poDnevih = new Map();
+  let odprtPrihod = null;
+
+  for (const v of sorted) {
+    if (v.tip === 'PRIHOD') {
+      odprtPrihod = v;
+      if (!poDnevih.has(v.datum)) poDnevih.set(v.datum, { minute: 0, prvPrihod: v.cas, zadnjiOdhod: null, vTeku: true, odprtPrihod: v });
+      else {
+        const d = poDnevih.get(v.datum);
+        if (!d.prvPrihod || v.cas < d.prvPrihod) d.prvPrihod = v.cas;
+        d.vTeku = true;
+        d.odprtPrihod = v;
       }
+    } else if (v.tip === 'ODHOD' && odprtPrihod) {
+      const datum = odprtPrihod.datum; // pripiši datumu PRIHODA
+      if (!poDnevih.has(datum)) poDnevih.set(datum, { minute: 0, prvPrihod: odprtPrihod.cas, zadnjiOdhod: null, vTeku: false, odprtPrihod: null });
+      const d = poDnevih.get(datum);
+      d.minute += (v.cas - odprtPrihod.cas) / 60000;
+      d.zadnjiOdhod = v.cas;
+      d.vTeku = false;
+      d.odprtPrihod = null;
+      odprtPrihod = null;
     }
-
-    const vTeku = zadnjiPrihod !== null;
-    if (vTeku && datum === danasnji) minute += (zdaj - zadnjiPrihod) / 60000;
-
-    rezultati.push({
-      datum, minute: Math.round(minute), vTeku,
-      prvPrihod: prvPrihod ? prvPrihod.toISOString() : null,
-      zadnjiOdhod: zadnjiOdhod ? zadnjiOdhod.toISOString() : null,
-      nepopoln: vTeku && datum !== danasnji
-    });
   }
 
-  return rezultati.sort((a, b) => a.datum.localeCompare(b.datum));
+  // Odprta izmena (brez odhoda): dodaj minute do zdaj če je danes
+  if (odprtPrihod) {
+    const d = poDnevih.get(odprtPrihod.datum);
+    if (d) {
+      if (odprtPrihod.datum === danasnji) d.minute += (zdaj - odprtPrihod.cas) / 60000;
+      d.vTeku = true;
+    }
+  }
+
+  return [...poDnevih.entries()].map(([datum, d]) => ({
+    datum,
+    minute: Math.round(d.minute),
+    vTeku: d.vTeku,
+    prvPrihod: d.prvPrihod ? d.prvPrihod.toISOString() : null,
+    zadnjiOdhod: d.zadnjiOdhod ? d.zadnjiOdhod.toISOString() : null,
+    nepopoln: d.vTeku && datum !== danasnji
+  })).sort((a, b) => a.datum.localeCompare(b.datum));
 }
 
 function izracunajMesecneUre(vsiZapisi) {
@@ -991,7 +1004,7 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }] = await Promise.all([
+    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }, { rows: kmRows }] = await Promise.all([
       req.db.execute(
         `SELECT z.id, z.ime, z.urna_postavka, z.privzeto_delo_id,
                 d.naziv AS priv_naziv, d.urna_postavka AS priv_up
@@ -1005,10 +1018,12 @@ function createApp() {
               FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
               WHERE r.datum BETWEEN ? AND ?`,
         args: [od, do_]
-      })
+      }),
+      req.db.execute({ sql: `SELECT zaposleni_id, SUM(km) AS skupaj_km, SUM(strosek) AS skupaj_strosek FROM kilometrina WHERE datum BETWEEN ? AND ? GROUP BY zaposleni_id`, args: [od, do_] })
     ]);
 
     const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
+    const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { km: parseFloat(r.skupaj_km) || 0, strosek: parseFloat(r.skupaj_strosek) || 0 }]));
 
     const obracun = zaposleni.map(z => {
       const zid = Number(z.id);
@@ -1038,6 +1053,7 @@ function createApp() {
       const hasRate = privzetaUp > 0 || delaMap.size > 0;
       const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
       const stimulacija = stimMap.get(zid) || 0;
+      const { km = 0, strosek = 0 } = kmMap.get(zid) || {};
 
       return {
         id: zid, ime: z.ime,
@@ -1047,6 +1063,7 @@ function createApp() {
         privzetaMinuta,
         dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
         osnova, stimulacija: stimulacija || null,
+        km, strosek,
         skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
       };
     });
@@ -1149,40 +1166,44 @@ function createApp() {
 
     if (!zRows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
 
-    const poDnevih = new Map();
-    vnosi.forEach(v => {
-      const datum = String(v.cas).slice(0, 10);
-      if (!poDnevih.has(datum)) poDnevih.set(datum, []);
-      poDnevih.get(datum).push(v);
-    });
-
     const danes = localDate();
     let skupajMinut = 0;
-    const dnevi = [];
 
-    for (const [datum, dayVnosi] of [...poDnevih.entries()].sort()) {
-      const sorted = dayVnosi.sort((a, b) => String(a.cas).localeCompare(String(b.cas)));
-      let minute = 0, zadnjiPrihod = null;
-      for (const v of sorted) {
-        if (v.tip === 'PRIHOD') {
-          zadnjiPrihod = new Date(String(v.cas).replace(' ', 'T'));
-        } else if (v.tip === 'ODHOD' && zadnjiPrihod) {
-          minute += (new Date(String(v.cas).replace(' ', 'T')) - zadnjiPrihod) / 60000;
-          zadnjiPrihod = null;
-        }
+    // Sortiraj kronološko in pari čez datum (za izmene čez polnoč)
+    const sortedVnosi = [...vnosi]
+      .map(v => ({ ...v, casObj: new Date(String(v.cas).replace(' ', 'T')), datum: String(v.cas).slice(0, 10) }))
+      .sort((a, b) => a.casObj - b.casObj);
+
+    const poDnevih = new Map();
+    let odprtPrihod = null;
+
+    for (const v of sortedVnosi) {
+      if (v.tip === 'PRIHOD') {
+        odprtPrihod = v;
+        if (!poDnevih.has(v.datum)) poDnevih.set(v.datum, { minute: 0, vnosi: [], odprtPrihod: v });
+        poDnevih.get(v.datum).vnosi.push({ tip: 'PRIHOD', cas: String(v.cas).slice(11, 16), naknadno: Number(v.naknadno) === 1 });
+        poDnevih.get(v.datum).odprtPrihod = v;
+      } else if (v.tip === 'ODHOD' && odprtPrihod) {
+        const datum = odprtPrihod.datum;
+        if (!poDnevih.has(datum)) poDnevih.set(datum, { minute: 0, vnosi: [], odprtPrihod: null });
+        const d = poDnevih.get(datum);
+        const min = (v.casObj - odprtPrihod.casObj) / 60000;
+        d.minute += min;
+        skupajMinut += min;
+        // Prikaži čas odhoda — če je naslednji dan, dodaj "+1d"
+        const odhCas = String(v.cas).slice(11, 16) + (v.datum !== datum ? ' +1d' : '');
+        d.vnosi.push({ tip: 'ODHOD', cas: odhCas, naknadno: Number(v.naknadno) === 1 });
+        d.odprtPrihod = null;
+        odprtPrihod = null;
       }
-      skupajMinut += minute;
-      dnevi.push({
-        datum,
-        minute: Math.round(minute),
-        nepopoln: zadnjiPrihod !== null && datum !== danes,
-        vnosi: sorted.map(v => ({
-          tip: v.tip,
-          cas: String(v.cas).slice(11, 16),
-          naknadno: Number(v.naknadno) === 1
-        }))
-      });
     }
+
+    const dnevi = [...poDnevih.entries()].sort().map(([datum, d]) => ({
+      datum,
+      minute: Math.round(d.minute),
+      nepopoln: d.odprtPrihod !== null && datum !== danes,
+      vnosi: d.vnosi
+    }));
 
     res.json({
       id: Number(zRows[0].id), ime: zRows[0].ime,

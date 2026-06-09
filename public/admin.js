@@ -533,23 +533,29 @@ async function naloziObracun() {
     const tbody = document.getElementById('obracun-tbody');
     const prazno = document.getElementById('obracun-prazno');
 
-    let skupajMin = 0, skupajOsnova = 0, skupajStim = 0, skupajVse = 0;
+    let skupajMin = 0, skupajOsnova = 0, skupajStim = 0, skupajVse = 0, skupajKm = 0, skupajStrosek = 0;
     tbody.innerHTML = obracun.map(z => {
       skupajMin += z.minute || 0;
       skupajOsnova += z.osnova || 0;
       skupajStim += z.stimulacija || 0;
       skupajVse += z.skupaj || 0;
+      skupajKm += z.km || 0;
+      skupajStrosek += z.strosek || 0;
       const delaBreakdown = z.dodatnaDela?.length
         ? '<br><span class="td-ure-sub">' + z.dodatnaDela.map(d => `${formatUre(d.minute)} ${d.naziv}`).join(' + ') + '</span>'
         : '';
       return `<tr>
         <td>${escHtml(z.ime)}</td>
         <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
+        <td class="td-r">${z.km ? `${z.km} km` : '—'}</td>
+        <td class="td-r">${z.strosek ? formatEur(z.strosek) : '—'}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
         <td class="td-r td-osnova"><strong>${formatEur(skupajOsnova)}</strong><br><span class="td-ure-sub">${formatUre(skupajMin)}</span></td>
+        <td class="td-r">${skupajKm ? `<strong>${skupajKm} km</strong>` : '—'}</td>
+        <td class="td-r">${skupajStrosek ? `<strong>${formatEur(skupajStrosek)}</strong>` : '—'}</td>
         <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong>${skupajStim ? `<br><span class="td-ure-sub">+ ${formatEur(skupajStim)} stim</span>` : ''}</td>
       </tr>` : '');
 

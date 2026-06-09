@@ -14,9 +14,17 @@
 </head>
 <body>
   <header>
-    <h1>Catering Kukman</h1>
-    <p class="subtitle">Evidenca prisotnosti</p>
-    <div id="ura"></div>
+    <div class="header-inner">
+      <div>
+        <h1>Catering Kukman</h1>
+        <p class="subtitle">Evidenca prisotnosti</p>
+      </div>
+      <div class="header-actions">
+        <a href="/prisotnost/pin" class="btn-link">Moj čas</a>
+        <a href="/prisotnost/admin" class="btn-link btn-link-admin">Admin panel</a>
+      </div>
+    </div>
+    <div id="ura" style="text-align:center;padding-bottom:8px"></div>
   </header>
 
   <main>
@@ -96,9 +104,7 @@
   <div id="toast" class="toast hidden"></div>
 
   <footer class="footer">
-    <a href="/prisotnost/pin" class="footer-link">Moj čas</a>
-    <span class="footer-sep">·</span>
-    <a href="/prisotnost/admin" class="footer-link footer-link-admin">Admin panel</a>
+    <span class="copyright">© 2026 GoMushroom</span>
   </footer>
 
   <script src="/app.js"></script>
