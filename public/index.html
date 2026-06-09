@@ -14,16 +14,16 @@
 </head>
 <body>
   <header>
-    <div class="header-nav">
-      <a href="/prisotnost/pin" class="header-moj-cas">Moj čas ›</a>
-      <a href="/prisotnost/admin" class="header-admin">admin</a>
-    </div>
     <h1>Catering Kukman</h1>
     <p class="subtitle">Evidenca prisotnosti</p>
     <div id="ura"></div>
   </header>
 
   <main>
+    <section class="moj-cas-btn-section">
+      <a href="/prisotnost/pin" class="btn-moj-cas-main">Moj čas ›</a>
+    </section>
+
     <section class="qr-tablica-section">
       <div class="qr-tablica-card">
         <img id="qr-tablica-img" alt="QR koda" class="qr-tablica-img" />
@@ -101,6 +101,8 @@
 
   <footer class="footer">
     <span class="copyright">© 2026 <a href="https://gomushroom.si" target="_blank" rel="noopener" class="copyright-link">GoMushroom</a></span>
+    <span class="footer-sep"> · </span>
+    <a href="/prisotnost/admin" class="footer-link footer-link-admin">admin</a>
   </footer>
 
   <script src="/app.js"></script>

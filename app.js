@@ -1558,7 +1558,7 @@ function createApp() {
       for (const emp of employees) {
         const privzetoDeloId = delaMap.get(emp.dela[0]) || null;
         const r = await db.execute({
-          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 0)',
+          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 1)',
           args: [emp.ime, emp.pin, privzetoDeloId]
         });
         const zaposleniId = Number(r.lastInsertRowid);
