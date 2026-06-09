@@ -122,6 +122,8 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE zaposleni ADD COLUMN privzeto_delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca ADD COLUMN delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN strosek REAL NOT NULL DEFAULT 0'); } catch(_) {}
+  // Vsili PIN setup za vse ki imajo še privzeti PIN 1234
+  try { await db.execute("UPDATE zaposleni SET pin_setup_required = 1 WHERE pin = '1234'"); } catch(_) {}
 
   // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
@@ -257,6 +259,16 @@ function createApp() {
   function requirePinAuth(req, res, next) {
     if (req.session.zaposleniId) return next();
     res.status(401).json({ napaka: 'Ni prijavljen' });
+  }
+
+  async function requirePinSetupDone(req, res, next) {
+    if (!req.session.zaposleniId) return res.status(401).json({ napaka: 'Ni prijavljen' });
+    const { rows } = await req.db.execute({
+      sql: 'SELECT pin_setup_required FROM zaposleni WHERE id = ?',
+      args: [req.session.zaposleniId]
+    });
+    if (rows[0]?.pin_setup_required) return res.status(403).json({ napaka: 'PIN setup required', pinSetupRequired: true });
+    next();
   }
 
   async function requireDeviceToken(req, res, next) {
@@ -571,7 +583,7 @@ function createApp() {
   });
 
   // ── Moj čas API ───────────────────────────────────────────────────────────────
-  app.get('/api/moj-cas/info', requirePinAuth, async (req, res) => {
+  app.get('/api/moj-cas/info', requirePinSetupDone, async (req, res) => {
     const danes = localDate();
     const { rows: zRows } = await req.db.execute({
       sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId]
@@ -585,7 +597,7 @@ function createApp() {
     res.json({ id: Number(zRows[0].id), ime: zRows[0].ime, statusDanes: sRows[0]?.tip ?? null, pinSetupRequired: !!zRows[0].pin_setup_required });
   });
 
-  app.get('/api/moj-cas/mesec', requirePinAuth, async (req, res) => {
+  app.get('/api/moj-cas/mesec', requirePinSetupDone, async (req, res) => {
     const zdaj = new Date();
     const leto = parseInt(req.query.leto) || zdaj.getFullYear();
     const mesec = parseInt(req.query.mesec) || (zdaj.getMonth() + 1);
@@ -630,7 +642,7 @@ function createApp() {
     });
   });
 
-  app.get('/api/moj-cas/kumulativno', requirePinAuth, async (req, res) => {
+  app.get('/api/moj-cas/kumulativno', requirePinSetupDone, async (req, res) => {
     const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }] = await Promise.all([
       req.db.execute({ sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas ASC', args: [req.session.zaposleniId] }),
       req.db.execute({ sql: `SELECT z.urna_postavka, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
@@ -668,7 +680,7 @@ function createApp() {
     res.json(meseci);
   });
 
-  app.post('/api/moj-cas/zahtevek', requirePinAuth, async (req, res) => {
+  app.post('/api/moj-cas/zahtevek', requirePinSetupDone, async (req, res) => {
     const { tip, cas, opomba } = req.body;
     if (!['PRIHOD', 'ODHOD'].includes(tip))
       return res.status(400).json({ napaka: 'Neveljaven tip' });
@@ -684,7 +696,7 @@ function createApp() {
     res.json({ ok: true });
   });
 
-  app.get('/api/moj-cas/zahtevki', requirePinAuth, async (req, res) => {
+  app.get('/api/moj-cas/zahtevki', requirePinSetupDone, async (req, res) => {
     const { rows } = await req.db.execute({
       sql: `SELECT id, tip, cas_zahtevka, opomba, status, ustvarjen FROM zahtevki WHERE zaposleni_id = ? ORDER BY ustvarjen DESC LIMIT 20`,
       args: [req.session.zaposleniId]
