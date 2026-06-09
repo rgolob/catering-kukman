@@ -517,7 +517,11 @@ button:hover { background: #1a365d; }
   /* PIN celice v tabeli */
   .td-pin { min-width: auto; }
   .pin-koda { font-size: 0.88rem; }
+  .pin-prikaz-vrstica,
+  .pin-razkrit-vrstica,
   .pin-uredi-vrstica { gap: 4px; }
+  .btn-sm { padding: 3px 7px; font-size: 0.68rem; }
+  .zap-podrobnosti-akcije { gap: 6px; }
 
   /* Prisotnost kartice */
   .prisotnost-seznam { grid-template-columns: 1fr 1fr; gap: 8px; }
