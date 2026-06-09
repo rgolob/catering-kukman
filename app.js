@@ -92,13 +92,18 @@ async function ensureDb() {
         cas_od TEXT NOT NULL,
         cas_do TEXT NOT NULL
       )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS zaposleni_dela (
+        zaposleni_id INTEGER NOT NULL,
+        delo_id INTEGER NOT NULL,
+        PRIMARY KEY (zaposleni_id, delo_id)
+      )`, args: [] },
     { sql: `CREATE TABLE IF NOT EXISTS kilometrina (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    zaposleni_id INTEGER NOT NULL,
-    datum TEXT NOT NULL,
-    km REAL NOT NULL,
-    UNIQUE(zaposleni_id, datum)
-  )`, args: [] },
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        zaposleni_id INTEGER NOT NULL,
+        datum TEXT NOT NULL,
+        km REAL NOT NULL,
+        UNIQUE(zaposleni_id, datum)
+      )`, args: [] },
     { sql: `CREATE TABLE IF NOT EXISTS device_tokens (
         token TEXT PRIMARY KEY,
         label TEXT NOT NULL DEFAULT 'Tablica',
@@ -115,72 +120,18 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE zaposleni ADD COLUMN privzeto_delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca ADD COLUMN delo_id INTEGER'); } catch(_) {}
 
-  // Seed work types
+  // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Pomivalec', 9)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Priprava', 10)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Organizator', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Teren', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Koordinator', 12)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Strežba', 11)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Kuhinja', 11)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Praktikant', 4)", args: [] },
+    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Pripravnik', 2)", args: [] },
   ], 'write');
-
-  const { rows } = await db.execute('SELECT COUNT(*) as n FROM zaposleni');
-  if (Number(rows[0].n) === 0) {
-    await db.batch(
-      ['Ana Novak', 'Bojan Kranjc', 'Maja Horvat', 'Luka Kovač', 'Sara Zupan'].map(ime => ({
-        sql: 'INSERT OR IGNORE INTO zaposleni (ime, pin, pin_setup_required) VALUES (?, ?, 1)', args: [ime, '1234']
-      })), 'write'
-    );
-  }
-
-  // Seed real employees — INSERT OR IGNORE, safe to run multiple times
-  const realni = [
-    // Pomivalci
-    { ime: 'Magda Golob',      delo: 'Pomivalec' },
-    { ime: 'Tončka Krevs',     delo: 'Pomivalec' },
-    { ime: 'Milena Zore',      delo: 'Pomivalec' },
-    { ime: 'Mari Gole',        delo: 'Pomivalec' },
-    { ime: 'Joži Krevs',       delo: 'Pomivalec' },
-    // Koordinatorji (višja postavka, prednost pred ostalimi vlogami)
-    { ime: 'Aljoša Bohte',     delo: 'Koordinator' },
-    { ime: 'Matej Kukman',     delo: 'Koordinator' },
-    { ime: 'Rok Kreme',        delo: 'Koordinator' },
-    { ime: 'Alou Muhić',       delo: 'Koordinator' },
-    { ime: 'Marvia Lumbot',    delo: 'Koordinator' },
-    { ime: 'Mojca Štravs',     delo: 'Koordinator' },
-    { ime: 'Eva Colarič',      delo: 'Koordinator' },
-    { ime: 'Anja Janžič',      delo: 'Koordinator' },
-    // Strežaj / Organizator
-    { ime: 'Manica Vdovič',    delo: 'Organizator' },
-    { ime: 'Lidija Popovič',   delo: 'Organizator' },
-    { ime: 'Ana Ozeman',       delo: 'Organizator' },
-    { ime: 'Helena Vdovič',    delo: 'Organizator' },
-    { ime: 'Lato Muhić',       delo: 'Organizator' },
-    { ime: 'Anja Cesar',       delo: 'Organizator' },
-    { ime: 'Kamouta Koš',      delo: 'Organizator' },
-    { ime: 'Julija Juštpalje', delo: 'Organizator' },
-    // Kuhinja / Priprava
-    { ime: 'Aljoša Rohte',     delo: 'Priprava' },
-    { ime: 'Davio Matoh',      delo: 'Priprava' },
-    { ime: 'Blaž Turk',        delo: 'Priprava' },
-    { ime: 'Matic Turk',       delo: 'Priprava' },
-    { ime: 'Ivan Rošič',       delo: 'Priprava' },
-    { ime: 'Andraž Cesar',     delo: 'Priprava' },
-  ];
-  const { rows: delaRows } = await db.execute('SELECT id, naziv FROM dela');
-  const delaMap = new Map(delaRows.map(d => [d.naziv, Number(d.id)]));
-  for (const z of realni) {
-    const r = await db.execute({
-      sql: 'INSERT OR IGNORE INTO zaposleni (ime, pin, pin_setup_required) VALUES (?, ?, 1)',
-      args: [z.ime, '1234']
-    });
-    if (Number(r.rowsAffected) > 0 && delaMap.has(z.delo)) {
-      await db.execute({
-        sql: 'UPDATE zaposleni SET privzeto_delo_id = ? WHERE ime = ?',
-        args: [delaMap.get(z.delo), z.ime]
-      });
-    }
-  }
 
   _initialized = true;
   return db;
@@ -388,18 +339,20 @@ function createApp() {
     });
 
     if (tip === 'ODHOD') {
-      const [{ rows: zd }, { rows: vsaDela }] = await Promise.all([
+      const [{ rows: zd }, { rows: ostala }] = await Promise.all([
         req.db.execute({
           sql: 'SELECT z.privzeto_delo_id, d.naziv, d.urna_postavka FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?',
           args: [zaposleniId]
         }),
-        req.db.execute('SELECT id, naziv, urna_postavka FROM dela ORDER BY urna_postavka, naziv')
+        req.db.execute({
+          sql: `SELECT d.id, d.naziv, d.urna_postavka FROM zaposleni_dela zd JOIN dela d ON d.id = zd.delo_id WHERE zd.zaposleni_id = ? AND zd.delo_id != COALESCE((SELECT privzeto_delo_id FROM zaposleni WHERE id = ?), 0) ORDER BY d.urna_postavka, d.naziv`,
+          args: [zaposleniId, zaposleniId]
+        })
       ]);
       const privzetoDelo = zd[0]?.privzeto_delo_id
         ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
         : null;
-      const ostala_dela = privzetoDelo ? vsaDela.filter(d => Number(d.id) !== privzetoDelo.id) : vsaDela;
-      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela });
+      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala });
     }
 
     res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes });
@@ -577,21 +530,20 @@ function createApp() {
     const zapis = rows[0];
 
     if (tip === 'ODHOD') {
-      const [{ rows: zd }, { rows: vsaDela }] = await Promise.all([
+      const [{ rows: zd }, { rows: ostala }] = await Promise.all([
         req.db.execute({
-          sql: `SELECT z.privzeto_delo_id, d.naziv, d.urna_postavka
-                FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`,
+          sql: `SELECT z.privzeto_delo_id, d.naziv, d.urna_postavka FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`,
           args: [zaposleni_id]
         }),
-        req.db.execute('SELECT id, naziv, urna_postavka FROM dela ORDER BY urna_postavka, naziv')
+        req.db.execute({
+          sql: `SELECT d.id, d.naziv, d.urna_postavka FROM zaposleni_dela zd JOIN dela d ON d.id = zd.delo_id WHERE zd.zaposleni_id = ? AND zd.delo_id != COALESCE((SELECT privzeto_delo_id FROM zaposleni WHERE id = ?), 0) ORDER BY d.urna_postavka, d.naziv`,
+          args: [zaposleni_id, zaposleni_id]
+        })
       ]);
       const privzetoDelo = zd[0]?.privzeto_delo_id
         ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
         : null;
-      const ostala_dela = privzetoDelo
-        ? vsaDela.filter(d => Number(d.id) !== privzetoDelo.id)
-        : vsaDela;
-      return res.json({ ...zapis, privzetoDelo, ostala_dela });
+      return res.json({ ...zapis, privzetoDelo, ostala_dela: ostala });
     }
 
     res.json(zapis);
