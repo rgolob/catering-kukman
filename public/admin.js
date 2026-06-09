@@ -427,10 +427,11 @@ async function naloziEvidenco() {
     const ura = dt.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
     const tr = document.createElement('tr');
     const nakNapis = z.naknadno ? ' <span class="nk-pill">NK</span>' : '';
+    const delaNapis = z.dodatna_dela ? `<br><span class="ev-dela-badge">${escHtml(z.dodatna_dela)}</span>` : '';
     tr.innerHTML = `
       <td>${datum}</td>
       <td>${escHtml(z.ime)}</td>
-      <td><span class="tip-pill ${z.tip}">${z.tip === 'PRIHOD' ? 'Prihod' : 'Odhod'}</span></td>
+      <td><span class="tip-pill ${z.tip}">${z.tip === 'PRIHOD' ? 'Prihod' : 'Odhod'}</span>${delaNapis}</td>
       <td>${ura}${nakNapis}</td>
       <td><button class="btn-sm btn-danger" data-id="${z.id}">Izbriši</button></td>
     `;
@@ -780,7 +781,6 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
 
     // Razporeditev del
     const razEl = document.getElementById('pris-modal-razporeditev');
-    const zaposleniId = d.id;
     function prikaziRazporeditev(razporeditev, dela) {
       const razHtml = razporeditev.length ? razporeditev.map(r => `
         <tr>
