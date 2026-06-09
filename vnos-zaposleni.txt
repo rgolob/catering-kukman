@@ -1,10 +1,11 @@
 # NAVODILA
-# Prva vrstica bloka: Ime Priimek | Privzeto delo | PIN
+# Prva vrstica bloka: Priimek Ime | Privzeto delo | PIN
 # Nato za vsak dan: DD.MM -HH:MM-HH:MM   (ali - če ni delal)
+# Gorivo: g5€, nakup v trgovini: n15€ (ali plain 15€)
 # Prazna vrstica loči zaposlene
 # Dnevi: 01.06 do 07.06 (2026)
 
-Magda Golob | Pomivalec | 1234
+Golob Magda | Pomivalec | 1234
 01.06 -07:30-15:30
 02.06 -
 03.06 -
@@ -13,7 +14,7 @@ Magda Golob | Pomivalec | 1234
 06.06 -
 07.06 -
 
-Tončka Krevs | Pomivalec | 1234
+Krevs Tončka | Pomivalec | 1234
 01.06 -07:00-15:30
 02.06 -07:00-13:30
 03.06 -
@@ -22,7 +23,7 @@ Tončka Krevs | Pomivalec | 1234
 06.06 -
 07.06 -
 
-Milena Zore | Pomivalec | 1234
+Zore Milena | Pomivalec | 1234
 01.06 -07:00-15:30
 02.06 -07:00-13:30
 03.06 -
@@ -31,7 +32,7 @@ Milena Zore | Pomivalec | 1234
 06.06 -
 07.06 -
 
-Mari Gole | Pomivalec | 1234
+Gole Mari | Pomivalec | 1234
 01.06 -07:00-15:30
 02.06 -07:00-13:30
 03.06 -
@@ -40,7 +41,7 @@ Mari Gole | Pomivalec | 1234
 06.06 -
 07.06 -
 
-Joži Krevs | Pomivalec, Teren | 1234
+Krevs Joži | Pomivalec, Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -49,7 +50,7 @@ Joži Krevs | Pomivalec, Teren | 1234
 06.06 -
 07.06 -
 
-Aljoša Bohte | Koordinator | 1234
+Bohte Aljoša | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -58,7 +59,7 @@ Aljoša Bohte | Koordinator | 1234
 06.06 -
 07.06 -
 
-Matej Kukman | Koordinator | 1234
+Kukman Matej | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -67,7 +68,7 @@ Matej Kukman | Koordinator | 1234
 06.06 -
 07.06 -
 
-Rok Kermc | Koordinator | 1234
+Kermc Rok | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -76,7 +77,7 @@ Rok Kermc | Koordinator | 1234
 06.06 -08:00-05:30
 07.06 -
 
-Alen Muhič | Koordinator | 1234
+Muhič Alen | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -85,7 +86,7 @@ Alen Muhič | Koordinator | 1234
 06.06 -09:00-03:30
 07.06 -
 
-Maruša Lumpert | Organizator, Koordinator | 1234
+Lumpert Maruša | Organizator, Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -94,7 +95,7 @@ Maruša Lumpert | Organizator, Koordinator | 1234
 06.06 -09:00-04:20
 07.06 -
 
-Mojca Štravs | Koordinator | 1234
+Štravs Mojca | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -103,7 +104,7 @@ Mojca Štravs | Koordinator | 1234
 06.06 -09:00-03:30
 07.06 -
 
-Eva Colarič | Koordinator | 1234
+Colarič Eva | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -112,7 +113,7 @@ Eva Colarič | Koordinator | 1234
 06.06 -09:00-05:30
 07.06 -
 
-Anja Janežič | Koordinator | 1234
+Janežič Anja | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -121,7 +122,7 @@ Anja Janežič | Koordinator | 1234
 06.06 -09:00-03:30
 07.06 -
 
-Manca Vdovič | Teren | 1234
+Vdovič Manca | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -130,7 +131,7 @@ Manca Vdovič | Teren | 1234
 06.06 -09:00-05:30
 07.06 -
 
-Lidija Popovič | Teren | 1234
+Popovič Lidija | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -139,16 +140,16 @@ Lidija Popovič | Teren | 1234
 06.06 -09:00-05:30
 07.06 -
 
-Ana Rozman | Teren | 1234
+Rozman Ana | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
 04.06 -
 05.06 -
-06.06 -09:00-04:20 96km
+06.06 -09:00-04:20
 07.06 -
 
-Helena Vedrič | Teren | 1234
+Vedrič Helena | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -157,7 +158,7 @@ Helena Vedrič | Teren | 1234
 06.06 -09:00-05:00
 07.06 -
 
-Lea Muhič | Teren | 1234
+Muhič Lea | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -166,7 +167,7 @@ Lea Muhič | Teren | 1234
 06.06 -
 07.06 -
 
-Anja Cesar | Pripravnik | 1234
+Cesar Anja | Pripravnik | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -175,7 +176,7 @@ Anja Cesar | Pripravnik | 1234
 06.06 -09:00-05:00
 07.06 -
 
-Maruša Kos | Pripravnik | 1234
+Kos Maruša | Pripravnik | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -184,7 +185,7 @@ Maruša Kos | Pripravnik | 1234
 06.06 -08:00-23:30
 07.06 -
 
-Julija Šušteršič | Teren | 1234
+Šušteršič Julija | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -193,16 +194,16 @@ Julija Šušteršič | Teren | 1234
 06.06 -08:00-23:30
 07.06 -
 
-David Matoh | Teren | 1234
+Matoh David | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
 04.06 -09:00-11:00
 05.06 -
-06.06 -06:00-03:00 50km 31€
+06.06 -06:00-03:00 n31€
 07.06 -
 
-Blaž Turk | Teren | 1234
+Turk Blaž | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -211,7 +212,7 @@ Blaž Turk | Teren | 1234
 06.06 -14:00-05:00
 07.06 -
 
-Nejc Turk | Pripravnik | 1234
+Turk Nejc | Pripravnik | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -220,7 +221,7 @@ Nejc Turk | Pripravnik | 1234
 06.06 -14:00-05:00
 07.06 -
 
-Jure Rožič | Teren | 1234
+Rožič Jure | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -229,7 +230,7 @@ Jure Rožič | Teren | 1234
 06.06 -09:00-03:30
 07.06 -
 
-Andraž Cesar | Koordinator | 1234
+Cesar Andraž | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -238,7 +239,7 @@ Andraž Cesar | Koordinator | 1234
 06.06 -10:00-04:20
 07.06 -
 
-Matej Zore | Teren | 1234
+Zore Matej | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -247,13 +248,13 @@ Matej Zore | Teren | 1234
 06.06 -
 07.06 -
 
-Domen Matoh | Teren | 1234
+Matoh Domen | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
 04.06 -
 05.06 -08:00-18:00
-06.06 -08:00-01:00 110km
+06.06 -08:00-01:00
 07.06 -
 
 Tina | Teren | 1234

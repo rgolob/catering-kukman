@@ -46,7 +46,8 @@ async function prikaziOsebo(id, ime) {
   const oseba = zaposleni.find(z => z.id === id);
   const jePrisoten = oseba?.zadnji_tip === 'PRIHOD';
 
-  document.getElementById('mp-pozdrav').textContent = `Pozdravljeni, ${ime.split(' ')[0]}!`;
+  const mpParts = ime.trim().split(' ');
+  document.getElementById('mp-pozdrav').textContent = `Pozdravljeni, ${mpParts[mpParts.length - 1]}!`;
 
   const btn = document.getElementById('mp-akcija-btn');
   btn.textContent = jePrisoten ? 'Odhod ›' : 'Prihod ›';

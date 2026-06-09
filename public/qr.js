@@ -84,7 +84,8 @@ async function prikaziOseboView(id, ime) {
   const oseba = zaposleni.find(z => z.id === id);
   const jePrisoten = oseba?.zadnji_tip === 'PRIHOD';
 
-  const ime1 = ime.split(' ')[0];
+  const imeParts = ime.trim().split(' ');
+  const ime1 = imeParts[imeParts.length - 1];
   document.getElementById('qr-oseba-pozdrav').textContent = `Pozdravljeni, ${ime1}!`;
 
   const btn = document.getElementById('qr-oseba-btn');

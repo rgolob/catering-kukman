@@ -940,3 +940,6 @@ input[type="time"].rv-input { min-width: 110px; }
 .copyright { font-size: 0.75rem; color: #a0aec0; letter-spacing: 0.02em; }
 .btn-link-admin { color: #4299e1; }
 .btn-link-admin:hover { color: #2c5282; }
+
+.copyright-link { color: #a0aec0; text-decoration: none; }
+.copyright-link:hover { color: #4a5568; text-decoration: underline; }
