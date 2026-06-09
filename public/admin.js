@@ -541,9 +541,12 @@ async function naloziObracun() {
       skupajVse += z.skupaj || 0;
       skupajGorivo += z.gorivo || 0;
       skupajNakup += z.nakup || 0;
-      const delaBreakdown = z.dodatnaDela?.length
-        ? '<br><span class="td-ure-sub">' + z.dodatnaDela.map(d => `${formatUre(d.minute)} ${d.naziv}`).join(' + ') + '</span>'
-        : '';
+      const vsaDela = [];
+      if (z.privzetaMinuta > 0 && z.privzetoDelo) vsaDela.push({ minute: z.privzetaMinuta, naziv: z.privzetoDelo.naziv });
+      (z.dodatnaDela || []).forEach(d => vsaDela.push({ minute: d.minute, naziv: d.naziv }));
+      const delaBreakdown = vsaDela.length > 1
+        ? '<br><span class="td-ure-sub">' + vsaDela.map(d => `${formatUre(d.minute)} ${escHtml(d.naziv)}`).join(' + ') + '</span>'
+        : vsaDela.length === 1 ? `<br><span class="td-ure-sub">${escHtml(vsaDela[0].naziv)}</span>` : '';
       return `<tr>
         <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span></td>
         <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
@@ -774,6 +777,68 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
         <tbody>${vrstice}</tbody>
       </table>`;
     }
+
+    // Razporeditev del
+    const razEl = document.getElementById('pris-modal-razporeditev');
+    const zaposleniId = d.id;
+    function prikaziRazporeditev(razporeditev, dela) {
+      const razHtml = razporeditev.length ? razporeditev.map(r => `
+        <tr>
+          <td>${r.datum.slice(5).replace('-','.')}</td>
+          <td>${escHtml(r.delo_naziv)} <span class="td-ure-sub">€${parseFloat(r.urna_postavka).toFixed(2)}/h</span></td>
+          <td>${r.cas_od}–${r.cas_do}</td>
+          <td><button class="btn-sm btn-danger btn-raz-brisi" data-id="${r.id}">×</button></td>
+        </tr>`).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni razporeditev</td></tr>`;
+
+      const delaOpts = dela.map(d => `<option value="${d.id}">${escHtml(d.naziv)} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`).join('');
+
+      razEl.innerHTML = `
+        <h3 style="margin:20px 0 8px;font-size:0.95rem;color:#4a5568">Razporeditev del</h3>
+        <table class="tabela" style="margin-bottom:12px">
+          <thead><tr><th>Datum</th><th>Delo</th><th>Ure</th><th></th></tr></thead>
+          <tbody id="raz-tbody">${razHtml}</tbody>
+        </table>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="raz-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Delo<select id="raz-delo" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem">${delaOpts}</select></label>
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Od<input type="time" id="raz-od" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Do<input type="time" id="raz-do" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+          <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px">Dodaj</button>
+        </div>
+        <div id="raz-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>`;
+
+      razEl.querySelectorAll('.btn-raz-brisi').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const r = await fetch(`/api/admin/razporeditev/${btn.dataset.id}`, { method: 'DELETE' });
+          if (r.ok) { const fresh = await osveziRaz(); prikaziRazporeditev(fresh, dela); naloziObracun(); }
+          else prikaziToast('Napaka pri brisanju', 'napaka');
+        });
+      });
+
+      document.getElementById('raz-dodaj').addEventListener('click', async () => {
+        const napaka = document.getElementById('raz-napaka');
+        napaka.textContent = '';
+        const datum = document.getElementById('raz-datum').value;
+        const deloId = document.getElementById('raz-delo').value;
+        const casOd = document.getElementById('raz-od').value;
+        const casDo = document.getElementById('raz-do').value;
+        if (!datum || !deloId || !casOd || !casDo) { napaka.textContent = 'Izpolni vsa polja.'; return; }
+        const res = await fetch('/api/admin/razporeditev', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zaposleniId, datum, deloId: Number(deloId), casOd, casDo })
+        });
+        if (res.ok) { const fresh = await osveziRaz(); prikaziRazporeditev(fresh, dela); naloziObracun(); }
+        else { const e = await res.json(); napaka.textContent = e.napaka || 'Napaka'; }
+      });
+    }
+
+    async function osveziRaz() {
+      const r = await fetch(`/api/admin/razporeditev?zaposleniId=${zaposleniId}&od=${mesecStr}-01&do=${mesecStr}-31`);
+      return r.ok ? await r.json() : [];
+    }
+    const mesecStr = `${leto}-${String(mesec).padStart(2,'0')}`;
+    prikaziRazporeditev(d.razporeditev || [], d.dela || []);
 
     document.getElementById('pris-modal-overlay').classList.remove('hidden');
   } catch(e) { console.error(e); }

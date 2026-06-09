@@ -484,22 +484,20 @@ h2 {
 
 /* ── Moj čas gumb nad QR ────────────────────────────────────────────────── */
 .moj-cas-btn-section {
-  display: flex; justify-content: center; padding: 20px 16px 4px;
+  display: flex; justify-content: center; padding: 15px 16px;
 }
 .btn-moj-cas-main {
   display: inline-block;
   background: #1a365d;
   color: #fff;
   text-decoration: none;
-  padding: 13px 40px;
-  border-radius: 28px;
-  font-size: 1.05rem;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  box-shadow: 0 2px 10px rgba(26,54,93,0.18);
-  transition: background 0.15s, box-shadow 0.15s;
+  padding: 6px 18px;
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.15s;
 }
-.btn-moj-cas-main:hover { background: #2c5282; box-shadow: 0 4px 16px rgba(26,54,93,0.25); }
+.btn-moj-cas-main:hover { background: #2c5282; }
 
 /* ── QR koda na tablici ───────────────────────────────────────────────────── */
 .qr-tablica-section {
@@ -547,4 +545,19 @@ h2 {
   background: #f0fff4; border: 1px solid #9ae6b4;
   border-radius: 6px; padding: 6px 10px;
   font-size: 0.88rem; color: #276749;
+}
+.dodatno-stroški-sekcija {
+  margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 14px;
+}
+.dodatno-strosek-row {
+  display: flex; gap: 10px;
+}
+.dodatno-strosek-row label {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.82rem; color: #718096; flex: 1;
+}
+.dodatno-strosek-row input[type="number"] {
+  flex: 1; padding: 8px 10px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.9rem; width: 100%; box-sizing: border-box;
 }
