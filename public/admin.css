@@ -556,6 +556,18 @@ button:hover { background: #1a365d; }
   letter-spacing: 0.3px;
 }
 
+/* Dodatna dela badge v evidenci */
+.ev-dela-badge {
+  display: inline-block;
+  font-size: 0.68rem;
+  background: #ebf8ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-top: 2px;
+}
+
 /* Pin setup pill */
 .pin-setup-pill {
   display: inline-block;

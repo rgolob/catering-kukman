@@ -944,7 +944,12 @@ function createApp() {
   app.get('/api/admin/evidenca', requireAuth, async (req, res) => {
     const od = req.query.od || '1970-01-01', do_ = req.query.do || '9999-12-31';
     const { rows } = await req.db.execute({
-      sql: `SELECT e.id, z.ime, e.tip, e.cas, e.naknadno FROM evidenca e
+      sql: `SELECT e.id, e.zaposleni_id, z.ime, e.tip, e.cas, e.naknadno,
+              (SELECT GROUP_CONCAT(d.naziv || ' ' || r.cas_od || '-' || r.cas_do, ', ')
+               FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
+               WHERE r.zaposleni_id = e.zaposleni_id AND r.datum = substr(e.cas,1,10)
+              ) AS dodatna_dela
+            FROM evidenca e
             JOIN zaposleni z ON z.id = e.zaposleni_id
             WHERE substr(e.cas,1,10) BETWEEN ? AND ? ORDER BY e.cas DESC`,
       args: [od, do_]
