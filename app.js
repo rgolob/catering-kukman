@@ -92,6 +92,13 @@ async function ensureDb() {
         cas_od TEXT NOT NULL,
         cas_do TEXT NOT NULL
       )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS kilometrina (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    zaposleni_id INTEGER NOT NULL,
+    datum TEXT NOT NULL,
+    km REAL NOT NULL,
+    UNIQUE(zaposleni_id, datum)
+  )`, args: [] },
     { sql: `CREATE TABLE IF NOT EXISTS device_tokens (
         token TEXT PRIMARY KEY,
         label TEXT NOT NULL DEFAULT 'Tablica',
@@ -418,6 +425,22 @@ function createApp() {
     res.json({ ok: true, id: Number(r.lastInsertRowid) });
   });
 
+  app.post('/api/qr-kilometrina', async (req, res) => {
+    const { zaposleniId, token, datum, km } = req.body;
+    if (!token || !validQrTokens().includes(token))
+      return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
+    const kmNum = parseFloat(km);
+    if (!Number.isFinite(kmNum) || kmNum <= 0)
+      return res.status(400).json({ napaka: 'Vnesite veljavno število km' });
+    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
+      return res.status(400).json({ napaka: 'Neveljaven datum' });
+    await req.db.execute({
+      sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km) VALUES (?, ?, ?)',
+      args: [zaposleniId, datum, kmNum]
+    });
+    res.json({ ok: true });
+  });
+
   // ── Auth API ─────────────────────────────────────────────────────────────────
   app.post('/api/login', async (req, res) => {
     const { rows } = await req.db.execute({ sql: 'SELECT vrednost FROM config WHERE kljuc = ?', args: ['admin_hash'] });
@@ -596,11 +619,12 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }] = await Promise.all([
+    const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }, { rows: kmRows }] = await Promise.all([
       req.db.execute({ sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [req.session.zaposleniId, od, do_] }),
       req.db.execute({ sql: `SELECT z.urna_postavka, z.privzeto_delo_id, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
       req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] }),
-      req.db.execute({ sql: `SELECT r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] })
+      req.db.execute({ sql: `SELECT r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] }),
+      req.db.execute({ sql: 'SELECT datum, km FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
     ]);
 
     const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
@@ -620,8 +644,11 @@ function createApp() {
     const hasRate = privzetaUp > 0 || razRows.length > 0;
     const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
 
+    const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), Number(r.km)]));
+    const dneviZKm = dnevi.map(d => ({ ...d, km: kmPoDateh.get(d.datum) || 0 }));
+
     res.json({
-      leto, mesec, dnevi,
+      leto, mesec, dnevi: dneviZKm,
       urnaPostavka: privzetaUp || null,
       imaDodatnaDela: razRows.length > 0,
       osnova,

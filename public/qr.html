@@ -44,22 +44,36 @@
     </div>
   </main>
 
-  <!-- Overlay: Dodatno delo (po odhodu) -->
+  <!-- Overlay: Zaključek izmene (po odhodu) -->
   <div id="qr-dodatno-overlay" class="overlay hidden">
     <div class="dialog dialog-dodatno">
-      <h2>Dodatno delo</h2>
-      <p class="dialog-vprasanje">Dodajte čas, ko ste delali drugo vrsto dela</p>
-      <div class="dodatno-form">
-        <select id="qr-dodatno-select" class="dodatno-select"></select>
-        <div class="dodatno-cas-row">
-          <label>Od<input type="time" id="qr-dodatno-od" /></label>
-          <label>Do<input type="time" id="qr-dodatno-do" /></label>
+      <h2>Zaključek izmene</h2>
+
+      <!-- Dodatno delo (prikazano samo če so ostala dela) -->
+      <div id="qr-dela-sekcija" class="hidden">
+        <p class="dialog-vprasanje">Ste delali še v drugi vlogi?</p>
+        <div class="dodatno-form">
+          <select id="qr-dodatno-select" class="dodatno-select"></select>
+          <div class="dodatno-cas-row">
+            <label>Od<input type="time" id="qr-dodatno-od" /></label>
+            <label>Do<input type="time" id="qr-dodatno-do" /></label>
+          </div>
+          <button id="qr-btn-dodaj-seg" class="btn-dodaj-seg">Dodaj segment</button>
         </div>
-        <button id="qr-btn-dodaj-seg" class="btn-dodaj-seg">Dodaj segment</button>
+        <div id="qr-dodatno-napaka" class="dialog-pin-napaka"></div>
+        <div id="qr-dodatno-segmenti" class="dodatno-segmenti"></div>
       </div>
-      <div id="qr-dodatno-napaka" class="dialog-pin-napaka"></div>
-      <div id="qr-dodatno-segmenti" class="dodatno-segmenti"></div>
-      <button id="qr-btn-zakljuci" class="btn-preklic">Zaključi</button>
+
+      <!-- Prevoz (vedno prikazan) -->
+      <div class="km-sekcija">
+        <div class="km-label">🚗 Prevoz z lastnim avtom <span class="km-neobvezno">(neobvezno)</span></div>
+        <div class="km-vnos-row">
+          <input type="number" id="qr-km-input" class="km-input" min="0" step="1" placeholder="0" />
+          <span class="km-enota">km</span>
+        </div>
+      </div>
+
+      <button id="qr-btn-zakljuci" class="btn-zakljuci-btn">Zaključi</button>
     </div>
   </div>
 

@@ -127,10 +127,10 @@ async function zabelezi(zaposleniId, ime) {
 
     rez.classList.remove('hidden');
 
-    if (d.tip === 'ODHOD' && d.ostala_dela?.length > 0) {
+    if (d.tip === 'ODHOD') {
       qrDodatnoZaposleniId = zaposleniId;
       qrDodatnoDatum = d.datum;
-      qrDodatnoOstala = d.ostala_dela;
+      qrDodatnoOstala = d.ostala_dela || [];
       setTimeout(() => {
         rez.classList.add('hidden');
         prikaziDodatnoOverlay();
@@ -154,12 +154,19 @@ async function zabelezi(zaposleniId, ime) {
 }
 
 function prikaziDodatnoOverlay() {
-  const select = document.getElementById('qr-dodatno-select');
-  select.innerHTML = qrDodatnoOstala.map(d =>
-    `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
-  ).join('');
-  document.getElementById('qr-dodatno-napaka').textContent = '';
-  document.getElementById('qr-dodatno-segmenti').innerHTML = '';
+  const delaSekcija = document.getElementById('qr-dela-sekcija');
+  if (qrDodatnoOstala.length > 0) {
+    const select = document.getElementById('qr-dodatno-select');
+    select.innerHTML = qrDodatnoOstala.map(d =>
+      `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
+    ).join('');
+    document.getElementById('qr-dodatno-napaka').textContent = '';
+    document.getElementById('qr-dodatno-segmenti').innerHTML = '';
+    delaSekcija.classList.remove('hidden');
+  } else {
+    delaSekcija.classList.add('hidden');
+  }
+  document.getElementById('qr-km-input').value = '';
   document.getElementById('qr-dodatno-overlay').classList.remove('hidden');
 }
 
@@ -192,6 +199,16 @@ async function dodajSegment() {
 
 document.getElementById('qr-btn-dodaj-seg').addEventListener('click', dodajSegment);
 document.getElementById('qr-btn-zakljuci').addEventListener('click', async () => {
+  const km = parseFloat(document.getElementById('qr-km-input').value);
+  if (km > 0) {
+    try {
+      await fetch('/api/qr-kilometrina', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zaposleniId: qrDodatnoZaposleniId, token, datum: qrDodatnoDatum, km })
+      });
+    } catch (_) {}
+  }
   document.getElementById('qr-dodatno-overlay').classList.add('hidden');
   await prikaziSeznam();
 });

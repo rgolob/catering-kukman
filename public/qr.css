@@ -158,4 +158,58 @@ main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
 .qr-napaka h2 { margin-bottom: 8px; }
 .qr-napaka p { color: #718096; font-size: 0.95rem; }
 
+/* Km prevoz sekcija */
+.km-sekcija {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+.km-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 10px;
+}
+.km-neobvezno {
+  font-weight: 400;
+  color: #a0aec0;
+  font-size: 0.82rem;
+}
+.km-vnos-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.km-input {
+  width: 120px;
+  padding: 10px 12px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: #1a202c;
+  text-align: center;
+  outline: none;
+}
+.km-input:focus { border-color: #4299e1; }
+.km-enota {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+.btn-zakljuci-btn {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: color 0.15s;
+}
+.btn-zakljuci-btn:hover { color: #4a5568; }
+
 .hidden { display: none !important; }
