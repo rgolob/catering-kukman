@@ -1348,14 +1348,35 @@ function createApp() {
     }
   });
 
+  // ── Preberi vnos-zaposleni.txt ────────────────────────────────────────────────
+  app.get('/api/admin/vnos-zaposleni', requireAuth, async (req, res) => {
+    try {
+      // Najprej iz baze (zadnji uvoz), nato iz datoteke kot fallback
+      const { rows } = await req.db.execute({ sql: `SELECT vrednost FROM config WHERE kljuc = 'vnos_zaposleni_txt'`, args: [] });
+      if (rows[0]?.vrednost) return res.json({ tekst: rows[0].vrednost });
+      const txtPath = path.join(__dirname, 'vnos-zaposleni.txt');
+      const txt = fs.existsSync(txtPath) ? fs.readFileSync(txtPath, 'utf8') : '';
+      res.json({ tekst: txt });
+    } catch (e) {
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
   // ── Uvoz zaposlenih iz vnos-zaposleni.txt ─────────────────────────────────────
   app.post('/api/admin/uvozi-zaposlene', requireAuth, async (req, res) => {
     try {
       const db = req.db;
-      const txtPath = path.join(__dirname, 'vnos-zaposleni.txt');
-      if (!fs.existsSync(txtPath)) return res.status(404).json({ napaka: 'vnos-zaposleni.txt ne obstaja' });
-
-      const txt = fs.readFileSync(txtPath, 'utf8');
+      // Sprejmi tekst iz telesa zahteve, nato iz baze, nato iz datoteke
+      let txt = (typeof req.body?.tekst === 'string' && req.body.tekst.trim()) ? req.body.tekst : null;
+      if (!txt) {
+        const { rows: cfgRows } = await db.execute({ sql: `SELECT vrednost FROM config WHERE kljuc = 'vnos_zaposleni_txt'`, args: [] });
+        txt = cfgRows[0]?.vrednost || null;
+      }
+      if (!txt) {
+        const txtPath = path.join(__dirname, 'vnos-zaposleni.txt');
+        if (!fs.existsSync(txtPath)) return res.status(404).json({ napaka: 'Ni vnesenega seznama. Prilepi zaposlene v polje zgoraj.' });
+        txt = fs.readFileSync(txtPath, 'utf8');
+      }
 
       const YEAR = '2026';
       function parseDatumImp(ddmm) {
@@ -1446,6 +1467,9 @@ function createApp() {
         }
         uvozenih++;
       }
+
+      // Shrani tekst v bazo za naslednje nalaganje textarea
+      await db.execute({ sql: `INSERT OR REPLACE INTO config (kljuc, vrednost) VALUES ('vnos_zaposleni_txt', ?)`, args: [txt] });
 
       res.json({ ok: true, uvozenih, evidencCount, sporocilo: `Uvoženo ${uvozenih} zaposlenih (${evidencCount} izmen).` });
     } catch (e) {
