@@ -112,7 +112,7 @@ Eva Colarič | Koordinator | 1234
 06.06 -09:00-05:30
 07.06 -
 
-Anja Janžič | Koordinator | 1234
+Anja Janežič | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -166,7 +166,7 @@ Lea Muhič | Teren | 1234
 06.06 -
 07.06 -
 
-Anja Cesar | Teren, Praktikant | 1234
+Anja Cesar | Pripravnik | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -175,7 +175,7 @@ Anja Cesar | Teren, Praktikant | 1234
 06.06 -09:00-05:00
 07.06 -
 
-Maruša Kos | Praktikant | 1234
+Maruša Kos | Pripravnik | 1234
 01.06 -
 02.06 -
 03.06 -
