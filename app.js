@@ -2,6 +2,7 @@
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const crypto = require('node:crypto');
 const cookieSession = require('cookie-session');
 const XLSX = require('xlsx');
@@ -1321,6 +1322,132 @@ function createApp() {
 
       const vstavljeno = ops.filter(o => o.sql.startsWith('INSERT')).length / 2;
       res.json({ ok: true, vstavljeno, sporocilo: `Dodano ${vstavljeno} dni za ${Math.min(zaposleni.length, 5)} zaposlenih (jan–jun 2026).` });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
+  // ── Briši vse zaposlene in ure ────────────────────────────────────────────────
+  app.post('/api/admin/brisi-vse-zaposlene', requireAuth, async (req, res) => {
+    try {
+      const db = req.db;
+      await db.batch([
+        { sql: 'DELETE FROM zaposleni_dela', args: [] },
+        { sql: 'DELETE FROM kilometrina', args: [] },
+        { sql: 'DELETE FROM evidenca_razporeditev', args: [] },
+        { sql: 'DELETE FROM evidenca', args: [] },
+        { sql: 'DELETE FROM zahtevki', args: [] },
+        { sql: 'DELETE FROM stimulacija', args: [] },
+        { sql: 'DELETE FROM zaposleni', args: [] },
+      ], 'write');
+      res.json({ ok: true, sporocilo: 'Vsi zaposleni in evidence so izbrisani.' });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
+  // ── Uvoz zaposlenih iz vnos-zaposleni.txt ─────────────────────────────────────
+  app.post('/api/admin/uvozi-zaposlene', requireAuth, async (req, res) => {
+    try {
+      const db = req.db;
+      const txtPath = path.join(__dirname, 'vnos-zaposleni.txt');
+      if (!fs.existsSync(txtPath)) return res.status(404).json({ napaka: 'vnos-zaposleni.txt ne obstaja' });
+
+      const txt = fs.readFileSync(txtPath, 'utf8');
+
+      const YEAR = '2026';
+      function parseDatumImp(ddmm) {
+        const [dd, mm] = ddmm.split('.');
+        return `${YEAR}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+      }
+      function addDayImp(dateStr) {
+        const d = new Date(dateStr + 'T00:00:00Z');
+        d.setUTCDate(d.getUTCDate() + 1);
+        return d.toISOString().slice(0, 10);
+      }
+      function parseShiftLineImp(line) {
+        const m = line.match(/^(\d{2}\.\d{2})\s+(.+)$/);
+        if (!m) return null;
+        const datum = parseDatumImp(m[1]);
+        const rest = m[2].trim();
+        if (rest === '-') return { datum, shift: null, km: null, strosek: null };
+        const tm = rest.match(/^-(\d{2}:\d{2})-(\d{2}:\d{2})\s*(.*)$/);
+        if (!tm) return { datum, shift: null, km: null, strosek: null };
+        const [, start, end, notes] = tm;
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        const crossesMidnight = (eh * 60 + em) < (sh * 60 + sm);
+        const kmM = (notes || '').match(/(\d+)\s*km/i);
+        const km = kmM ? parseInt(kmM[1]) : null;
+        const strosekM = (notes || '').match(/(\d+(?:[.,]\d+)?)\s*€/);
+        const strosek = strosekM ? parseFloat(strosekM[1].replace(',', '.')) : null;
+        return { datum, shift: { start, end, crossesMidnight }, km, strosek };
+      }
+      function parseFileImp(src) {
+        const blocks = src.split(/\n[ \t]*\n/).filter(b => b.trim());
+        const employees = [];
+        for (const block of blocks) {
+          const lines = block.trim().split('\n').map(l => l.trim()).filter(l => l && !l.startsWith('#'));
+          if (!lines.length) continue;
+          const parts = lines[0].split('|').map(s => s.trim());
+          if (parts.length < 3) continue;
+          const [ime, delaStr, pin] = parts;
+          const dela = delaStr.split(',').map(s => s.trim().charAt(0).toUpperCase() + s.trim().slice(1));
+          const days = lines.slice(1).map(parseShiftLineImp).filter(Boolean);
+          employees.push({ ime: ime.trim(), dela, pin: pin.trim(), days });
+        }
+        return employees;
+      }
+
+      const employees = parseFileImp(txt);
+      if (!employees.length) return res.status(400).json({ napaka: 'Ni zaposlenih v datoteki' });
+
+      // Pobriši obstoječe
+      await db.batch([
+        { sql: 'DELETE FROM zaposleni_dela', args: [] },
+        { sql: 'DELETE FROM kilometrina', args: [] },
+        { sql: 'DELETE FROM evidenca_razporeditev', args: [] },
+        { sql: 'DELETE FROM evidenca', args: [] },
+        { sql: 'DELETE FROM zahtevki', args: [] },
+        { sql: 'DELETE FROM stimulacija', args: [] },
+        { sql: 'DELETE FROM zaposleni', args: [] },
+      ], 'write');
+
+      // Naložni tipi dela
+      const { rows: delaRows } = await db.execute('SELECT id, naziv FROM dela');
+      const delaMap = new Map(delaRows.map(d => [d.naziv, Number(d.id)]));
+
+      let uvozenih = 0;
+      let evidencCount = 0;
+      for (const emp of employees) {
+        const privzetoDeloId = delaMap.get(emp.dela[0]) || null;
+        const r = await db.execute({
+          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 0)',
+          args: [emp.ime, emp.pin, privzetoDeloId]
+        });
+        const zaposleniId = Number(r.lastInsertRowid);
+        for (const deloNaziv of emp.dela) {
+          const deloId = delaMap.get(deloNaziv);
+          if (!deloId) continue;
+          await db.execute({ sql: 'INSERT OR IGNORE INTO zaposleni_dela (zaposleni_id, delo_id) VALUES (?, ?)', args: [zaposleniId, deloId] });
+        }
+        for (const day of emp.days) {
+          if (!day.shift) continue;
+          const { datum, shift, km, strosek } = day;
+          const odhodDatum = shift.crossesMidnight ? addDayImp(datum) : datum;
+          await db.execute({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)', args: [zaposleniId, 'PRIHOD', `${datum} ${shift.start}:00`] });
+          await db.execute({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)', args: [zaposleniId, 'ODHOD', `${odhodDatum} ${shift.end}:00`] });
+          evidencCount++;
+          if (km || strosek) {
+            await db.execute({ sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)', args: [zaposleniId, datum, km || 0, strosek || 0] });
+          }
+        }
+        uvozenih++;
+      }
+
+      res.json({ ok: true, uvozenih, evidencCount, sporocilo: `Uvoženo ${uvozenih} zaposlenih (${evidencCount} izmen).` });
     } catch (e) {
       console.error(e);
       res.status(500).json({ napaka: e.message });
