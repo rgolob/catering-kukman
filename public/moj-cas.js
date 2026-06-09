@@ -80,8 +80,9 @@ async function naloziMesec() {
     else { ureStr = formatirajUre(d.minute); ureClass = ''; }
 
     const kmBadge = d.km > 0 ? `<br><span class="km-badge">🚗 ${d.km} km</span>` : '';
+    const strosekBadge = d.strosek > 0 ? `<br><span class="km-badge strosek-badge">🧾 €${parseFloat(d.strosek).toFixed(2)}</span>` : '';
     return `<tr class="${jeDanes ? 'danes-row' : ''}">
-      <td>${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}${kmBadge}</td>
+      <td>${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}${kmBadge}${strosekBadge}</td>
       <td class="td-cas">${formatirajCas(d.prvPrihod)}</td>
       <td class="td-cas">${d.vTeku && !d.nepopoln ? '<span style="color:#38a169">v delu</span>' : formatirajCas(d.zadnjiOdhod)}</td>
       <td class="td-ure ${ureClass}">${ureStr}</td>

@@ -47,8 +47,10 @@ function parseShiftLine(line) {
 
   const kmM = (notes || '').match(/(\d+)\s*km/i);
   const km = kmM ? parseInt(kmM[1]) : null;
+  const strosekM = (notes || '').match(/(\d+(?:[.,]\d+)?)\s*€/);
+  const strosek = strosekM ? parseFloat(strosekM[1].replace(',', '.')) : null;
 
-  return { datum, shift: { start, end, crossesMidnight }, km };
+  return { datum, shift: { start, end, crossesMidnight }, km, strosek };
 }
 
 function capitalizeFirst(s) {
@@ -94,7 +96,7 @@ async function main() {
   // 0. Zagotovi tabele (v primeru, da app še ni zagnal ensureDb)
   await db.batch([
     { sql: `CREATE TABLE IF NOT EXISTS zaposleni_dela (zaposleni_id INTEGER NOT NULL, delo_id INTEGER NOT NULL, PRIMARY KEY (zaposleni_id, delo_id))`, args: [] },
-    { sql: `CREATE TABLE IF NOT EXISTS kilometrina (id INTEGER PRIMARY KEY AUTOINCREMENT, zaposleni_id INTEGER NOT NULL, datum TEXT NOT NULL, km REAL NOT NULL, UNIQUE(zaposleni_id, datum))`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS kilometrina (id INTEGER PRIMARY KEY AUTOINCREMENT, zaposleni_id INTEGER NOT NULL, datum TEXT NOT NULL, km REAL NOT NULL DEFAULT 0, strosek REAL NOT NULL DEFAULT 0, UNIQUE(zaposleni_id, datum))`, args: [] },
     { sql: `CREATE TABLE IF NOT EXISTS evidenca_razporeditev (id INTEGER PRIMARY KEY AUTOINCREMENT, zaposleni_id INTEGER NOT NULL, datum TEXT NOT NULL, delo_id INTEGER NOT NULL, cas_od TEXT NOT NULL, cas_do TEXT NOT NULL)`, args: [] },
     { sql: `CREATE TABLE IF NOT EXISTS zahtevki (id INTEGER PRIMARY KEY AUTOINCREMENT, zaposleni_id INTEGER NOT NULL, tip TEXT NOT NULL, cas_zahtevka TEXT NOT NULL, opomba TEXT, status TEXT NOT NULL DEFAULT 'CAKA', ustvarjen TEXT NOT NULL)`, args: [] },
     { sql: `CREATE TABLE IF NOT EXISTS stimulacija (id INTEGER PRIMARY KEY AUTOINCREMENT, zaposleni_id INTEGER NOT NULL, mesec TEXT NOT NULL, znesek REAL NOT NULL DEFAULT 0, opomba TEXT)`, args: [] },
@@ -112,6 +114,10 @@ async function main() {
     // Počisti napačno dodane tipe
     { sql: "DELETE FROM zaposleni_dela WHERE delo_id IN (SELECT id FROM dela WHERE naziv IN ('Strežba','Kuhinja'))", args: [] },
     { sql: "DELETE FROM dela WHERE naziv IN ('Strežba','Kuhinja')", args: [] },
+  ], 'write');
+  // Migracija — stolpec strosek (varno če že obstaja)
+  try { await db.execute('ALTER TABLE kilometrina ADD COLUMN strosek REAL NOT NULL DEFAULT 0'); } catch(_) {}
+  await db.batch([
   ], 'write');
 
   // 1. Pobriši stare podatke
@@ -160,7 +166,7 @@ async function main() {
     let evidencaCount = 0;
     for (const day of emp.days) {
       if (!day.shift) continue;
-      const { datum, shift, km } = day;
+      const { datum, shift, km, strosek } = day;
       const odhodDatum = shift.crossesMidnight ? addDay(datum) : datum;
 
       await db.execute({
@@ -174,10 +180,10 @@ async function main() {
       evidencaCount++;
 
       // Vstavi km
-      if (km) {
+      if (km || strosek) {
         await db.execute({
-          sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km) VALUES (?, ?, ?)',
-          args: [zaposleniId, datum, km]
+          sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
+          args: [zaposleniId, datum, km || 0, strosek || 0]
         });
       }
     }

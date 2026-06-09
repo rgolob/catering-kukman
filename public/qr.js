@@ -167,6 +167,7 @@ function prikaziDodatnoOverlay() {
     delaSekcija.classList.add('hidden');
   }
   document.getElementById('qr-km-input').value = '';
+  document.getElementById('qr-strosek-input').value = '';
   document.getElementById('qr-dodatno-overlay').classList.remove('hidden');
 }
 
@@ -199,13 +200,14 @@ async function dodajSegment() {
 
 document.getElementById('qr-btn-dodaj-seg').addEventListener('click', dodajSegment);
 document.getElementById('qr-btn-zakljuci').addEventListener('click', async () => {
-  const km = parseFloat(document.getElementById('qr-km-input').value);
-  if (km > 0) {
+  const km = parseFloat(document.getElementById('qr-km-input').value) || 0;
+  const strosek = parseFloat(document.getElementById('qr-strosek-input').value) || 0;
+  if (km > 0 || strosek > 0) {
     try {
       await fetch('/api/qr-kilometrina', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ zaposleniId: qrDodatnoZaposleniId, token, datum: qrDodatnoDatum, km })
+        body: JSON.stringify({ zaposleniId: qrDodatnoZaposleniId, token, datum: qrDodatnoDatum, km, strosek })
       });
     } catch (_) {}
   }
