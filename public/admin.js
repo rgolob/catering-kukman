@@ -1301,8 +1301,29 @@ document.getElementById('btn-registriraj-tablico').addEventListener('click', asy
 });
 
 // ── Backup & Restore ──────────────────────────────────────────────────────────
-document.getElementById('btn-backup').addEventListener('click', () => {
-  window.location.href = '/api/admin/backup';
+document.getElementById('btn-backup').addEventListener('click', async () => {
+  const el = document.getElementById('backup-rezultat');
+  el.textContent = '';
+  try {
+    const res = await fetch('/api/admin/backup');
+    if (!res.ok) { el.style.color = '#fc8181'; el.textContent = 'Napaka pri backupu'; return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const datum = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    a.href = url;
+    a.download = `backup_kukman_${datum}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    el.style.color = '#68d391';
+    el.textContent = '✓ Backup prenesen';
+    setTimeout(() => { el.textContent = ''; }, 3000);
+  } catch (e) {
+    el.style.color = '#fc8181';
+    el.textContent = 'Napaka: ' + e.message;
+  }
 });
 
 document.getElementById('btn-restore').addEventListener('click', async () => {
