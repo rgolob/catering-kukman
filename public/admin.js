@@ -545,7 +545,7 @@ async function naloziObracun() {
         ? '<br><span class="td-ure-sub">' + z.dodatnaDela.map(d => `${formatUre(d.minute)} ${d.naziv}`).join(' + ') + '</span>'
         : '';
       return `<tr>
-        <td>${escHtml(z.ime)}</td>
+        <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span></td>
         <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
         <td class="td-r">${z.gorivo ? formatEur(z.gorivo) : '—'}</td>
         <td class="td-r">${z.nakup ? formatEur(z.nakup) : '—'}</td>
@@ -560,6 +560,10 @@ async function naloziObracun() {
       </tr>` : '');
 
     prazno.style.display = obracun.length ? 'none' : 'block';
+
+    tbody.querySelectorAll('.obr-ime-link').forEach(el => {
+      el.addEventListener('click', () => odpriPrisModal(Number(el.dataset.id), obrLeto, obrMesec));
+    });
 
     // Stimulacija tabela + dropdown
     await naloziStimulacije(stimulacije);
@@ -719,9 +723,11 @@ async function naloziPrisotnost() {
   } catch(e) { console.error(e); }
 }
 
-async function odpriPrisModal(zaposleniId) {
+async function odpriPrisModal(zaposleniId, leto, mesec) {
+  leto = leto || prisLeto;
+  mesec = mesec || prisMesec;
   try {
-    const res = await fetch(`/api/admin/prisotnost/${zaposleniId}?leto=${prisLeto}&mesec=${prisMesec}`);
+    const res = await fetch(`/api/admin/prisotnost/${zaposleniId}?leto=${leto}&mesec=${mesec}`);
     if (!res.ok) return;
     const d = await res.json();
 
