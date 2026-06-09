@@ -34,23 +34,25 @@ function parseShiftLine(line) {
   if (!m) return null;
   const datum = parseDatum(m[1]);
   const rest = m[2].trim();
-  if (rest === '-') return { datum, shift: null, km: null };
+  if (rest === '-') return { datum, shift: null, gorivo: null, nakup: null };
 
   // Format: -HH:MM-HH:MM [notes]
   const tm = rest.match(/^-(\d{2}:\d{2})-(\d{2}:\d{2})\s*(.*)$/);
-  if (!tm) return { datum, shift: null, km: null };
+  if (!tm) return { datum, shift: null, gorivo: null, nakup: null };
 
   const [, start, end, notes] = tm;
   const [sh, sm] = start.split(':').map(Number);
   const [eh, em] = end.split(':').map(Number);
   const crossesMidnight = (eh * 60 + em) < (sh * 60 + sm);
 
-  const kmM = (notes || '').match(/(\d+)\s*km/i);
-  const km = kmM ? parseInt(kmM[1]) : null;
-  const strosekM = (notes || '').match(/(\d+(?:[.,]\d+)?)\s*€/);
-  const strosek = strosekM ? parseFloat(strosekM[1].replace(',', '.')) : null;
+  // g5€ = gorivo, n15€ or bare 15€ = nakup (backward compat)
+  const gorivoM = (notes || '').match(/g(\d+(?:[.,]\d+)?)\s*€/i);
+  const gorivo = gorivoM ? parseFloat(gorivoM[1].replace(',', '.')) : null;
+  const noteWithoutGorivo = (notes || '').replace(/g(\d+(?:[.,]\d+)?)\s*€/gi, '');
+  const nakupM = noteWithoutGorivo.match(/n?(\d+(?:[.,]\d+)?)\s*€/i);
+  const nakup = nakupM ? parseFloat(nakupM[1].replace(',', '.')) : null;
 
-  return { datum, shift: { start, end, crossesMidnight }, km, strosek };
+  return { datum, shift: { start, end, crossesMidnight }, gorivo, nakup };
 }
 
 function capitalizeFirst(s) {
@@ -166,7 +168,7 @@ async function main() {
     let evidencaCount = 0;
     for (const day of emp.days) {
       if (!day.shift) continue;
-      const { datum, shift, km, strosek } = day;
+      const { datum, shift, gorivo, nakup } = day;
       const odhodDatum = shift.crossesMidnight ? addDay(datum) : datum;
 
       await db.execute({
@@ -179,11 +181,11 @@ async function main() {
       });
       evidencaCount++;
 
-      // Vstavi km
-      if (km || strosek) {
+      // Vstavi gorivo / nakup
+      if (gorivo || nakup) {
         await db.execute({
           sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
-          args: [zaposleniId, datum, km || 0, strosek || 0]
+          args: [zaposleniId, datum, gorivo || 0, nakup || 0]
         });
       }
     }

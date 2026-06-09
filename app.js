@@ -399,18 +399,18 @@ function createApp() {
   });
 
   app.post('/api/qr-kilometrina', async (req, res) => {
-    const { zaposleniId, token, datum, km, strosek } = req.body;
+    const { zaposleniId, token, datum, km, strosek, gorivo, nakup } = req.body;
     if (!token || !validQrTokens().includes(token))
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
       return res.status(400).json({ napaka: 'Neveljaven datum' });
-    const kmNum = parseFloat(km) || 0;
-    const strosekNum = parseFloat(strosek) || 0;
-    if (kmNum <= 0 && strosekNum <= 0)
-      return res.status(400).json({ napaka: 'Vnesite km ali znesek stroškov' });
+    const gorivoNum = parseFloat(gorivo ?? km) || 0;
+    const nakupNum = parseFloat(nakup ?? strosek) || 0;
+    if (gorivoNum <= 0 && nakupNum <= 0)
+      return res.status(400).json({ napaka: 'Vnesite vrednost goriva ali nakupa' });
     await req.db.execute({
       sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
-      args: [zaposleniId, datum, kmNum, strosekNum]
+      args: [zaposleniId, datum, gorivoNum, nakupNum]
     });
     res.json({ ok: true });
   });
@@ -597,7 +597,7 @@ function createApp() {
       req.db.execute({ sql: `SELECT z.urna_postavka, z.privzeto_delo_id, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
       req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] }),
       req.db.execute({ sql: `SELECT r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] }),
-      req.db.execute({ sql: 'SELECT datum, km, strosek FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
+      req.db.execute({ sql: 'SELECT datum, km AS gorivo, strosek AS nakup FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
     ]);
 
     const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
@@ -617,8 +617,8 @@ function createApp() {
     const hasRate = privzetaUp > 0 || razRows.length > 0;
     const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
 
-    const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { km: Number(r.km), strosek: Number(r.strosek || 0) }]));
-    const dneviZKm = dnevi.map(d => ({ ...d, ...( kmPoDateh.get(d.datum) || { km: 0, strosek: 0 }) }));
+    const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { gorivo: Number(r.gorivo), nakup: Number(r.nakup || 0) }]));
+    const dneviZKm = dnevi.map(d => ({ ...d, ...( kmPoDateh.get(d.datum) || { gorivo: 0, nakup: 0 }) }));
 
     res.json({
       leto, mesec, dnevi: dneviZKm,
@@ -1023,7 +1023,7 @@ function createApp() {
     ]);
 
     const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
-    const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { km: parseFloat(r.skupaj_km) || 0, strosek: parseFloat(r.skupaj_strosek) || 0 }]));
+    const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { gorivo: parseFloat(r.skupaj_km) || 0, nakup: parseFloat(r.skupaj_strosek) || 0 }]));
 
     const obracun = zaposleni.map(z => {
       const zid = Number(z.id);
@@ -1053,7 +1053,7 @@ function createApp() {
       const hasRate = privzetaUp > 0 || delaMap.size > 0;
       const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
       const stimulacija = stimMap.get(zid) || 0;
-      const { km = 0, strosek = 0 } = kmMap.get(zid) || {};
+      const { gorivo = 0, nakup = 0 } = kmMap.get(zid) || {};
 
       return {
         id: zid, ime: z.ime,
@@ -1063,7 +1063,7 @@ function createApp() {
         privzetaMinuta,
         dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
         osnova, stimulacija: stimulacija || null,
-        km, strosek,
+        gorivo, nakup,
         skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
       };
     });
@@ -1415,18 +1415,20 @@ function createApp() {
         if (!m) return null;
         const datum = parseDatumImp(m[1]);
         const rest = m[2].trim();
-        if (rest === '-') return { datum, shift: null, km: null, strosek: null };
+        if (rest === '-') return { datum, shift: null, gorivo: null, nakup: null };
         const tm = rest.match(/^-(\d{2}:\d{2})-(\d{2}:\d{2})\s*(.*)$/);
-        if (!tm) return { datum, shift: null, km: null, strosek: null };
+        if (!tm) return { datum, shift: null, gorivo: null, nakup: null };
         const [, start, end, notes] = tm;
         const [sh, sm] = start.split(':').map(Number);
         const [eh, em] = end.split(':').map(Number);
         const crossesMidnight = (eh * 60 + em) < (sh * 60 + sm);
-        const kmM = (notes || '').match(/(\d+)\s*km/i);
-        const km = kmM ? parseInt(kmM[1]) : null;
-        const strosekM = (notes || '').match(/(\d+(?:[.,]\d+)?)\s*€/);
-        const strosek = strosekM ? parseFloat(strosekM[1].replace(',', '.')) : null;
-        return { datum, shift: { start, end, crossesMidnight }, km, strosek };
+        // g5€ = gorivo, n15€ or bare 15€ = nakup (backward compat)
+        const gorivoM = (notes || '').match(/g(\d+(?:[.,]\d+)?)\s*€/i);
+        const gorivo = gorivoM ? parseFloat(gorivoM[1].replace(',', '.')) : null;
+        const noteWithoutGorivo = (notes || '').replace(/g(\d+(?:[.,]\d+)?)\s*€/gi, '');
+        const nakupM = noteWithoutGorivo.match(/n?(\d+(?:[.,]\d+)?)\s*€/i);
+        const nakup = nakupM ? parseFloat(nakupM[1].replace(',', '.')) : null;
+        return { datum, shift: { start, end, crossesMidnight }, gorivo, nakup };
       }
       function parseFileImp(src) {
         const blocks = src.split(/\n[ \t]*\n/).filter(b => b.trim());
@@ -1478,13 +1480,13 @@ function createApp() {
         }
         for (const day of emp.days) {
           if (!day.shift) continue;
-          const { datum, shift, km, strosek } = day;
+          const { datum, shift, gorivo, nakup } = day;
           const odhodDatum = shift.crossesMidnight ? addDayImp(datum) : datum;
           await db.execute({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)', args: [zaposleniId, 'PRIHOD', `${datum} ${shift.start}:00`] });
           await db.execute({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)', args: [zaposleniId, 'ODHOD', `${odhodDatum} ${shift.end}:00`] });
           evidencCount++;
-          if (km || strosek) {
-            await db.execute({ sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)', args: [zaposleniId, datum, km || 0, strosek || 0] });
+          if (gorivo || nakup) {
+            await db.execute({ sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)', args: [zaposleniId, datum, gorivo || 0, nakup || 0] });
           }
         }
         uvozenih++;
