@@ -1064,7 +1064,7 @@ function createApp() {
         dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
         osnova, stimulacija: stimulacija || null,
         gorivo, nakup,
-        skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
+        skupaj: (osnova !== null || stimulacija > 0 || gorivo > 0 || nakup > 0) ? Math.round(((osnova || 0) + stimulacija + gorivo + nakup) * 100) / 100 : null
       };
     });
     res.json({ leto, mesec, obracun });
