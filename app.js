@@ -1370,6 +1370,95 @@ function createApp() {
     }
   });
 
+  // ── Backup & Restore ─────────────────────────────────────────────────────────
+  app.get('/api/admin/backup', requireAuth, async (req, res) => {
+    try {
+      const [z, e, k, s, zd, er] = await Promise.all([
+        req.db.execute('SELECT * FROM zaposleni ORDER BY id'),
+        req.db.execute('SELECT * FROM evidenca ORDER BY id'),
+        req.db.execute('SELECT * FROM kilometrina ORDER BY id'),
+        req.db.execute('SELECT * FROM stimulacija ORDER BY id'),
+        req.db.execute('SELECT * FROM zaposleni_dela ORDER BY zaposleni_id, delo_id'),
+        req.db.execute('SELECT * FROM evidenca_razporeditev ORDER BY id')
+      ]);
+      const backup = {
+        verzija: 1,
+        datum: localTime(),
+        zaposleni: z.rows,
+        evidenca: e.rows,
+        kilometrina: k.rows,
+        stimulacija: s.rows,
+        zaposleni_dela: zd.rows,
+        evidenca_razporeditev: er.rows
+      };
+      const filename = `backup_kukman_${localDate().replace(/-/g, '')}.json`;
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.json(backup);
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
+  app.post('/api/admin/restore', requireAuth, async (req, res) => {
+    try {
+      const backup = req.body;
+      if (!backup?.verzija || !Array.isArray(backup.zaposleni))
+        return res.status(400).json({ napaka: 'Neveljaven backup format' });
+      const db = req.db;
+      await db.batch([
+        { sql: 'DELETE FROM zaposleni_dela', args: [] },
+        { sql: 'DELETE FROM kilometrina', args: [] },
+        { sql: 'DELETE FROM evidenca_razporeditev', args: [] },
+        { sql: 'DELETE FROM evidenca', args: [] },
+        { sql: 'DELETE FROM zahtevki', args: [] },
+        { sql: 'DELETE FROM stimulacija', args: [] },
+        { sql: 'DELETE FROM zaposleni', args: [] },
+      ], 'write');
+      for (const z of backup.zaposleni) {
+        await db.execute({
+          sql: 'INSERT INTO zaposleni (id, ime, aktiven, pin, pin_setup_required, urna_postavka, privzeto_delo_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          args: [z.id, z.ime, z.aktiven ?? 1, z.pin, z.pin_setup_required ?? 0, z.urna_postavka ?? 0, z.privzeto_delo_id ?? null]
+        });
+      }
+      for (const e of (backup.evidenca || [])) {
+        await db.execute({
+          sql: 'INSERT INTO evidenca (id, zaposleni_id, tip, cas, naknadno, delo_id) VALUES (?, ?, ?, ?, ?, ?)',
+          args: [e.id, e.zaposleni_id, e.tip, e.cas, e.naknadno ?? 0, e.delo_id ?? null]
+        });
+      }
+      for (const k of (backup.kilometrina || [])) {
+        await db.execute({
+          sql: 'INSERT INTO kilometrina (id, zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?, ?)',
+          args: [k.id, k.zaposleni_id, k.datum, k.km ?? 0, k.strosek ?? 0]
+        });
+      }
+      for (const s of (backup.stimulacija || [])) {
+        await db.execute({
+          sql: 'INSERT INTO stimulacija (id, zaposleni_id, mesec, znesek, opomba) VALUES (?, ?, ?, ?, ?)',
+          args: [s.id, s.zaposleni_id, s.mesec, s.znesek, s.opomba ?? null]
+        });
+      }
+      for (const zd of (backup.zaposleni_dela || [])) {
+        await db.execute({
+          sql: 'INSERT OR IGNORE INTO zaposleni_dela (zaposleni_id, delo_id) VALUES (?, ?)',
+          args: [zd.zaposleni_id, zd.delo_id]
+        });
+      }
+      for (const er of (backup.evidenca_razporeditev || [])) {
+        await db.execute({
+          sql: 'INSERT INTO evidenca_razporeditev (id, zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?, ?)',
+          args: [er.id, er.zaposleni_id, er.datum, er.delo_id, er.cas_od, er.cas_do]
+        });
+      }
+      res.json({ ok: true, sporocilo: `Obnovljeno: ${backup.zaposleni.length} zaposlenih, ${(backup.evidenca||[]).length} vnosov.` });
+    } catch (e) {
+      console.error(e);
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
   // ── Preberi vnos-zaposleni.txt ────────────────────────────────────────────────
   app.get('/api/admin/vnos-zaposleni', requireAuth, async (req, res) => {
     try {

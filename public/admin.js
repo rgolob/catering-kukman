@@ -1294,6 +1294,43 @@ document.getElementById('btn-registriraj-tablico').addEventListener('click', asy
   }
 });
 
+// ── Backup & Restore ──────────────────────────────────────────────────────────
+document.getElementById('btn-backup').addEventListener('click', () => {
+  window.location.href = '/api/admin/backup';
+});
+
+document.getElementById('btn-restore').addEventListener('click', async () => {
+  const el = document.getElementById('backup-rezultat');
+  const fileInput = document.getElementById('backup-file-input');
+  el.textContent = '';
+  if (!fileInput.files.length) { el.style.color = '#fc8181'; el.textContent = 'Izberi backup datoteko.'; return; }
+  if (!confirm('POZOR: Obnova bo izbrisala VSE obstoječe podatke in jih zamenjala z backup datoteko.\n\nSi prepričan?')) return;
+  if (!confirm('Potrdi še enkrat: vsi trenutni podatki bodo trajno izgubljeni.')) return;
+  try {
+    const tekst = await fileInput.files[0].text();
+    const backup = JSON.parse(tekst);
+    const res = await fetch('/api/admin/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(backup)
+    });
+    const d = await res.json();
+    if (res.ok) {
+      el.style.color = '#68d391';
+      el.textContent = `✓ ${d.sporocilo}`;
+      prikaziToast(d.sporocilo);
+      naloziZaposlene();
+      fileInput.value = '';
+    } else {
+      el.style.color = '#fc8181';
+      el.textContent = d.napaka || 'Napaka pri obnovi';
+    }
+  } catch (e) {
+    el.style.color = '#fc8181';
+    el.textContent = 'Napaka: ' + (e.message || 'neveljavna datoteka');
+  }
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 naloziZaposlene();
 naloziEvidenco();

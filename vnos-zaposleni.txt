@@ -3,7 +3,7 @@
 # Nato za vsak dan: DD.MM -HH:MM-HH:MM   (ali - če ni delal)
 # Gorivo: g5€, nakup v trgovini: n15€ (ali plain 15€)
 # Prazna vrstica loči zaposlene
-# Dnevi: 01.06 do 07.06 (2026)
+# Dnevi: 01.06 do 09.06 (2026)
 
 Golob Magda | Pomivalec | 1234
 01.06 -07:30-15:30
@@ -13,6 +13,8 @@ Golob Magda | Pomivalec | 1234
 05.06 -07:30-15:30
 06.06 -
 07.06 -
+08.06 -07:00-15:00
+09.06 -07:00-16:30
 
 Krevs Tončka | Pomivalec | 1234
 01.06 -07:00-15:30
@@ -22,6 +24,8 @@ Krevs Tončka | Pomivalec | 1234
 05.06 -09:00-15:30
 06.06 -
 07.06 -
+08.06 -07:15-15:00
+09.06 -07:15-16:30
 
 Zore Milena | Pomivalec | 1234
 01.06 -07:00-15:30
@@ -31,6 +35,8 @@ Zore Milena | Pomivalec | 1234
 05.06 -
 06.06 -
 07.06 -
+08.06 -07:00-15:00
+09.06 -07:00-16:30
 
 Gole Mari | Pomivalec | 1234
 01.06 -07:00-15:30
@@ -40,6 +46,8 @@ Gole Mari | Pomivalec | 1234
 05.06 -09:00-15:30
 06.06 -
 07.06 -
+08.06 -07:00-15:00
+09.06 -07:00-16:30
 
 Krevs Joži | Pomivalec, Teren | 1234
 01.06 -
@@ -49,6 +57,8 @@ Krevs Joži | Pomivalec, Teren | 1234
 05.06 -
 06.06 -
 07.06 -
+08.06 -07:15-15:15
+09.06 -07:00-16:30
 
 Bohte Aljoša | Koordinator | 1234
 01.06 -
@@ -113,7 +123,7 @@ Colarič Eva | Koordinator | 1234
 06.06 -09:00-05:30
 07.06 -
 
-Janežič Anja | Koordinator | 1234
+Janžič Anja | Koordinator | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -146,7 +156,7 @@ Rozman Ana | Teren | 1234
 03.06 -
 04.06 -
 05.06 -
-06.06 -09:00-04:20
+06.06 -09:00-04:20 g10.69€
 07.06 -
 
 Vedrič Helena | Teren | 1234
@@ -167,7 +177,7 @@ Muhič Lea | Teren | 1234
 06.06 -
 07.06 -
 
-Cesar Anja | Pripravnik | 1234
+Cesar Anja | Teren, Praktikant | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -176,7 +186,7 @@ Cesar Anja | Pripravnik | 1234
 06.06 -09:00-05:00
 07.06 -
 
-Kos Maruša | Pripravnik | 1234
+Kos Maruša | Praktikant | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -200,7 +210,7 @@ Matoh David | Teren | 1234
 03.06 -
 04.06 -09:00-11:00
 05.06 -
-06.06 -06:00-03:00 n31€
+06.06 -06:00-03:00 g5.57€ n31€
 07.06 -
 
 Turk Blaž | Teren | 1234
@@ -254,10 +264,10 @@ Matoh Domen | Teren | 1234
 03.06 -
 04.06 -
 05.06 -08:00-18:00
-06.06 -08:00-01:00
-07.06 -
+06.06 -08:00-01:00 g12.25€
+07.06 -10:00-14:00
 
-Tina | Teren | 1234
+Fabjan Tina | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -265,3 +275,21 @@ Tina | Teren | 1234
 05.06 -
 06.06 -
 07.06 -
+
+Ratushniuk Maksym | Teren | 1234
+01.06 -
+02.06 -
+03.06 -
+04.06 -
+05.06 -
+06.06 -08:00-04:20
+07.06 -07:00-16:00
+
+Ratushniuk Daša | Teren | 1234
+01.06 -
+02.06 -
+03.06 -
+04.06 -
+05.06 -
+06.06 -
+07.06 -07:00-16:00 g11.14€
