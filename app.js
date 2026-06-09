@@ -1224,6 +1224,26 @@ function createApp() {
     });
   });
 
+  app.post('/api/kilometrina-pin', async (req, res) => {
+    const { zaposleniId, pin, datum, gorivo, nakup } = req.body;
+    if (!zaposleniId || !pin) return res.status(401).json({ napaka: 'Ni pooblastil' });
+    const { rows } = await req.db.execute({
+      sql: 'SELECT id FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
+      args: [zaposleniId, pin]
+    });
+    if (!rows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
+    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
+      return res.status(400).json({ napaka: 'Neveljaven datum' });
+    const g = parseFloat(gorivo) || 0;
+    const n = parseFloat(nakup) || 0;
+    if (g <= 0 && n <= 0) return res.json({ ok: true });
+    await req.db.execute({
+      sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
+      args: [zaposleniId, datum, g, n]
+    });
+    res.json({ ok: true });
+  });
+
   app.post('/api/admin/razporeditev', requireAuth, async (req, res) => {
     const { zaposleniId, datum, deloId, casOd, casDo } = req.body;
     if (!zaposleniId || !datum || !deloId || !casOd || !casDo)

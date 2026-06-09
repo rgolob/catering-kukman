@@ -243,8 +243,8 @@ async function potrdiZapis() {
     zapriDialog();
     prikaziToast(zapis.ime, tipZaDodatno);
 
-    if (tipZaDodatno === 'ODHOD' && zapis.privzetoDelo && zapis.ostala_dela?.length > 0) {
-      prikaziDodatnoDeloOverlay(idZaDodatno, pinZaDodatno, String(zapis.cas).slice(0, 10), zapis.privzetoDelo, zapis.ostala_dela);
+    if (tipZaDodatno === 'ODHOD') {
+      prikaziDodatnoDeloOverlay(idZaDodatno, pinZaDodatno, String(zapis.cas).slice(0, 10), zapis.privzetoDelo, zapis.ostala_dela || []);
     }
 
     naloziZaposlene();
@@ -296,18 +296,26 @@ function prikaziDodatnoDeloOverlay(zaposleniId, pin, datum, privzetoDelo, ostala
   odhodDatum = datum;
   odhodDela = ostala_dela;
 
-  const sel = document.getElementById('dodatno-delo-select');
-  sel.innerHTML = ostala_dela.map(d =>
-    `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
-  ).join('');
+  const delaSekcija = document.getElementById('dodatno-dela-sekcija');
+  if (ostala_dela.length > 0 && privzetoDelo) {
+    delaSekcija.style.display = '';
+    const sel = document.getElementById('dodatno-delo-select');
+    sel.innerHTML = ostala_dela.map(d =>
+      `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
+    ).join('');
+    document.getElementById('dodatno-od').value = '';
+    document.getElementById('dodatno-do').value = '';
+    document.getElementById('dodatno-segmenti').innerHTML = '';
+    document.getElementById('dodatno-napaka').textContent = '';
+    document.getElementById('dodatno-podnaslov').textContent =
+      `Ste danes opravljali še kako drugo delo poleg ${privzetoDelo.naziv}?`;
+  } else {
+    delaSekcija.style.display = 'none';
+    document.getElementById('dodatno-podnaslov').textContent = 'Imate kakšne stroške za danes?';
+  }
 
-  document.getElementById('dodatno-od').value = '';
-  document.getElementById('dodatno-do').value = '';
-  document.getElementById('dodatno-segmenti').innerHTML = '';
-  document.getElementById('dodatno-napaka').textContent = '';
-  document.getElementById('dodatno-podnaslov').textContent =
-    `Odhod zabeležen. Ste delali katero drugo delo poleg ${privzetoDelo.naziv}?`;
-
+  document.getElementById('dodatno-gorivo').value = '';
+  document.getElementById('dodatno-nakup').value = '';
   document.getElementById('dodatno-overlay').classList.remove('hidden');
 }
 
@@ -343,7 +351,18 @@ async function dodajSegment() {
 }
 
 document.getElementById('btn-dodaj-segment').addEventListener('click', dodajSegment);
-document.getElementById('btn-dodatno-zakljuci').addEventListener('click', () => {
+document.getElementById('btn-dodatno-zakljuci').addEventListener('click', async () => {
+  const gorivo = parseFloat(document.getElementById('dodatno-gorivo').value) || 0;
+  const nakup = parseFloat(document.getElementById('dodatno-nakup').value) || 0;
+  if ((gorivo > 0 || nakup > 0) && odhodZaposleniId && odhodPin) {
+    try {
+      await fetch('/api/kilometrina-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ zaposleniId: odhodZaposleniId, pin: odhodPin, datum: odhodDatum, gorivo, nakup })
+      });
+    } catch(_) {}
+  }
   document.getElementById('dodatno-overlay').classList.add('hidden');
   odhodZaposleniId = null;
   odhodPin = null;
