@@ -224,8 +224,8 @@ function casOdDoMinute(casOd, casDo) {
 function createApp() {
   const app = express();
 
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: false }));
+  app.use(express.json({ limit: '10mb' }));
+  app.use(express.urlencoded({ extended: false, limit: '10mb' }));
   app.use(cookieSession({
     name: 'kukman-seja',
     keys: [process.env.SESSION_SECRET || 'kukman-evidenca-tajna-kljuc-2024'],
@@ -1064,7 +1064,7 @@ function createApp() {
         dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
         osnova, stimulacija: stimulacija || null,
         gorivo, nakup,
-        skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
+        skupaj: (osnova !== null || stimulacija > 0 || gorivo > 0 || nakup > 0) ? Math.round(((osnova || 0) + stimulacija + gorivo + nakup) * 100) / 100 : null
       };
     });
     res.json({ leto, mesec, obracun });
@@ -1558,7 +1558,7 @@ function createApp() {
       for (const emp of employees) {
         const privzetoDeloId = delaMap.get(emp.dela[0]) || null;
         const r = await db.execute({
-          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 0)',
+          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 1)',
           args: [emp.ime, emp.pin, privzetoDeloId]
         });
         const zaposleniId = Number(r.lastInsertRowid);
