@@ -405,6 +405,41 @@ button:hover { background: #1a365d; }
 
 .pin-celica { flex: 1; min-width: 0; }
 
+/* Dovoljene vloge — pills */
+.dela-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+  padding-top: 2px;
+}
+.dela-pill {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1.5px solid #e2e8f0;
+  background: #f7fafc;
+  color: #718096;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.12s;
+}
+.dela-pill input[type="checkbox"] { display: none; }
+.dela-pill.dela-pill-checked {
+  background: #ebf8ff;
+  border-color: #90cdf4;
+  color: #2b6cb0;
+}
+.dela-pill.dela-pill-privzeto {
+  background: #c6f6d5;
+  border-color: #68d391;
+  color: #276749;
+  cursor: default;
+}
+
 .pin-prikaz-vrstica,
 .pin-razkrit-vrstica,
 .pin-uredi-vrstica {

@@ -674,10 +674,25 @@ function createApp() {
   // ── Admin API ──────────────────────────────────────────────────────────────────
   app.get('/api/admin/zaposleni', requireAuth, async (req, res) => {
     const { rows } = await req.db.execute(
-      `SELECT z.*, d.naziv AS privzeto_delo_naziv, d.urna_postavka AS privzeto_delo_up
+      `SELECT z.*, d.naziv AS privzeto_delo_naziv, d.urna_postavka AS privzeto_delo_up,
+        (SELECT GROUP_CONCAT(delo_id) FROM zaposleni_dela WHERE zaposleni_id = z.id) AS dela_ids
        FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id ORDER BY z.ime`
     );
-    res.json(rows);
+    res.json(rows.map(r => ({ ...r, dela_ids: r.dela_ids ? String(r.dela_ids).split(',').map(Number) : [] })));
+  });
+
+  app.put('/api/admin/zaposleni/:id/dela', requireAuth, async (req, res) => {
+    const { delaIds } = req.body;
+    if (!Array.isArray(delaIds)) return res.status(400).json({ napaka: 'Neveljaven vnos' });
+    const id = Number(req.params.id);
+    await req.db.execute({ sql: 'DELETE FROM zaposleni_dela WHERE zaposleni_id = ?', args: [id] });
+    for (const deloId of delaIds) {
+      await req.db.execute({
+        sql: 'INSERT OR IGNORE INTO zaposleni_dela (zaposleni_id, delo_id) VALUES (?, ?)',
+        args: [id, Number(deloId)]
+      });
+    }
+    res.json({ ok: true });
   });
 
   app.patch('/api/admin/zaposleni/:id/privzeto-delo', requireAuth, async (req, res) => {

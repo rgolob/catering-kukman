@@ -1,4 +1,4 @@
-const CACHE = 'kukman-v27';
+const CACHE = 'kukman-v28';
 
 const STATIC = [
   '/style.css',

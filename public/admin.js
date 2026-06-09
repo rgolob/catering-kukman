@@ -79,6 +79,10 @@ async function naloziZaposlene() {
           </select>
         </div>
         <div class="zap-podrobnosti-vrstica">
+          <span class="zap-podrobnosti-oznaka">Dovoljene vloge</span>
+          <div class="dela-checkboxes" id="dela-cb-${z.id}"></div>
+        </div>
+        <div class="zap-podrobnosti-vrstica">
           <span class="zap-podrobnosti-oznaka">PIN</span>
           <div class="pin-celica">
             <div class="pin-prikaz-vrstica" id="pin-prikaz-${z.id}">
@@ -149,9 +153,33 @@ async function naloziZaposlene() {
     kartica.querySelector('.zap-ime-input').addEventListener('click', e => e.stopPropagation());
   });
 
-  // Privzeto delo — naloži opcije in nastavi vrednost
+  // Privzeto delo + Dovoljene vloge
   const delaRes = await fetch('/api/dela');
   const vsaDela = delaRes.ok ? await delaRes.json() : [];
+
+  function getCheckedDelaIds(zId) {
+    const container = document.getElementById(`dela-cb-${zId}`);
+    const sel = document.querySelector(`.privzeto-delo-select[data-id="${zId}"]`);
+    const privzetoId = sel?.value ? Number(sel.value) : null;
+    const checked = container
+      ? [...container.querySelectorAll('input[type="checkbox"]')]
+          .filter(c => c.checked).map(c => Number(c.value))
+      : [];
+    if (privzetoId && !checked.includes(privzetoId)) checked.push(privzetoId);
+    return checked;
+  }
+
+  async function saveVloge(zId) {
+    const delaIds = getCheckedDelaIds(zId);
+    const res = await fetch(`/api/admin/zaposleni/${zId}/dela`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ delaIds })
+    });
+    if (res.ok) prikaziToast('Vloge posodobljene');
+    else prikaziToast('Napaka pri shranjevanju', 'napaka');
+  }
+
   seznam.querySelectorAll('.privzeto-delo-select').forEach(sel => {
     sel.addEventListener('click', e => e.stopPropagation());
     const zId = Number(sel.dataset.id);
@@ -164,14 +192,55 @@ async function naloziZaposlene() {
       sel.appendChild(opt);
     });
     sel.addEventListener('change', async () => {
-      const deloId = sel.value || null;
+      const newDeloId = sel.value ? Number(sel.value) : null;
+      const oldDeloId = Number(zaposlen?.privzeto_delo_id) || null;
+      // Update checkbox state in DOM
+      const container = document.getElementById(`dela-cb-${zId}`);
+      if (container) {
+        if (oldDeloId) {
+          const oldCb = container.querySelector(`input[value="${oldDeloId}"]`);
+          if (oldCb) { oldCb.disabled = false; oldCb.closest('.dela-pill').classList.remove('dela-pill-privzeto'); }
+        }
+        if (newDeloId) {
+          const newCb = container.querySelector(`input[value="${newDeloId}"]`);
+          if (newCb) { newCb.disabled = true; newCb.checked = true; newCb.closest('.dela-pill').classList.add('dela-pill-privzeto', 'dela-pill-checked'); }
+        }
+      }
+      zaposlen.privzeto_delo_id = newDeloId;
       const res = await fetch(`/api/admin/zaposleni/${zId}/privzeto-delo`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deloId })
+        body: JSON.stringify({ deloId: newDeloId })
       });
-      if (res.ok) prikaziToast('Privzeto delo shranjeno');
+      if (res.ok) { await saveVloge(zId); prikaziToast('Privzeto delo shranjeno'); }
       else prikaziToast('Napaka pri shranjevanju', 'napaka');
+    });
+  });
+
+  // Dovoljene vloge — pill checkboxes
+  seznam.querySelectorAll('[id^="dela-cb-"]').forEach(container => {
+    const zId = Number(container.id.replace('dela-cb-', ''));
+    const zaposlen = zaposleni.find(z => Number(z.id) === zId);
+    const zDelaIds = zaposlen?.dela_ids || [];
+    container.addEventListener('click', e => e.stopPropagation());
+    vsaDela.forEach(d => {
+      const deloId = Number(d.id);
+      const isDefault = Number(zaposlen?.privzeto_delo_id) === deloId;
+      const isChecked = zDelaIds.includes(deloId) || isDefault;
+      const pill = document.createElement('label');
+      pill.className = 'dela-pill' + (isChecked ? ' dela-pill-checked' : '') + (isDefault ? ' dela-pill-privzeto' : '');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = deloId;
+      cb.checked = isChecked;
+      cb.disabled = isDefault;
+      cb.addEventListener('change', () => {
+        pill.classList.toggle('dela-pill-checked', cb.checked);
+        saveVloge(zId);
+      });
+      pill.appendChild(cb);
+      pill.appendChild(document.createTextNode(d.naziv));
+      container.appendChild(pill);
     });
   });
 
