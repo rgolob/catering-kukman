@@ -127,11 +127,15 @@ async function ensureDb() {
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Organizator', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Teren', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Koordinator', 12)", args: [] },
-    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Strežba', 11)", args: [] },
-    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Kuhinja', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Praktikant', 4)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Pripravnik', 2)", args: [] },
   ], 'write');
+
+  // Odstrani napačno dodane tipe dela (Strežba in Kuhinja = Teren)
+  try {
+    await db.execute("DELETE FROM zaposleni_dela WHERE delo_id IN (SELECT id FROM dela WHERE naziv IN ('Strežba','Kuhinja'))");
+    await db.execute("DELETE FROM dela WHERE naziv IN ('Strežba','Kuhinja')");
+  } catch(_) {}
 
   _initialized = true;
   return db;

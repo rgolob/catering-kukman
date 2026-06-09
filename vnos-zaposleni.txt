@@ -40,7 +40,7 @@ Mari Gole | Pomivalec | 1234
 06.06 -
 07.06 -
 
-Joži Krevs | Pomivalec, Strežba, Kuhinja | 1234
+Joži Krevs | Pomivalec, Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -121,7 +121,7 @@ Anja Janžič | Koordinator | 1234
 06.06 -09:00-03:30
 07.06 -
 
-Manca Vdovič | Strežba, Kuhinja | 1234
+Manca Vdovič | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -130,7 +130,7 @@ Manca Vdovič | Strežba, Kuhinja | 1234
 06.06 -09:00-05:30
 07.06 -
 
-Lidija Popovič | Strežba, Kuhinja | 1234
+Lidija Popovič | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -139,7 +139,7 @@ Lidija Popovič | Strežba, Kuhinja | 1234
 06.06 -09:00-05:30
 07.06 -
 
-Ana Rozman | Strežba, Kuhinja | 1234
+Ana Rozman | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -148,7 +148,7 @@ Ana Rozman | Strežba, Kuhinja | 1234
 06.06 -09:00-04:20 96km
 07.06 -
 
-Helena Vedrič | Strežba, Kuhinja | 1234
+Helena Vedrič | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -157,7 +157,7 @@ Helena Vedrič | Strežba, Kuhinja | 1234
 06.06 -09:00-05:00
 07.06 -
 
-Lea Muhič | Strežba, Kuhinja | 1234
+Lea Muhič | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -166,7 +166,7 @@ Lea Muhič | Strežba, Kuhinja | 1234
 06.06 -
 07.06 -
 
-Anja Cesar | Strežba, Kuhinja, Praktikant | 1234
+Anja Cesar | Teren, Praktikant | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -184,7 +184,7 @@ Maruša Kos | Praktikant | 1234
 06.06 -08:00-23:30
 07.06 -
 
-Julija Šušteršič | Strežba, Kuhinja | 1234
+Julija Šušteršič | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -193,7 +193,7 @@ Julija Šušteršič | Strežba, Kuhinja | 1234
 06.06 -08:00-23:30
 07.06 -
 
-David Matoh | Strežba, Kuhinja | 1234
+David Matoh | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -202,7 +202,7 @@ David Matoh | Strežba, Kuhinja | 1234
 06.06 -06:00-03:00 50km
 07.06 -
 
-Blaž Turk | Strežba, Kuhinja | 1234
+Blaž Turk | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -220,7 +220,7 @@ Nejc Turk | Pripravnik | 1234
 06.06 -14:00-05:00
 07.06 -
 
-Jure Rožič | Strežba, Kuhinja | 1234
+Jure Rožič | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -238,7 +238,7 @@ Andraž Cesar | Koordinator | 1234
 06.06 -10:00-04:20
 07.06 -
 
-Matej Zore | Kuhinja | 1234
+Matej Zore | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -247,7 +247,7 @@ Matej Zore | Kuhinja | 1234
 06.06 -
 07.06 -
 
-Domen Matoh | Strežba, Kuhinja | 1234
+Domen Matoh | Teren | 1234
 01.06 -
 02.06 -
 03.06 -
@@ -256,7 +256,7 @@ Domen Matoh | Strežba, Kuhinja | 1234
 06.06 -08:00-01:00 110km
 07.06 -
 
-Tina | Strežba, Kuhinja | 1234
+Tina | Teren | 1234
 01.06 -
 02.06 -
 03.06 -

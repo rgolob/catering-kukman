@@ -107,10 +107,11 @@ async function main() {
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Organizator', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Teren', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Koordinator', 12)", args: [] },
-    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Strežba', 11)", args: [] },
-    { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Kuhinja', 11)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Praktikant', 4)", args: [] },
     { sql: "INSERT OR IGNORE INTO dela (naziv, urna_postavka) VALUES ('Pripravnik', 2)", args: [] },
+    // Počisti napačno dodane tipe
+    { sql: "DELETE FROM zaposleni_dela WHERE delo_id IN (SELECT id FROM dela WHERE naziv IN ('Strežba','Kuhinja'))", args: [] },
+    { sql: "DELETE FROM dela WHERE naziv IN ('Strežba','Kuhinja')", args: [] },
   ], 'write');
 
   // 1. Pobriši stare podatke
