@@ -5,6 +5,7 @@
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["@libsql/client", "xlsx", "qrcode"]
+  included_files = ["vnos-zaposleni.txt"]
 
 [dev]
   command = "node server.js"
