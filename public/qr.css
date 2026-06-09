@@ -142,8 +142,8 @@ main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
 .dodatno-cas-row { display: flex; gap: 10px; }
 .dodatno-cas-row label { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #718096; flex: 1; }
 .dodatno-cas-row input[type="time"] { flex: 1; padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; color: #1a202c; }
-.btn-dodaj-seg { padding: 10px 16px; border: none; border-radius: 8px; background: #3182ce; color: #fff; font-weight: 600; cursor: pointer; font-size: 0.92rem; }
-.btn-dodaj-seg:hover { background: #2b6cb0; }
+.btn-dodaj-seg { padding: 7px 14px; border: 1.5px solid #90cdf4; border-radius: 8px; background: #ebf8ff; color: #2b6cb0; font-weight: 600; cursor: pointer; font-size: 0.84rem; align-self: flex-start; }
+.btn-dodaj-seg:hover { background: #bee3f8; }
 .dialog-pin-napaka { color: #e53e3e; font-size: 0.82rem; min-height: 18px; margin: 6px 0; }
 .dodatno-segmenti { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
 .dodatno-segment { background: #f0fff4; border: 1px solid #9ae6b4; border-radius: 6px; padding: 6px 10px; font-size: 0.88rem; color: #276749; }
@@ -201,15 +201,17 @@ main { padding: 20px 16px; max-width: 480px; margin: 0 auto; }
   display: block;
   width: 100%;
   margin-top: 18px;
-  background: none;
+  background: #276749;
   border: none;
-  color: #a0aec0;
-  font-size: 0.9rem;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
   cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: color 0.15s;
+  padding: 16px;
+  border-radius: 14px;
+  transition: background 0.15s;
 }
-.btn-zakljuci-btn:hover { color: #4a5568; }
+.btn-zakljuci-btn:hover { background: #22543d; }
+.btn-zakljuci-btn:active { transform: scale(0.98); }
 
 .hidden { display: none !important; }
