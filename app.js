@@ -1348,14 +1348,28 @@ function createApp() {
     }
   });
 
+  // ── Preberi vnos-zaposleni.txt ────────────────────────────────────────────────
+  app.get('/api/admin/vnos-zaposleni', requireAuth, (req, res) => {
+    try {
+      const txtPath = path.join(__dirname, 'vnos-zaposleni.txt');
+      const txt = fs.existsSync(txtPath) ? fs.readFileSync(txtPath, 'utf8') : '';
+      res.json({ tekst: txt });
+    } catch (e) {
+      res.status(500).json({ napaka: e.message });
+    }
+  });
+
   // ── Uvoz zaposlenih iz vnos-zaposleni.txt ─────────────────────────────────────
   app.post('/api/admin/uvozi-zaposlene', requireAuth, async (req, res) => {
     try {
       const db = req.db;
-      const txtPath = path.join(__dirname, 'vnos-zaposleni.txt');
-      if (!fs.existsSync(txtPath)) return res.status(404).json({ napaka: 'vnos-zaposleni.txt ne obstaja' });
-
-      const txt = fs.readFileSync(txtPath, 'utf8');
+      // Sprejmi tekst iz telesa zahteve ali preberi iz datoteke
+      let txt = req.body?.tekst || null;
+      if (!txt) {
+        const txtPath = path.join(__dirname, 'vnos-zaposleni.txt');
+        if (!fs.existsSync(txtPath)) return res.status(404).json({ napaka: 'vnos-zaposleni.txt ne obstaja' });
+        txt = fs.readFileSync(txtPath, 'utf8');
+      }
 
       const YEAR = '2026';
       function parseDatumImp(ddmm) {

@@ -11,7 +11,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
     if (btn.dataset.tab === 'lestvica') naloziLestvicaTab();
     if (btn.dataset.tab === 'dela') naloziDelaTab();
-    if (btn.dataset.tab === 'nastavitve') naloziNapraveTab();
+    if (btn.dataset.tab === 'nastavitve') { naloziNapraveTab(); naloziUvozTekst(); }
   });
 });
 
@@ -876,15 +876,31 @@ document.getElementById('btn-seed-demo').addEventListener('click', async () => {
 });
 
 // ── Uvoz zaposlenih ───────────────────────────────────────────────────────────
+async function naloziUvozTekst() {
+  try {
+    const res = await fetch('/api/admin/vnos-zaposleni');
+    const d = await res.json();
+    document.getElementById('uvoz-textarea').value = d.tekst || '';
+  } catch (_) {}
+}
+
+document.getElementById('btn-uvoz-reset').addEventListener('click', naloziUvozTekst);
+
 document.getElementById('btn-uvozi-zaposlene').addEventListener('click', async () => {
   const el = document.getElementById('uvoz-rezultat');
   const btn = document.getElementById('btn-uvozi-zaposlene');
-  if (!confirm('POZOR: Izbrisati vse zaposlene in uvoziti nove iz vnos-zaposleni.txt?\n\nTe akcije ni mogoče razveljaviti.')) return;
+  const tekst = document.getElementById('uvoz-textarea').value.trim();
+  if (!tekst) { el.style.color = '#fc8181'; el.textContent = 'Seznam je prazen.'; return; }
+  if (!confirm('POZOR: Izbrisati vse zaposlene in uvoziti seznam iz polja zgoraj?\n\nTe akcije ni mogoče razveljaviti.')) return;
   btn.disabled = true;
   btn.textContent = 'Uvažam…';
   el.textContent = '';
   try {
-    const res = await fetch('/api/admin/uvozi-zaposlene', { method: 'POST' });
+    const res = await fetch('/api/admin/uvozi-zaposlene', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tekst })
+    });
     const d = await res.json();
     if (res.ok) {
       el.style.color = '#68d391';
