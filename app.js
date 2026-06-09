@@ -991,7 +991,7 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }] = await Promise.all([
+    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }, { rows: kmRows }] = await Promise.all([
       req.db.execute(
         `SELECT z.id, z.ime, z.urna_postavka, z.privzeto_delo_id,
                 d.naziv AS priv_naziv, d.urna_postavka AS priv_up
@@ -1005,10 +1005,12 @@ function createApp() {
               FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
               WHERE r.datum BETWEEN ? AND ?`,
         args: [od, do_]
-      })
+      }),
+      req.db.execute({ sql: `SELECT zaposleni_id, SUM(km) AS skupaj_km, SUM(strosek) AS skupaj_strosek FROM kilometrina WHERE datum BETWEEN ? AND ? GROUP BY zaposleni_id`, args: [od, do_] })
     ]);
 
     const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
+    const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { km: parseFloat(r.skupaj_km) || 0, strosek: parseFloat(r.skupaj_strosek) || 0 }]));
 
     const obracun = zaposleni.map(z => {
       const zid = Number(z.id);
@@ -1038,6 +1040,7 @@ function createApp() {
       const hasRate = privzetaUp > 0 || delaMap.size > 0;
       const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
       const stimulacija = stimMap.get(zid) || 0;
+      const { km = 0, strosek = 0 } = kmMap.get(zid) || {};
 
       return {
         id: zid, ime: z.ime,
@@ -1047,6 +1050,7 @@ function createApp() {
         privzetaMinuta,
         dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
         osnova, stimulacija: stimulacija || null,
+        km, strosek,
         skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
       };
     });
