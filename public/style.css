@@ -183,8 +183,13 @@ h2 {
 /* Footer */
 .footer {
   text-align: center;
-  padding: 16px;
-  margin-top: 4px;
+  padding: 14px 16px;
+  margin-top: 8px;
+}
+.copyright {
+  font-size: 0.75rem;
+  color: #cbd5e0;
+  letter-spacing: 0.02em;
 }
 
 .footer-link {
@@ -199,6 +204,10 @@ h2 {
 .footer-link-admin { color: #4299e1; }
 .footer-link-admin:hover { color: #2c5282; }
 .footer-sep { color: #cbd5e0; }
+
+/* Header nav links */
+.btn-link-admin { color: #4299e1; }
+.btn-link-admin:hover { color: #2c5282; }
 
 .evidenca-zapis .tip-pill {
   padding: 3px 12px;

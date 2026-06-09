@@ -19,7 +19,10 @@
         <h1 id="pozdrav">Moj čas</h1>
         <div id="status-danes" class="status-danes"></div>
       </div>
-      <button id="btn-odjava" class="btn-odjava">Odjava</button>
+      <div class="header-actions">
+        <a href="/prisotnost/admin" class="btn-link btn-link-admin">Admin panel</a>
+        <button id="btn-odjava" class="btn-odjava">Odjava</button>
+      </div>
     </div>
   </header>
 
@@ -118,6 +121,10 @@
       </div>
     </div>
   </div>
+
+  <footer class="footer">
+    <span class="copyright">© 2026 GoMushroom</span>
+  </footer>
 
   <script src="/moj-cas.js"></script>
   <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
