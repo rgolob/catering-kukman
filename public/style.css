@@ -484,20 +484,33 @@ h2 {
 
 /* ── Moj čas gumb nad QR ────────────────────────────────────────────────── */
 .moj-cas-btn-section {
-  display: flex; justify-content: center; padding: 15px 16px;
+  display: flex;
+  justify-content: center;
+  padding: 20px 16px 10px;
 }
 .btn-moj-cas-main {
-  display: inline-block;
-  background: #1a365d;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
   color: #fff;
   text-decoration: none;
-  padding: 6px 18px;
-  border-radius: 20px;
-  font-size: 0.82rem;
-  font-weight: 600;
-  transition: background 0.15s;
+  padding: 13px 36px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  box-shadow: 0 4px 14px rgba(26,54,93,0.35);
+  transition: transform 0.15s, box-shadow 0.15s;
 }
-.btn-moj-cas-main:hover { background: #2c5282; }
+.btn-moj-cas-main:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 20px rgba(26,54,93,0.45);
+}
+.btn-moj-cas-main:active {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(26,54,93,0.3);
+}
 
 /* ── QR koda na tablici ───────────────────────────────────────────────────── */
 .qr-tablica-section {
