@@ -310,6 +310,9 @@ function createApp() {
   app.get(BASE + '/qr', (req, res) =>
     res.sendFile(path.join(P, 'qr.html')));
 
+  // ── Device check ────────────────────────────────────────────────────────────
+  app.get('/api/device-check', requireDeviceToken, (req, res) => res.json({ ok: true }));
+
   // ── QR API ───────────────────────────────────────────────────────────────────
   app.get('/api/qr-info', async (req, res) => {
     const token = generateQrToken();
