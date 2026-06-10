@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Evidenca prisotnosti – Catering Kukman</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#1a365d" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Kukman" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <header>
+    <h1>Catering Kukman</h1>
+    <p class="subtitle">Evidenca prisotnosti</p>
+    <div id="ura"></div>
+  </header>
+
+  <main>
+    <section class="moj-cas-btn-section">
+      <a href="/prisotnost/pin" class="btn-moj-cas-main">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Moj čas
+      </a>
+    </section>
+
+    <section class="qr-tablica-section">
+      <div class="qr-tablica-card">
+        <img id="qr-tablica-img" alt="QR koda" class="qr-tablica-img" />
+        <p class="qr-tablica-napis">Skenirajte za prijavo s telefonom</p>
+      </div>
+    </section>
+
+    <section class="zaposleni-section">
+      <h2>Klikni na svoje ime</h2>
+      <div id="zaposleni-grid" class="zaposleni-grid"></div>
+    </section>
+
+    <section class="evidenca-section">
+      <h2>Današnji vnosi</h2>
+      <div id="evidenca-list" class="evidenca-list"></div>
+    </section>
+  </main>
+
+  <!-- Potrditveni dialog -->
+  <div id="overlay" class="overlay hidden">
+    <div class="dialog">
+      <div id="dialog-tip-badge" class="tip-badge"></div>
+      <h2 id="dialog-ime"></h2>
+      <p class="dialog-cas"><span id="dialog-cas"></span></p>
+      <p id="dialog-vprasanje" class="dialog-vprasanje"></p>
+
+      <div class="dialog-pin-prikaz" id="dialog-pin-prikaz">
+        <div class="pin-dot" id="dp0"></div>
+        <div class="pin-dot" id="dp1"></div>
+        <div class="pin-dot" id="dp2"></div>
+        <div class="pin-dot" id="dp3"></div>
+      </div>
+      <div id="dialog-pin-napaka" class="dialog-pin-napaka"></div>
+
+      <div class="dialog-tipkovnica">
+        <button class="dialog-tipka" data-digit="1">1</button>
+        <button class="dialog-tipka" data-digit="2">2</button>
+        <button class="dialog-tipka" data-digit="3">3</button>
+        <button class="dialog-tipka" data-digit="4">4</button>
+        <button class="dialog-tipka" data-digit="5">5</button>
+        <button class="dialog-tipka" data-digit="6">6</button>
+        <button class="dialog-tipka" data-digit="7">7</button>
+        <button class="dialog-tipka" data-digit="8">8</button>
+        <button class="dialog-tipka" data-digit="9">9</button>
+        <button class="dialog-tipka dialog-tipka-brisi" id="dialog-btn-brisi">⌫</button>
+        <button class="dialog-tipka" data-digit="0">0</button>
+        <button class="dialog-tipka dialog-tipka-prazna"></button>
+      </div>
+
+      <button id="btn-preklic" class="btn-preklic">Prekliči</button>
+    </div>
+  </div>
+
+  <!-- Dodatno delo overlay (po odhodu) -->
+  <div id="dodatno-overlay" class="overlay hidden">
+    <div class="dialog dialog-dodatno">
+      <h2>Odhod zabeležen</h2>
+      <p id="dodatno-podnaslov" class="dialog-vprasanje"></p>
+      <div id="dodatno-dela-sekcija">
+        <div class="dodatno-form">
+          <select id="dodatno-delo-select" class="dodatno-select"></select>
+          <div class="dodatno-cas-row">
+            <label>Od<input type="time" id="dodatno-od" /></label>
+            <label>Do<input type="time" id="dodatno-do" /></label>
+          </div>
+          <button id="btn-dodaj-segment" class="btn-dodaj-seg">Dodaj segment</button>
+        </div>
+        <div id="dodatno-napaka" class="dialog-pin-napaka"></div>
+        <div id="dodatno-segmenti" class="dodatno-segmenti"></div>
+      </div>
+      <div class="dodatno-stroški-sekcija">
+        <div class="dodatno-strosek-row">
+          <label>⛽ Gorivo (€)<input type="number" id="dodatno-gorivo" min="0" step="0.01" placeholder="0.00" /></label>
+          <label>🛒 Nakup (€)<input type="number" id="dodatno-nakup" min="0" step="0.01" placeholder="0.00" /></label>
+        </div>
+      </div>
+      <button id="btn-dodatno-zakljuci" class="btn-preklic" style="margin-top:16px">Zaključi</button>
+    </div>
+  </div>
+
+  <!-- Toast obvestilo -->
+  <div id="toast" class="toast hidden"></div>
+
+  <footer class="footer">
+    <span class="copyright">© 2026 <a href="https://gomushroom.si" target="_blank" rel="noopener" class="copyright-link">GoMushroom</a></span>
+    <span class="footer-sep"> · </span>
+    <a href="/prisotnost/admin" class="footer-link footer-link-admin">admin</a>
+  </footer>
+
+  <script src="/app.js"></script>
+  <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+</body>
+</html>
