@@ -137,9 +137,8 @@ async function zabelezi(zaposleniId, ime) {
         prikaziDodatnoOverlay();
       }, 2000);
     } else {
-      // PRIHOD — vrni na seznam, počisti shranjenega uporabnika → za odhod potrebno novo skeniranje
+      // PRIHOD — zapomni si identiteto, vrni na seznam; naslednje skeniranje pokaže gumb Odhod
       setTimeout(async () => {
-        localStorage.removeItem(LS_KEY);
         rez.classList.add('hidden');
         await prikaziSeznam();
       }, 3000);
