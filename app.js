@@ -286,39 +286,33 @@ function createApp() {
     next();
   });
 
-  app.use(express.static(path.join(__dirname, 'public'), { index: false }));
+  const P = path.join(__dirname, 'public', 'prisotnost');
+  app.use(express.static(path.join(__dirname, 'public')));
 
-  // ── Landing page ─────────────────────────────────────────────────────────────
-  app.get('/', (req, res) =>
-    res.sendFile(path.join(__dirname, 'public', 'landing.html')));
-
-  // ── Pages ───────────────────────────────────────────────────────────────────
-  app.get(BASE, (req, res) =>
-    res.sendFile(path.join(__dirname, 'public', 'index.html')));
-
+  // ── Pages (samo tiste z auth logiko) ────────────────────────────────────────
   app.get(BASE + '/login', (req, res) => {
     if (req.session.admin) return res.redirect(BASE + '/admin');
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+    res.sendFile(path.join(P, 'login.html'));
   });
 
   app.get(BASE + '/admin', requireAuth, (req, res) =>
-    res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+    res.sendFile(path.join(P, 'admin.html')));
 
   app.get(BASE + '/pin', (req, res) => {
     if (req.session.zaposleniId) return res.redirect(BASE + '/moj-cas');
-    res.sendFile(path.join(__dirname, 'public', 'pin.html'));
+    res.sendFile(path.join(P, 'pin.html'));
   });
 
   app.get(BASE + '/moj-cas', (req, res) => {
     if (!req.session.zaposleniId) return res.redirect(BASE + '/pin');
-    res.sendFile(path.join(__dirname, 'public', 'moj-cas.html'));
+    res.sendFile(path.join(P, 'moj-cas.html'));
   });
 
   app.get(BASE + '/pin-setup', (req, res) =>
-    res.sendFile(path.join(__dirname, 'public', 'pin-setup.html')));
+    res.sendFile(path.join(P, 'pin-setup.html')));
 
   app.get(BASE + '/qr', (req, res) =>
-    res.sendFile(path.join(__dirname, 'public', 'qr.html')));
+    res.sendFile(path.join(P, 'qr.html')));
 
   // ── QR API ───────────────────────────────────────────────────────────────────
   app.get('/api/qr-info', async (req, res) => {
@@ -536,6 +530,13 @@ function createApp() {
       args: [danes]
     });
     res.json(rows);
+  });
+
+  app.get('/api/device-check', async (req, res) => {
+    const token = req.headers['x-device-token'];
+    if (!token) return res.status(403).json({ registriran: false });
+    const { rows } = await req.db.execute({ sql: 'SELECT token FROM device_tokens WHERE token = ?', args: [token] });
+    res.status(rows.length ? 200 : 403).json({ registriran: rows.length > 0 });
   });
 
   app.post('/api/belezi', requireDeviceToken, async (req, res) => {

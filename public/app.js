@@ -389,8 +389,17 @@ async function naloziQR() {
   }
 }
 
-// Začetno nalaganje in osvežitev vsako minuto
-naloziZaposlene();
-naloziEvidenco();
-naloziQR();
-setInterval(() => { naloziZaposlene(); naloziEvidenco(); }, 60_000);
+// Preveri ali je naprava registrirana, nato naloži vsebino
+(async function init() {
+  const dt = localStorage.getItem('kukman_device_token') ||
+    ((document.cookie.match(/(?:^|;\s*)kukman_dt=([^;]+)/) || [])[1] || '');
+  try {
+    const r = await fetch('/api/device-check', { headers: { 'X-Device-Token': dt } });
+    if (!r.ok) { location.replace('/prisotnost/pin'); return; }
+  } catch (_) { location.replace('/prisotnost/pin'); return; }
+
+  naloziZaposlene();
+  naloziEvidenco();
+  naloziQR();
+  setInterval(() => { naloziZaposlene(); naloziEvidenco(); }, 60_000);
+})();
