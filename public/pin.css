@@ -142,6 +142,18 @@ main {
 }
 .nazaj:hover { text-decoration: underline; }
 
+.btn-nisem-jaz {
+  margin-top: 14px;
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 0.82rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-decoration: underline;
+}
+.btn-nisem-jaz:hover { color: #718096; }
+
 @keyframes tresenje {
   0%, 100% { transform: translateX(0); }
   20%       { transform: translateX(-8px); }

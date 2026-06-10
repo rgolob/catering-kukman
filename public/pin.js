@@ -1,5 +1,7 @@
+const LS_USER = 'kukman_pin_user';
 let pin = '';
 let izbraniZaposleniId = null;
+let izbraniZaposleniIme = null;
 
 async function naloziZaposlene() {
   try {
@@ -18,6 +20,7 @@ async function naloziZaposlene() {
 
 function izberIme(id, ime) {
   izbraniZaposleniId = id;
+  izbraniZaposleniIme = ime;
   document.getElementById('pin-navodilo').textContent = `Pozdravljeni, ${ime}!`;
   document.getElementById('header-podnaslov').textContent = ime;
   document.getElementById('ime-karta').style.display = 'none';
@@ -30,7 +33,9 @@ function izberIme(id, ime) {
 
 function vrniNaIzbiro() {
   izbraniZaposleniId = null;
+  izbraniZaposleniIme = null;
   pin = '';
+  document.getElementById('btn-nisem-jaz').style.display = 'none';
   document.getElementById('ime-karta').style.display = '';
   document.getElementById('pin-karta').style.display = 'none';
   document.getElementById('link-nazaj').style.display = '';
@@ -55,6 +60,7 @@ async function preveriPin() {
 
   if (res.ok) {
     const data = await res.json();
+    localStorage.setItem(LS_USER, JSON.stringify({ id: izbraniZaposleniId, ime: izbraniZaposleniIme }));
     window.location.href = data.pinSetupRequired ? '/prisotnost/pin-setup' : '/prisotnost/moj-cas';
   } else {
     const prikaz = document.querySelector('.pin-prikaz');
@@ -91,6 +97,11 @@ document.querySelectorAll('.tipka[data-digit]').forEach(btn => {
 });
 document.getElementById('btn-brisi').addEventListener('click', brisi);
 document.getElementById('btn-nazaj').addEventListener('click', vrniNaIzbiro);
+document.getElementById('btn-nisem-jaz').addEventListener('click', () => {
+  localStorage.removeItem(LS_USER);
+  vrniNaIzbiro();
+  naloziZaposlene();
+});
 
 document.addEventListener('keydown', e => {
   if (e.key >= '0' && e.key <= '9') dodajCifro(e.key);
@@ -98,4 +109,16 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape' && izbraniZaposleniId) vrniNaIzbiro();
 });
 
-naloziZaposlene();
+// Preveri shranjeno identiteto
+(function init() {
+  try {
+    const s = localStorage.getItem(LS_USER);
+    if (s) {
+      const { id, ime } = JSON.parse(s);
+      izberIme(id, ime);
+      document.getElementById('btn-nisem-jaz').style.display = '';
+      return;
+    }
+  } catch(_) { localStorage.removeItem(LS_USER); }
+  naloziZaposlene();
+})();
