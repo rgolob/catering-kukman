@@ -17,6 +17,12 @@ function formatirajCas(isoStr) {
   return d.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 }
 
+function isoNaCasInput(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
 function formatirajDatum(datum) {
   const d = new Date(datum + 'T00:00:00');
   const dan = d.getDate();
@@ -94,7 +100,7 @@ async function naloziMesec() {
       <td class="td-cas">${d.vTeku && !d.nepopoln ? '<span style="color:#38a169">v delu</span>' : formatirajCas(d.zadnjiOdhod)}</td>
       <td class="td-ure ${ureClass}">
         ${ureStr}
-        <button class="btn-uredi-dan" data-datum="${d.datum}" data-gorivo="${d.gorivo || 0}" data-nakup="${d.nakup || 0}" title="Uredi">✏</button>
+        <button class="btn-uredi-dan" data-datum="${d.datum}" data-gorivo="${d.gorivo || 0}" data-nakup="${d.nakup || 0}" data-prihod="${isoNaCasInput(d.prvPrihod)}" data-odhod="${isoNaCasInput(d.zadnjiOdhod)}" data-komentar="${d.komentar || ''}" title="Uredi">✏</button>
       </td>
     </tr>`;
   }).join('');
@@ -103,7 +109,10 @@ async function naloziMesec() {
     btn.addEventListener('click', () => odpriRetroModal(
       btn.dataset.datum,
       parseFloat(btn.dataset.gorivo),
-      parseFloat(btn.dataset.nakup)
+      parseFloat(btn.dataset.nakup),
+      btn.dataset.prihod,
+      btn.dataset.odhod,
+      btn.dataset.komentar
     ));
   });
 
@@ -272,13 +281,16 @@ async function naloziZahtevke() {
 
 let retroDatum = null;
 
-async function odpriRetroModal(datum, gorivo, nakup) {
+async function odpriRetroModal(datum, gorivo, nakup, prihod, odhod, komentar) {
   retroDatum = datum;
   const d = new Date(datum + 'T00:00:00');
   document.getElementById('retro-naslov').textContent =
     `${DNEVI[d.getDay()]} ${d.getDate()}. ${MESECI[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
   document.getElementById('retro-gorivo').value = gorivo > 0 ? gorivo : '';
   document.getElementById('retro-nakup').value = nakup > 0 ? nakup : '';
+  document.getElementById('retro-prihod').value = prihod || '';
+  document.getElementById('retro-odhod').value = odhod || '';
+  document.getElementById('retro-komentar').value = komentar || '';
   document.getElementById('retro-shrani-napaka').textContent = '';
   document.getElementById('retro-od').value = '';
   document.getElementById('retro-do').value = '';
@@ -351,13 +363,16 @@ document.getElementById('retro-btn-dodaj').addEventListener('click', async () =>
 document.getElementById('retro-shrani').addEventListener('click', async () => {
   const gorivo = parseFloat(document.getElementById('retro-gorivo').value) || 0;
   const nakup = parseFloat(document.getElementById('retro-nakup').value) || 0;
+  const prihod = document.getElementById('retro-prihod').value || null;
+  const odhod = document.getElementById('retro-odhod').value || null;
+  const komentar = document.getElementById('retro-komentar').value.trim() || null;
   const napaka = document.getElementById('retro-shrani-napaka');
   napaka.textContent = '';
   try {
     const res = await fetch('/api/moj-cas/kilometrina', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ datum: retroDatum, gorivo, nakup })
+      body: JSON.stringify({ datum: retroDatum, gorivo, nakup, prihod, odhod, komentar })
     });
     if (res.ok) {
       document.getElementById('retro-overlay').classList.add('hidden');

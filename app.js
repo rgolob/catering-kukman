@@ -122,6 +122,7 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE zaposleni ADD COLUMN privzeto_delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca ADD COLUMN delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN strosek REAL NOT NULL DEFAULT 0'); } catch(_) {}
+  try { await db.execute('ALTER TABLE kilometrina ADD COLUMN komentar TEXT'); } catch(_) {}
 
   // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
@@ -599,7 +600,7 @@ function createApp() {
       req.db.execute({ sql: `SELECT z.urna_postavka, z.privzeto_delo_id, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
       req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] }),
       req.db.execute({ sql: `SELECT r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] }),
-      req.db.execute({ sql: 'SELECT datum, km, strosek FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
+      req.db.execute({ sql: 'SELECT datum, km, strosek, komentar FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
     ]);
 
     const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
@@ -619,7 +620,7 @@ function createApp() {
     const hasRate = privzetaUp > 0 || razRows.length > 0;
     const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
 
-    const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { gorivo: Number(r.km || 0), nakup: Number(r.strosek || 0) }]));
+    const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { gorivo: Number(r.km || 0), nakup: Number(r.strosek || 0), komentar: r.komentar || null }]));
     const dneviZKm = dnevi.map(d => ({ ...d, ...( kmPoDateh.get(d.datum) || { gorivo: 0, nakup: 0 }) }));
     const skupajGorivo = Math.round(kmRows.reduce((s, r) => s + (Number(r.km) || 0), 0) * 100) / 100;
     const skupajNakup = Math.round(kmRows.reduce((s, r) => s + (Number(r.strosek) || 0), 0) * 100) / 100;
@@ -699,6 +700,90 @@ function createApp() {
       args: [req.session.zaposleniId]
     });
     res.json(rows);
+  });
+
+  app.get('/api/moj-cas/dela', requirePinAuth, async (req, res) => {
+    try {
+      const { rows } = await req.db.execute({
+        sql: `SELECT d.id, d.naziv, COALESCE(zd.urna_postavka, d.urna_postavka) AS urna_postavka
+              FROM dela d
+              JOIN zaposleni_dela zd ON zd.delo_id = d.id
+              WHERE zd.zaposleni_id = ?
+              ORDER BY d.naziv`,
+        args: [req.session.zaposleniId]
+      });
+      res.json(rows);
+    } catch (_) { res.json([]); }
+  });
+
+  app.post('/api/moj-cas/kilometrina', requirePinAuth, async (req, res) => {
+    const { datum, gorivo, nakup, komentar, prihod, odhod } = req.body;
+    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
+      return res.status(400).json({ napaka: 'Neveljaven datum' });
+    const zapId = req.session.zaposleniId;
+    try {
+      await req.db.execute({
+        sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek, komentar) VALUES (?, ?, ?, ?, ?)',
+        args: [zapId, datum, gorivo || 0, nakup || 0, komentar || null]
+      });
+      if (prihod && /^\d{2}:\d{2}$/.test(prihod)) {
+        await req.db.execute({
+          sql: `UPDATE evidenca SET cas = ? WHERE id = (
+                  SELECT id FROM evidenca WHERE zaposleni_id = ? AND tip = 'PRIHOD' AND substr(cas,1,10) = ?
+                  ORDER BY cas ASC LIMIT 1)`,
+          args: [`${datum} ${prihod}:00`, zapId, datum]
+        });
+      }
+      if (odhod && /^\d{2}:\d{2}$/.test(odhod)) {
+        await req.db.execute({
+          sql: `UPDATE evidenca SET cas = ? WHERE id = (
+                  SELECT id FROM evidenca WHERE zaposleni_id = ? AND tip = 'ODHOD' AND substr(cas,1,10) = ?
+                  ORDER BY cas DESC LIMIT 1)`,
+          args: [`${datum} ${odhod}:00`, zapId, datum]
+        });
+      }
+      res.json({ ok: true });
+    } catch (e) {
+      console.error('moj-cas/kilometrina:', e);
+      res.status(500).json({ napaka: 'Napaka pri shranjevanju' });
+    }
+  });
+
+  app.get('/api/moj-cas/razporeditev', requirePinAuth, async (req, res) => {
+    const { datum } = req.query;
+    if (!datum) return res.json([]);
+    try {
+      const { rows } = await req.db.execute({
+        sql: `SELECT r.id, d.naziv, r.cas_od, r.cas_do
+              FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
+              WHERE r.zaposleni_id = ? AND r.datum = ? ORDER BY r.cas_od`,
+        args: [req.session.zaposleniId, datum]
+      });
+      res.json(rows);
+    } catch (_) { res.json([]); }
+  });
+
+  app.post('/api/moj-cas/razporeditev', requirePinAuth, async (req, res) => {
+    const { datum, deloId, casOd, casDo } = req.body;
+    if (!datum || !deloId || !casOd || !casDo)
+      return res.status(400).json({ napaka: 'Manjkajoči podatki' });
+    try {
+      await req.db.execute({
+        sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
+        args: [req.session.zaposleniId, datum, deloId, casOd, casDo]
+      });
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ napaka: 'Napaka pri shranjevanju' }); }
+  });
+
+  app.delete('/api/moj-cas/razporeditev/:id', requirePinAuth, async (req, res) => {
+    try {
+      await req.db.execute({
+        sql: 'DELETE FROM evidenca_razporeditev WHERE id = ? AND zaposleni_id = ?',
+        args: [req.params.id, req.session.zaposleniId]
+      });
+      res.json({ ok: true });
+    } catch (e) { res.status(500).json({ napaka: 'Napaka' }); }
   });
 
   // ── Admin API ──────────────────────────────────────────────────────────────────
