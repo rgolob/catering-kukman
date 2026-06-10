@@ -706,6 +706,55 @@ function createApp() {
     res.json(rows);
   });
 
+  app.get('/api/moj-cas/dela', requirePinSetupDone, async (req, res) => {
+    const { rows: zr } = await req.db.execute({ sql: 'SELECT privzeto_delo_id FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId] });
+    const privzetoId = zr[0]?.privzeto_delo_id;
+    const { rows } = await req.db.execute('SELECT id, naziv, urna_postavka FROM dela WHERE aktiven = 1 ORDER BY naziv');
+    res.json(rows.filter(d => d.id !== privzetoId));
+  });
+
+  app.get('/api/moj-cas/razporeditev', requirePinSetupDone, async (req, res) => {
+    const { datum } = req.query;
+    if (!datum) return res.status(400).json({ napaka: 'Manjka datum' });
+    const { rows } = await req.db.execute({
+      sql: `SELECT r.id, r.cas_od, r.cas_do, d.naziv, d.urna_postavka
+            FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
+            WHERE r.zaposleni_id = ? AND r.datum = ? ORDER BY r.cas_od`,
+      args: [req.session.zaposleniId, datum]
+    });
+    res.json(rows);
+  });
+
+  app.post('/api/moj-cas/razporeditev', requirePinSetupDone, async (req, res) => {
+    const { datum, deloId, casOd, casDo } = req.body;
+    if (!datum || !deloId || !casOd || !casDo) return res.status(400).json({ napaka: 'Manjkajo podatki' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
+    if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
+    const r = await req.db.execute({
+      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
+      args: [req.session.zaposleniId, datum, deloId, casOd, casDo]
+    });
+    res.json({ ok: true, id: Number(r.lastInsertRowid) });
+  });
+
+  app.delete('/api/moj-cas/razporeditev/:id', requirePinSetupDone, async (req, res) => {
+    await req.db.execute({ sql: 'DELETE FROM evidenca_razporeditev WHERE id = ? AND zaposleni_id = ?', args: [req.params.id, req.session.zaposleniId] });
+    res.json({ ok: true });
+  });
+
+  app.post('/api/moj-cas/kilometrina', requirePinSetupDone, async (req, res) => {
+    const { datum, gorivo, nakup } = req.body;
+    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
+    const g = parseFloat(gorivo) || 0;
+    const n = parseFloat(nakup) || 0;
+    if (g > 0 || n > 0) {
+      await req.db.execute({ sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)', args: [req.session.zaposleniId, datum, g, n] });
+    } else {
+      await req.db.execute({ sql: 'DELETE FROM kilometrina WHERE zaposleni_id = ? AND datum = ?', args: [req.session.zaposleniId, datum] });
+    }
+    res.json({ ok: true });
+  });
+
   // ── Admin API ──────────────────────────────────────────────────────────────────
   app.get('/api/admin/zaposleni', requireAuth, async (req, res) => {
     const { rows } = await req.db.execute(

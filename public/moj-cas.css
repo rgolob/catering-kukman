@@ -368,6 +368,76 @@ main {
   font-weight: 500;
 }
 
+.dan-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* Gumb za urejanje dne */
+.btn-uredi-dan {
+  background: none;
+  border: none;
+  color: #cbd5e0;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  margin-left: 4px;
+  border-radius: 4px;
+  vertical-align: middle;
+  transition: color 0.15s;
+  line-height: 1;
+}
+.btn-uredi-dan:hover { color: #4299e1; }
+
+/* Retroaktivni modal */
+.retro-strosek-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+.retro-strosek-row .form-skupina input {
+  width: 100%; padding: 9px 10px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.95rem; color: #1a202c; outline: none;
+}
+.retro-strosek-row .form-skupina input:focus { border-color: #4299e1; }
+
+.retro-dela-naslov {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #4a5568;
+  margin: 14px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e8f0;
+}
+.retro-select {
+  width: 100%; padding: 8px 10px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.9rem; color: #1a202c;
+  margin-bottom: 8px;
+}
+.retro-dodaj-form { display: flex; flex-direction: column; gap: 6px; }
+.retro-segment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f7fafc;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+.retro-del-btn {
+  background: none; border: none;
+  color: #fc8181; cursor: pointer; font-size: 0.85rem;
+  padding: 0 4px;
+}
+.retro-del-btn:hover { color: #e53e3e; }
+
 @media (max-width: 480px) {
   .header-inner { gap: 8px; }
   header h1 { font-size: 1.05rem; }
