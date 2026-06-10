@@ -137,16 +137,12 @@ async function zabelezi(zaposleniId, ime) {
         prikaziDodatnoOverlay();
       }, 2000);
     } else {
+      // PRIHOD — vrni na seznam, počisti shranjenega uporabnika → za odhod potrebno novo skeniranje
       setTimeout(async () => {
+        localStorage.removeItem(LS_KEY);
         rez.classList.add('hidden');
-        const shranjeno = localStorage.getItem(LS_KEY);
-        if (shranjeno) {
-          const { id, ime: sime } = JSON.parse(shranjeno);
-          await prikaziOseboView(id, sime);
-        } else {
-          await prikaziSeznam();
-        }
-      }, 5000);
+        await prikaziSeznam();
+      }, 3000);
     }
   } catch (_) {
     alert('Napaka pri povezavi');
