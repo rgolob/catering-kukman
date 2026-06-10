@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catering Kukman</title>
+  <meta name="theme-color" content="#1a1a1a" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #faf9f7;
+      font-family: 'Georgia', serif;
+      color: #1a1a1a;
+      padding: 40px 24px;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
+      padding: 48px 40px 40px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .logo-wrap {
+      margin-bottom: 28px;
+    }
+
+    .logo-wrap img {
+      max-width: 180px;
+      max-height: 120px;
+      object-fit: contain;
+    }
+
+    .logo-placeholder {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      border: 2px dashed #c9b96e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto;
+      color: #c9b96e;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .divider {
+      width: 60px;
+      height: 2px;
+      background: linear-gradient(90deg, #c9b96e, #e8d48a, #c9b96e);
+      margin: 0 auto 20px;
+      border-radius: 2px;
+    }
+
+    h1 {
+      font-size: 1.7rem;
+      font-weight: normal;
+      letter-spacing: 0.02em;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+
+    .podnaslov {
+      font-size: 0.8rem;
+      color: #888;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 32px;
+    }
+
+    .kontakt {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      text-align: left;
+    }
+
+    .kontakt-vrstica {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.92rem;
+      color: #333;
+    }
+
+    .kontakt-ikona {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #f5f0e8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .kontakt-ikona svg {
+      width: 17px;
+      height: 17px;
+      stroke: #c9b96e;
+      fill: none;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .kontakt-ikona.fb svg,
+    .kontakt-ikona.ig svg {
+      fill: #c9b96e;
+      stroke: none;
+    }
+
+    .kontakt-vrstica a {
+      color: #333;
+      text-decoration: none;
+    }
+    .kontakt-vrstica a:hover { color: #c9b96e; }
+
+    footer {
+      margin-top: 32px;
+      font-size: 0.72rem;
+      color: #bbb;
+      letter-spacing: 0.03em;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo-wrap">
+      <!-- Logo bo dodan sem -->
+      <div class="logo-placeholder">Logotip</div>
+    </div>
+
+    <div class="divider"></div>
+    <h1>Jože Kukman</h1>
+    <p class="podnaslov">Catering Kukman, s.p.</p>
+
+    <div class="kontakt">
+      <div class="kontakt-vrstica">
+        <div class="kontakt-ikona">
+          <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <span>Drkijvec 9a, 8216 Mirna Peč</span>
+      </div>
+
+      <div class="kontakt-vrstica">
+        <div class="kontakt-ikona">
+          <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11.1 19.79 19.79 0 0 1 1.61 2.5 2 2 0 0 1 3.59.5h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+        </div>
+        <a href="tel:031759848">031 759 848</a>
+      </div>
+
+      <div class="kontakt-vrstica">
+        <div class="kontakt-ikona">
+          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" stroke="#c9b96e" stroke-width="1.8" fill="none"/><polyline points="22,6 12,13 2,6" stroke="#c9b96e" stroke-width="1.8" fill="none"/></svg>
+        </div>
+        <a href="mailto:cateringkukman@gmail.com">cateringkukman@gmail.com</a>
+      </div>
+
+      <div class="kontakt-vrstica">
+        <div class="kontakt-ikona ig">
+          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="#faf9f7"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="#faf9f7" stroke-width="2"/></svg>
+        </div>
+        <a href="https://instagram.com/cateringkukman" target="_blank" rel="noopener">@cateringkukman</a>
+      </div>
+
+      <div class="kontakt-vrstica">
+        <div class="kontakt-ikona fb">
+          <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#c9b96e"/></svg>
+        </div>
+        <a href="https://facebook.com/cateringkukman" target="_blank" rel="noopener">cateringkukman</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>© 2026 Catering Kukman, Jože Kukman s.p.</footer>
+</body>
+</html>

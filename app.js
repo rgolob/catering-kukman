@@ -288,8 +288,9 @@ function createApp() {
 
   app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
-  // ── Root redirect ────────────────────────────────────────────────────────────
-  app.get('/', (req, res) => res.redirect(BASE));
+  // ── Landing page ─────────────────────────────────────────────────────────────
+  app.get('/', (req, res) =>
+    res.sendFile(path.join(__dirname, 'public', 'landing.html')));
 
   // ── Pages ───────────────────────────────────────────────────────────────────
   app.get(BASE, (req, res) =>
