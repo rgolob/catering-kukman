@@ -349,7 +349,7 @@ function createApp() {
   });
 
   app.post('/api/qr-belezi', async (req, res) => {
-    const { zaposleniId, token } = req.body;
+    const { zaposleniId, token, pin } = req.body;
     if (!token || !validQrTokens().includes(token))
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     const { rows } = await req.db.execute({
@@ -357,6 +357,12 @@ function createApp() {
       args: [zaposleniId]
     });
     if (!rows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
+    if (!pin) return res.status(401).json({ napaka: 'Vnesite PIN' });
+    const { rows: pinRows } = await req.db.execute({
+      sql: 'SELECT id FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
+      args: [zaposleniId, pin]
+    });
+    if (!pinRows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
     const danes = localDate();
     const { rows: zadnji } = await req.db.execute({
       sql: 'SELECT tip FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
