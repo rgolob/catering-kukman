@@ -122,8 +122,6 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE zaposleni ADD COLUMN privzeto_delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca ADD COLUMN delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN strosek REAL NOT NULL DEFAULT 0'); } catch(_) {}
-  // Vsili PIN setup za vse ki imajo še privzeti PIN 1234
-  try { await db.execute("UPDATE zaposleni SET pin_setup_required = 1 WHERE pin = '1234'"); } catch(_) {}
 
   // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
@@ -226,8 +224,8 @@ function casOdDoMinute(casOd, casDo) {
 function createApp() {
   const app = express();
 
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: false }));
   app.use(cookieSession({
     name: 'kukman-seja',
     keys: [process.env.SESSION_SECRET || 'kukman-evidenca-tajna-kljuc-2024'],
@@ -261,16 +259,6 @@ function createApp() {
     res.status(401).json({ napaka: 'Ni prijavljen' });
   }
 
-  async function requirePinSetupDone(req, res, next) {
-    if (!req.session.zaposleniId) return res.status(401).json({ napaka: 'Ni prijavljen' });
-    const { rows } = await req.db.execute({
-      sql: 'SELECT pin_setup_required FROM zaposleni WHERE id = ?',
-      args: [req.session.zaposleniId]
-    });
-    if (rows[0]?.pin_setup_required) return res.status(403).json({ napaka: 'PIN setup required', pinSetupRequired: true });
-    next();
-  }
-
   async function requireDeviceToken(req, res, next) {
     const token = req.headers['x-device-token'];
     if (!token) return res.status(403).json({ napaka: 'Ta naprava ni registrirana kot tablica. Prosite admina.' });
@@ -286,33 +274,38 @@ function createApp() {
     next();
   });
 
-  const P = path.join(__dirname, 'public', 'prisotnost');
   app.use(express.static(path.join(__dirname, 'public')));
 
-  // ── Pages (samo tiste z auth logiko) ────────────────────────────────────────
+  // ── Root redirect ────────────────────────────────────────────────────────────
+  app.get('/', (req, res) => res.redirect(BASE));
+
+  // ── Pages ───────────────────────────────────────────────────────────────────
+  app.get(BASE, (req, res) =>
+    res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
   app.get(BASE + '/login', (req, res) => {
     if (req.session.admin) return res.redirect(BASE + '/admin');
-    res.sendFile(path.join(P, 'login.html'));
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
   });
 
   app.get(BASE + '/admin', requireAuth, (req, res) =>
-    res.sendFile(path.join(P, 'admin.html')));
+    res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
   app.get(BASE + '/pin', (req, res) => {
     if (req.session.zaposleniId) return res.redirect(BASE + '/moj-cas');
-    res.sendFile(path.join(P, 'pin.html'));
+    res.sendFile(path.join(__dirname, 'public', 'pin.html'));
   });
 
   app.get(BASE + '/moj-cas', (req, res) => {
     if (!req.session.zaposleniId) return res.redirect(BASE + '/pin');
-    res.sendFile(path.join(P, 'moj-cas.html'));
+    res.sendFile(path.join(__dirname, 'public', 'moj-cas.html'));
   });
 
   app.get(BASE + '/pin-setup', (req, res) =>
-    res.sendFile(path.join(P, 'pin-setup.html')));
+    res.sendFile(path.join(__dirname, 'public', 'pin-setup.html')));
 
   app.get(BASE + '/qr', (req, res) =>
-    res.sendFile(path.join(P, 'qr.html')));
+    res.sendFile(path.join(__dirname, 'public', 'qr.html')));
 
   // ── QR API ───────────────────────────────────────────────────────────────────
   app.get('/api/qr-info', async (req, res) => {
@@ -406,18 +399,18 @@ function createApp() {
   });
 
   app.post('/api/qr-kilometrina', async (req, res) => {
-    const { zaposleniId, token, datum, km, strosek, gorivo, nakup } = req.body;
+    const { zaposleniId, token, datum, km, strosek } = req.body;
     if (!token || !validQrTokens().includes(token))
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
       return res.status(400).json({ napaka: 'Neveljaven datum' });
-    const gorivoNum = parseFloat(gorivo ?? km) || 0;
-    const nakupNum = parseFloat(nakup ?? strosek) || 0;
-    if (gorivoNum <= 0 && nakupNum <= 0)
-      return res.status(400).json({ napaka: 'Vnesite vrednost goriva ali nakupa' });
+    const kmNum = parseFloat(km) || 0;
+    const strosekNum = parseFloat(strosek) || 0;
+    if (kmNum <= 0 && strosekNum <= 0)
+      return res.status(400).json({ napaka: 'Vnesite km ali znesek stroškov' });
     await req.db.execute({
       sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
-      args: [zaposleniId, datum, gorivoNum, nakupNum]
+      args: [zaposleniId, datum, kmNum, strosekNum]
     });
     res.json({ ok: true });
   });
@@ -532,13 +525,6 @@ function createApp() {
     res.json(rows);
   });
 
-  app.get('/api/device-check', async (req, res) => {
-    const token = req.headers['x-device-token'];
-    if (!token) return res.status(403).json({ registriran: false });
-    const { rows } = await req.db.execute({ sql: 'SELECT token FROM device_tokens WHERE token = ?', args: [token] });
-    res.status(rows.length ? 200 : 403).json({ registriran: rows.length > 0 });
-  });
-
   app.post('/api/belezi', requireDeviceToken, async (req, res) => {
     const { zaposleni_id, tip, pin } = req.body;
     if (!zaposleni_id || !['PRIHOD', 'ODHOD'].includes(tip))
@@ -585,7 +571,7 @@ function createApp() {
   });
 
   // ── Moj čas API ───────────────────────────────────────────────────────────────
-  app.get('/api/moj-cas/info', requirePinSetupDone, async (req, res) => {
+  app.get('/api/moj-cas/info', requirePinAuth, async (req, res) => {
     const danes = localDate();
     const { rows: zRows } = await req.db.execute({
       sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId]
@@ -599,7 +585,7 @@ function createApp() {
     res.json({ id: Number(zRows[0].id), ime: zRows[0].ime, statusDanes: sRows[0]?.tip ?? null, pinSetupRequired: !!zRows[0].pin_setup_required });
   });
 
-  app.get('/api/moj-cas/mesec', requirePinSetupDone, async (req, res) => {
+  app.get('/api/moj-cas/mesec', requirePinAuth, async (req, res) => {
     const zdaj = new Date();
     const leto = parseInt(req.query.leto) || zdaj.getFullYear();
     const mesec = parseInt(req.query.mesec) || (zdaj.getMonth() + 1);
@@ -611,7 +597,7 @@ function createApp() {
       req.db.execute({ sql: `SELECT z.urna_postavka, z.privzeto_delo_id, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
       req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] }),
       req.db.execute({ sql: `SELECT r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] }),
-      req.db.execute({ sql: 'SELECT datum, km AS gorivo, strosek AS nakup FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
+      req.db.execute({ sql: 'SELECT datum, km, strosek FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
     ]);
 
     const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
@@ -633,9 +619,8 @@ function createApp() {
 
     const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { gorivo: Number(r.km || 0), nakup: Number(r.strosek || 0) }]));
     const dneviZKm = dnevi.map(d => ({ ...d, ...( kmPoDateh.get(d.datum) || { gorivo: 0, nakup: 0 }) }));
-
     const skupajGorivo = Math.round(kmRows.reduce((s, r) => s + (Number(r.km) || 0), 0) * 100) / 100;
-    const skupajNakup  = Math.round(kmRows.reduce((s, r) => s + (Number(r.strosek) || 0), 0) * 100) / 100;
+    const skupajNakup = Math.round(kmRows.reduce((s, r) => s + (Number(r.strosek) || 0), 0) * 100) / 100;
     const skupajStroški = Math.round((skupajGorivo + skupajNakup) * 100) / 100;
 
     res.json({
@@ -652,7 +637,7 @@ function createApp() {
     });
   });
 
-  app.get('/api/moj-cas/kumulativno', requirePinSetupDone, async (req, res) => {
+  app.get('/api/moj-cas/kumulativno', requirePinAuth, async (req, res) => {
     const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }] = await Promise.all([
       req.db.execute({ sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas ASC', args: [req.session.zaposleniId] }),
       req.db.execute({ sql: `SELECT z.urna_postavka, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
@@ -690,7 +675,7 @@ function createApp() {
     res.json(meseci);
   });
 
-  app.post('/api/moj-cas/zahtevek', requirePinSetupDone, async (req, res) => {
+  app.post('/api/moj-cas/zahtevek', requirePinAuth, async (req, res) => {
     const { tip, cas, opomba } = req.body;
     if (!['PRIHOD', 'ODHOD'].includes(tip))
       return res.status(400).json({ napaka: 'Neveljaven tip' });
@@ -706,61 +691,12 @@ function createApp() {
     res.json({ ok: true });
   });
 
-  app.get('/api/moj-cas/zahtevki', requirePinSetupDone, async (req, res) => {
+  app.get('/api/moj-cas/zahtevki', requirePinAuth, async (req, res) => {
     const { rows } = await req.db.execute({
       sql: `SELECT id, tip, cas_zahtevka, opomba, status, ustvarjen FROM zahtevki WHERE zaposleni_id = ? ORDER BY ustvarjen DESC LIMIT 20`,
       args: [req.session.zaposleniId]
     });
     res.json(rows);
-  });
-
-  app.get('/api/moj-cas/dela', requirePinSetupDone, async (req, res) => {
-    const { rows: zr } = await req.db.execute({ sql: 'SELECT privzeto_delo_id FROM zaposleni WHERE id = ?', args: [req.session.zaposleniId] });
-    const privzetoId = zr[0]?.privzeto_delo_id;
-    const { rows } = await req.db.execute('SELECT id, naziv, urna_postavka FROM dela WHERE aktiven = 1 ORDER BY naziv');
-    res.json(rows.filter(d => d.id !== privzetoId));
-  });
-
-  app.get('/api/moj-cas/razporeditev', requirePinSetupDone, async (req, res) => {
-    const { datum } = req.query;
-    if (!datum) return res.status(400).json({ napaka: 'Manjka datum' });
-    const { rows } = await req.db.execute({
-      sql: `SELECT r.id, r.cas_od, r.cas_do, d.naziv, d.urna_postavka
-            FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
-            WHERE r.zaposleni_id = ? AND r.datum = ? ORDER BY r.cas_od`,
-      args: [req.session.zaposleniId, datum]
-    });
-    res.json(rows);
-  });
-
-  app.post('/api/moj-cas/razporeditev', requirePinSetupDone, async (req, res) => {
-    const { datum, deloId, casOd, casDo } = req.body;
-    if (!datum || !deloId || !casOd || !casDo) return res.status(400).json({ napaka: 'Manjkajo podatki' });
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
-    if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
-    const r = await req.db.execute({
-      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
-      args: [req.session.zaposleniId, datum, deloId, casOd, casDo]
-    });
-    res.json({ ok: true, id: Number(r.lastInsertRowid) });
-  });
-
-  app.delete('/api/moj-cas/razporeditev/:id', requirePinSetupDone, async (req, res) => {
-    await req.db.execute({ sql: 'DELETE FROM evidenca_razporeditev WHERE id = ? AND zaposleni_id = ?', args: [req.params.id, req.session.zaposleniId] });
-    res.json({ ok: true });
-  });
-
-  app.post('/api/moj-cas/kilometrina', requirePinSetupDone, async (req, res) => {
-    const { datum, gorivo, nakup } = req.body;
-    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
-    const g = parseFloat(gorivo) || 0;
-    const n = parseFloat(nakup) || 0;
-    if (g > 0 || n > 0) {
-      await req.db.execute({ sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)', args: [req.session.zaposleniId, datum, g, n] });
-    } else {
-      await req.db.execute({ sql: 'DELETE FROM kilometrina WHERE zaposleni_id = ? AND datum = ?', args: [req.session.zaposleniId, datum] });
-    }
-    res.json({ ok: true });
   });
 
   // ── Admin API ──────────────────────────────────────────────────────────────────
@@ -1003,12 +939,7 @@ function createApp() {
   app.get('/api/admin/evidenca', requireAuth, async (req, res) => {
     const od = req.query.od || '1970-01-01', do_ = req.query.do || '9999-12-31';
     const { rows } = await req.db.execute({
-      sql: `SELECT e.id, e.zaposleni_id, z.ime, e.tip, e.cas, e.naknadno,
-              (SELECT GROUP_CONCAT(d.naziv || ' ' || r.cas_od || '-' || r.cas_do, ', ')
-               FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
-               WHERE r.zaposleni_id = e.zaposleni_id AND r.datum = substr(e.cas,1,10)
-              ) AS dodatna_dela
-            FROM evidenca e
+      sql: `SELECT e.id, z.ime, e.tip, e.cas, e.naknadno FROM evidenca e
             JOIN zaposleni z ON z.id = e.zaposleni_id
             WHERE substr(e.cas,1,10) BETWEEN ? AND ? ORDER BY e.cas DESC`,
       args: [od, do_]
@@ -1099,7 +1030,7 @@ function createApp() {
     ]);
 
     const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
-    const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { gorivo: parseFloat(r.skupaj_km) || 0, nakup: parseFloat(r.skupaj_strosek) || 0 }]));
+    const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { km: parseFloat(r.skupaj_km) || 0, strosek: parseFloat(r.skupaj_strosek) || 0 }]));
 
     const obracun = zaposleni.map(z => {
       const zid = Number(z.id);
@@ -1129,7 +1060,7 @@ function createApp() {
       const hasRate = privzetaUp > 0 || delaMap.size > 0;
       const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
       const stimulacija = stimMap.get(zid) || 0;
-      const { gorivo = 0, nakup = 0 } = kmMap.get(zid) || {};
+      const { km = 0, strosek = 0 } = kmMap.get(zid) || {};
 
       return {
         id: zid, ime: z.ime,
@@ -1139,8 +1070,8 @@ function createApp() {
         privzetaMinuta,
         dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
         osnova, stimulacija: stimulacija || null,
-        gorivo, nakup,
-        skupaj: (osnova !== null || stimulacija > 0 || gorivo > 0 || nakup > 0) ? Math.round(((osnova || 0) + stimulacija + gorivo + nakup) * 100) / 100 : null
+        km, strosek,
+        skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
       };
     });
     res.json({ leto, mesec, obracun });
@@ -1231,22 +1162,14 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows: zRows }, { rows: vnosi }, { rows: razRows }, { rows: delaRows }] = await Promise.all([
+    const [{ rows: zRows }, { rows: vnosi }] = await Promise.all([
       req.db.execute({ sql: 'SELECT id, ime FROM zaposleni WHERE id = ?', args: [req.params.id] }),
       req.db.execute({
         sql: `SELECT id, tip, cas, naknadno FROM evidenca
               WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ?
               ORDER BY cas ASC`,
         args: [req.params.id, od, do_]
-      }),
-      req.db.execute({
-        sql: `SELECT r.id, r.datum, r.delo_id, d.naziv AS delo_naziv, d.urna_postavka, r.cas_od, r.cas_do
-              FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
-              WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?
-              ORDER BY r.datum, r.cas_od`,
-        args: [req.params.id, od, do_]
-      }),
-      req.db.execute('SELECT id, naziv, urna_postavka FROM dela ORDER BY urna_postavka, naziv')
+      })
     ]);
 
     if (!zRows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
@@ -1294,42 +1217,8 @@ function createApp() {
       id: Number(zRows[0].id), ime: zRows[0].ime,
       leto, mesec,
       skupajMinut: Math.round(skupajMinut),
-      dnevi,
-      razporeditev: razRows,
-      dela: delaRows
+      dnevi
     });
-  });
-
-  app.post('/api/kilometrina-pin', async (req, res) => {
-    const { zaposleniId, pin, datum, gorivo, nakup } = req.body;
-    if (!zaposleniId || !pin) return res.status(401).json({ napaka: 'Ni pooblastil' });
-    const { rows } = await req.db.execute({
-      sql: 'SELECT id FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
-      args: [zaposleniId, pin]
-    });
-    if (!rows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
-    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
-      return res.status(400).json({ napaka: 'Neveljaven datum' });
-    const g = parseFloat(gorivo) || 0;
-    const n = parseFloat(nakup) || 0;
-    if (g <= 0 && n <= 0) return res.json({ ok: true });
-    await req.db.execute({
-      sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
-      args: [zaposleniId, datum, g, n]
-    });
-    res.json({ ok: true });
-  });
-
-  app.post('/api/admin/razporeditev', requireAuth, async (req, res) => {
-    const { zaposleniId, datum, deloId, casOd, casDo } = req.body;
-    if (!zaposleniId || !datum || !deloId || !casOd || !casDo)
-      return res.status(400).json({ napaka: 'Manjkajo podatki' });
-    if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
-    const r = await req.db.execute({
-      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
-      args: [zaposleniId, datum, deloId, casOd, casDo]
-    });
-    res.json({ ok: true, id: Number(r.lastInsertRowid) });
   });
 
   // ── Lestvica ──────────────────────────────────────────────────────────────────
@@ -1488,95 +1377,6 @@ function createApp() {
     }
   });
 
-  // ── Backup & Restore ─────────────────────────────────────────────────────────
-  app.get('/api/admin/backup', requireAuth, async (req, res) => {
-    try {
-      const [z, e, k, s, zd, er] = await Promise.all([
-        req.db.execute('SELECT * FROM zaposleni ORDER BY id'),
-        req.db.execute('SELECT * FROM evidenca ORDER BY id'),
-        req.db.execute('SELECT * FROM kilometrina ORDER BY id'),
-        req.db.execute('SELECT * FROM stimulacija ORDER BY id'),
-        req.db.execute('SELECT * FROM zaposleni_dela ORDER BY zaposleni_id, delo_id'),
-        req.db.execute('SELECT * FROM evidenca_razporeditev ORDER BY id')
-      ]);
-      const backup = {
-        verzija: 1,
-        datum: localTime(),
-        zaposleni: z.rows,
-        evidenca: e.rows,
-        kilometrina: k.rows,
-        stimulacija: s.rows,
-        zaposleni_dela: zd.rows,
-        evidenca_razporeditev: er.rows
-      };
-      const filename = `backup_kukman_${localDate().replace(/-/g, '')}.json`;
-      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.json(backup);
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ napaka: e.message });
-    }
-  });
-
-  app.post('/api/admin/restore', requireAuth, async (req, res) => {
-    try {
-      const backup = req.body;
-      if (!backup?.verzija || !Array.isArray(backup.zaposleni))
-        return res.status(400).json({ napaka: 'Neveljaven backup format' });
-      const db = req.db;
-      await db.batch([
-        { sql: 'DELETE FROM zaposleni_dela', args: [] },
-        { sql: 'DELETE FROM kilometrina', args: [] },
-        { sql: 'DELETE FROM evidenca_razporeditev', args: [] },
-        { sql: 'DELETE FROM evidenca', args: [] },
-        { sql: 'DELETE FROM zahtevki', args: [] },
-        { sql: 'DELETE FROM stimulacija', args: [] },
-        { sql: 'DELETE FROM zaposleni', args: [] },
-      ], 'write');
-      for (const z of backup.zaposleni) {
-        await db.execute({
-          sql: 'INSERT INTO zaposleni (id, ime, aktiven, pin, pin_setup_required, urna_postavka, privzeto_delo_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          args: [z.id, z.ime, z.aktiven ?? 1, z.pin, z.pin_setup_required ?? 0, z.urna_postavka ?? 0, z.privzeto_delo_id ?? null]
-        });
-      }
-      for (const e of (backup.evidenca || [])) {
-        await db.execute({
-          sql: 'INSERT INTO evidenca (id, zaposleni_id, tip, cas, naknadno, delo_id) VALUES (?, ?, ?, ?, ?, ?)',
-          args: [e.id, e.zaposleni_id, e.tip, e.cas, e.naknadno ?? 0, e.delo_id ?? null]
-        });
-      }
-      for (const k of (backup.kilometrina || [])) {
-        await db.execute({
-          sql: 'INSERT INTO kilometrina (id, zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?, ?)',
-          args: [k.id, k.zaposleni_id, k.datum, k.km ?? 0, k.strosek ?? 0]
-        });
-      }
-      for (const s of (backup.stimulacija || [])) {
-        await db.execute({
-          sql: 'INSERT INTO stimulacija (id, zaposleni_id, mesec, znesek, opomba) VALUES (?, ?, ?, ?, ?)',
-          args: [s.id, s.zaposleni_id, s.mesec, s.znesek, s.opomba ?? null]
-        });
-      }
-      for (const zd of (backup.zaposleni_dela || [])) {
-        await db.execute({
-          sql: 'INSERT OR IGNORE INTO zaposleni_dela (zaposleni_id, delo_id) VALUES (?, ?)',
-          args: [zd.zaposleni_id, zd.delo_id]
-        });
-      }
-      for (const er of (backup.evidenca_razporeditev || [])) {
-        await db.execute({
-          sql: 'INSERT INTO evidenca_razporeditev (id, zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?, ?)',
-          args: [er.id, er.zaposleni_id, er.datum, er.delo_id, er.cas_od, er.cas_do]
-        });
-      }
-      res.json({ ok: true, sporocilo: `Obnovljeno: ${backup.zaposleni.length} zaposlenih, ${(backup.evidenca||[]).length} vnosov.` });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ napaka: e.message });
-    }
-  });
-
   // ── Preberi vnos-zaposleni.txt ────────────────────────────────────────────────
   app.get('/api/admin/vnos-zaposleni', requireAuth, async (req, res) => {
     try {
@@ -1622,20 +1422,18 @@ function createApp() {
         if (!m) return null;
         const datum = parseDatumImp(m[1]);
         const rest = m[2].trim();
-        if (rest === '-') return { datum, shift: null, gorivo: null, nakup: null };
+        if (rest === '-') return { datum, shift: null, km: null, strosek: null };
         const tm = rest.match(/^-(\d{2}:\d{2})-(\d{2}:\d{2})\s*(.*)$/);
-        if (!tm) return { datum, shift: null, gorivo: null, nakup: null };
+        if (!tm) return { datum, shift: null, km: null, strosek: null };
         const [, start, end, notes] = tm;
         const [sh, sm] = start.split(':').map(Number);
         const [eh, em] = end.split(':').map(Number);
         const crossesMidnight = (eh * 60 + em) < (sh * 60 + sm);
-        // g5€ = gorivo, n15€ or bare 15€ = nakup (backward compat)
-        const gorivoM = (notes || '').match(/g(\d+(?:[.,]\d+)?)\s*€/i);
-        const gorivo = gorivoM ? parseFloat(gorivoM[1].replace(',', '.')) : null;
-        const noteWithoutGorivo = (notes || '').replace(/g(\d+(?:[.,]\d+)?)\s*€/gi, '');
-        const nakupM = noteWithoutGorivo.match(/n?(\d+(?:[.,]\d+)?)\s*€/i);
-        const nakup = nakupM ? parseFloat(nakupM[1].replace(',', '.')) : null;
-        return { datum, shift: { start, end, crossesMidnight }, gorivo, nakup };
+        const kmM = (notes || '').match(/(\d+)\s*km/i);
+        const km = kmM ? parseInt(kmM[1]) : null;
+        const strosekM = (notes || '').match(/(\d+(?:[.,]\d+)?)\s*€/);
+        const strosek = strosekM ? parseFloat(strosekM[1].replace(',', '.')) : null;
+        return { datum, shift: { start, end, crossesMidnight }, km, strosek };
       }
       function parseFileImp(src) {
         const blocks = src.split(/\n[ \t]*\n/).filter(b => b.trim());
@@ -1676,7 +1474,7 @@ function createApp() {
       for (const emp of employees) {
         const privzetoDeloId = delaMap.get(emp.dela[0]) || null;
         const r = await db.execute({
-          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 1)',
+          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 0)',
           args: [emp.ime, emp.pin, privzetoDeloId]
         });
         const zaposleniId = Number(r.lastInsertRowid);
@@ -1687,13 +1485,13 @@ function createApp() {
         }
         for (const day of emp.days) {
           if (!day.shift) continue;
-          const { datum, shift, gorivo, nakup } = day;
+          const { datum, shift, km, strosek } = day;
           const odhodDatum = shift.crossesMidnight ? addDayImp(datum) : datum;
           await db.execute({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)', args: [zaposleniId, 'PRIHOD', `${datum} ${shift.start}:00`] });
           await db.execute({ sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)', args: [zaposleniId, 'ODHOD', `${odhodDatum} ${shift.end}:00`] });
           evidencCount++;
-          if (gorivo || nakup) {
-            await db.execute({ sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)', args: [zaposleniId, datum, gorivo || 0, nakup || 0] });
+          if (km || strosek) {
+            await db.execute({ sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)', args: [zaposleniId, datum, km || 0, strosek || 0] });
           }
         }
         uvozenih++;
