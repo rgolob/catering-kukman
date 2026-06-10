@@ -69,6 +69,14 @@
           <span>Stimulacija</span>
           <span id="placilo-stim-znesek"></span>
         </div>
+        <div class="placilo-vrstica" id="placilo-gorivo-row" style="display:none">
+          <span>⛽ Gorivo</span>
+          <span id="placilo-gorivo-znesek"></span>
+        </div>
+        <div class="placilo-vrstica" id="placilo-nakup-row" style="display:none">
+          <span>🛒 Nakup</span>
+          <span id="placilo-nakup-znesek"></span>
+        </div>
         <div class="placilo-vrstica placilo-skupaj-row">
           <span>Skupaj</span>
           <span id="placilo-skupaj-znesek"></span>
@@ -88,6 +96,43 @@
       <div id="kum-prazno" class="prazno" style="display:none">Še ni podatkov.</div>
     </section>
   </main>
+
+  <!-- Modal: retroaktivni vnos km/stroški/dodatno delo -->
+  <div id="retro-overlay" class="modal-overlay hidden">
+    <div class="modal-karta">
+      <h3 id="retro-naslov">Uredi dan</h3>
+
+      <div class="retro-strosek-row">
+        <div class="form-skupina" style="flex:1">
+          <label>⛽ Gorivo (€)</label>
+          <input type="number" id="retro-gorivo" min="0" step="0.01" placeholder="0.00" />
+        </div>
+        <div class="form-skupina" style="flex:1">
+          <label>🛒 Nakup (€)</label>
+          <input type="number" id="retro-nakup" min="0" step="0.01" placeholder="0.00" />
+        </div>
+      </div>
+
+      <div id="retro-dela-sekcija">
+        <div class="retro-dela-naslov">Dodatno delo</div>
+        <div id="retro-segmenti"></div>
+        <div class="dodatno-form retro-dodaj-form">
+          <select id="retro-delo-select" class="retro-select"></select>
+          <div class="dodatno-cas-row">
+            <label>Od<input type="time" id="retro-od" /></label>
+            <label>Do<input type="time" id="retro-do" /></label>
+          </div>
+          <button id="retro-btn-dodaj" class="btn-dodaj-seg">+ Dodaj</button>
+        </div>
+        <div id="retro-napaka" class="nak-napaka"></div>
+      </div>
+
+      <div class="modal-gumbi">
+        <button id="retro-shrani" class="btn-primarni">Shrani</button>
+        <button id="retro-preklic" class="btn-sekundarni">Zapri</button>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: naknadno evidentiranje -->
   <div id="naknadno-overlay" class="modal-overlay hidden">

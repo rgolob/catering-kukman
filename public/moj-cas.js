@@ -80,15 +80,26 @@ async function naloziMesec() {
     else if (d.vTeku) { ureStr = formatirajUre(d.minute) + ' ▶'; ureClass = 'v-teku'; }
     else { ureStr = formatirajUre(d.minute); ureClass = ''; }
 
-    const kmBadge = d.gorivo > 0 ? `<br><span class="km-badge">⛽ €${parseFloat(d.gorivo).toFixed(2)}</span>` : '';
-    const strosekBadge = d.nakup > 0 ? `<br><span class="km-badge strosek-badge">🛒 €${parseFloat(d.nakup).toFixed(2)}</span>` : '';
+    const kmBadge = d.gorivo > 0 ? `<span class="km-badge">⛽ €${parseFloat(d.gorivo).toFixed(2)}</span>` : '';
+    const strosekBadge = d.nakup > 0 ? `<span class="km-badge strosek-badge">🛒 €${parseFloat(d.nakup).toFixed(2)}</span>` : '';
+    const badges = (kmBadge || strosekBadge) ? `<span class="dan-badges">${kmBadge}${strosekBadge}</span>` : '';
     return `<tr class="${jeDanes ? 'danes-row' : ''}">
-      <td>${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}${kmBadge}${strosekBadge}</td>
+      <td>
+        <span class="dan-ime">${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}</span>
+        ${badges}
+      </td>
       <td class="td-cas">${formatirajCas(d.prvPrihod)}</td>
       <td class="td-cas">${d.vTeku && !d.nepopoln ? '<span style="color:#38a169">v delu</span>' : formatirajCas(d.zadnjiOdhod)}</td>
-      <td class="td-ure ${ureClass}">${ureStr}</td>
+      <td class="td-ure ${ureClass}">
+        ${ureStr}
+        <button class="btn-uredi-dan" data-datum="${d.datum}" data-gorivo="${d.gorivo || 0}" data-nakup="${d.nakup || 0}" title="Uredi">✏</button>
+      </td>
     </tr>`;
   }).join('');
+
+  tbody.querySelectorAll('.btn-uredi-dan').forEach(btn => {
+    btn.addEventListener('click', () => odpriRetroModal(btn.dataset.datum, parseFloat(btn.dataset.gorivo), parseFloat(btn.dataset.nakup)));
+  });
 
   // Prikaz plačila
   const plBox = document.getElementById('placilo-box');
@@ -104,6 +115,16 @@ async function naloziMesec() {
     } else {
       stimRow.style.display = 'none';
     }
+    const gorivoRow = document.getElementById('placilo-gorivo-row');
+    if (data.gorivo) {
+      document.getElementById('placilo-gorivo-znesek').textContent = formatEur(data.gorivo);
+      gorivoRow.style.display = '';
+    } else { gorivoRow.style.display = 'none'; }
+    const nakupRow = document.getElementById('placilo-nakup-row');
+    if (data.nakup) {
+      document.getElementById('placilo-nakup-znesek').textContent = formatEur(data.nakup);
+      nakupRow.style.display = '';
+    } else { nakupRow.style.display = 'none'; }
     document.getElementById('placilo-skupaj-znesek').textContent = formatEur(data.skupajPlacilo);
     plBox.style.display = '';
   } else {
@@ -240,6 +261,105 @@ async function naloziZahtevke() {
     </div>`;
   }).join('');
 }
+
+// ── Retroaktivni vnos ────────────────────────────────────────────────────────
+
+let retroDatum = null;
+
+async function odpriRetroModal(datum, gorivo, nakup) {
+  retroDatum = datum;
+  const d = new Date(datum + 'T00:00:00');
+  document.getElementById('retro-naslov').textContent =
+    `${DNEVI[d.getDay()]} ${d.getDate()}. ${MESECI[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
+  document.getElementById('retro-gorivo').value = gorivo > 0 ? gorivo : '';
+  document.getElementById('retro-nakup').value = nakup > 0 ? nakup : '';
+  document.getElementById('retro-napaka').textContent = '';
+  document.getElementById('retro-od').value = '';
+  document.getElementById('retro-do').value = '';
+
+  try {
+    const res = await fetch('/api/moj-cas/dela');
+    const dela = await res.json();
+    const delaSekcija = document.getElementById('retro-dela-sekcija');
+    if (dela.length > 0) {
+      document.getElementById('retro-delo-select').innerHTML = dela.map(d =>
+        `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
+      ).join('');
+      delaSekcija.style.display = '';
+    } else {
+      delaSekcija.style.display = 'none';
+    }
+  } catch(_) {}
+
+  await osveziRetroSegmente();
+  document.getElementById('retro-overlay').classList.remove('hidden');
+}
+
+async function osveziRetroSegmente() {
+  try {
+    const res = await fetch(`/api/moj-cas/razporeditev?datum=${retroDatum}`);
+    const segmenti = await res.json();
+    const el = document.getElementById('retro-segmenti');
+    if (!segmenti.length) { el.innerHTML = ''; return; }
+    el.innerHTML = segmenti.map(s =>
+      `<div class="retro-segment">
+        <span>${s.naziv}: ${s.cas_od}–${s.cas_do}</span>
+        <button class="retro-del-btn" data-id="${s.id}">✕</button>
+      </div>`
+    ).join('');
+    el.querySelectorAll('.retro-del-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        await fetch(`/api/moj-cas/razporeditev/${btn.dataset.id}`, { method: 'DELETE' });
+        await osveziRetroSegmente();
+      });
+    });
+  } catch(_) {}
+}
+
+document.getElementById('retro-btn-dodaj').addEventListener('click', async () => {
+  const deloId = document.getElementById('retro-delo-select').value;
+  const casOd = document.getElementById('retro-od').value;
+  const casDo = document.getElementById('retro-do').value;
+  const napaka = document.getElementById('retro-napaka');
+  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do.'; return; }
+  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do".'; return; }
+  napaka.textContent = '';
+  const res = await fetch('/api/moj-cas/razporeditev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ datum: retroDatum, deloId, casOd, casDo })
+  });
+  if (res.ok) {
+    document.getElementById('retro-od').value = '';
+    document.getElementById('retro-do').value = '';
+    await osveziRetroSegmente();
+  } else {
+    const d = await res.json();
+    napaka.textContent = d.napaka || 'Napaka';
+  }
+});
+
+document.getElementById('retro-shrani').addEventListener('click', async () => {
+  const gorivo = parseFloat(document.getElementById('retro-gorivo').value) || 0;
+  const nakup = parseFloat(document.getElementById('retro-nakup').value) || 0;
+  const res = await fetch('/api/moj-cas/kilometrina', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ datum: retroDatum, gorivo, nakup })
+  });
+  if (res.ok) {
+    document.getElementById('retro-overlay').classList.add('hidden');
+    naloziMesec();
+  }
+});
+
+document.getElementById('retro-preklic').addEventListener('click', () => {
+  document.getElementById('retro-overlay').classList.add('hidden');
+});
+document.getElementById('retro-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('retro-overlay'))
+    document.getElementById('retro-overlay').classList.add('hidden');
+});
 
 // Init
 const zdaj = new Date();
