@@ -631,8 +631,12 @@ function createApp() {
     const hasRate = privzetaUp > 0 || razRows.length > 0;
     const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
 
-    const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { gorivo: Number(r.gorivo), nakup: Number(r.nakup || 0) }]));
+    const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { gorivo: Number(r.km || 0), nakup: Number(r.strosek || 0) }]));
     const dneviZKm = dnevi.map(d => ({ ...d, ...( kmPoDateh.get(d.datum) || { gorivo: 0, nakup: 0 }) }));
+
+    const skupajGorivo = Math.round(kmRows.reduce((s, r) => s + (Number(r.km) || 0), 0) * 100) / 100;
+    const skupajNakup  = Math.round(kmRows.reduce((s, r) => s + (Number(r.strosek) || 0), 0) * 100) / 100;
+    const skupajStroški = Math.round((skupajGorivo + skupajNakup) * 100) / 100;
 
     res.json({
       leto, mesec, dnevi: dneviZKm,
@@ -640,7 +644,11 @@ function createApp() {
       imaDodatnaDela: razRows.length > 0,
       osnova,
       stimulacija: stimulacija || null,
-      skupajPlacilo: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
+      gorivo: skupajGorivo || null,
+      nakup: skupajNakup || null,
+      skupajPlacilo: (osnova !== null || stimulacija > 0 || skupajStroški > 0)
+        ? Math.round(((osnova || 0) + stimulacija + skupajStroški) * 100) / 100
+        : null
     });
   });
 

@@ -115,6 +115,16 @@ async function naloziMesec() {
     } else {
       stimRow.style.display = 'none';
     }
+    const gorivoRow = document.getElementById('placilo-gorivo-row');
+    if (data.gorivo) {
+      document.getElementById('placilo-gorivo-znesek').textContent = formatEur(data.gorivo);
+      gorivoRow.style.display = '';
+    } else { gorivoRow.style.display = 'none'; }
+    const nakupRow = document.getElementById('placilo-nakup-row');
+    if (data.nakup) {
+      document.getElementById('placilo-nakup-znesek').textContent = formatEur(data.nakup);
+      nakupRow.style.display = '';
+    } else { nakupRow.style.display = 'none'; }
     document.getElementById('placilo-skupaj-znesek').textContent = formatEur(data.skupajPlacilo);
     plBox.style.display = '';
   } else {
