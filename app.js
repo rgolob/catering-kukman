@@ -286,7 +286,7 @@ function createApp() {
     next();
   });
 
-  app.use(express.static(path.join(__dirname, 'public')));
+  app.use(express.static(path.join(__dirname, 'public'), { index: false }));
 
   // ── Root redirect ────────────────────────────────────────────────────────────
   app.get('/', (req, res) => res.redirect(BASE));
