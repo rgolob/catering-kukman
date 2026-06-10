@@ -167,34 +167,45 @@ function prikaziDodatnoOverlay() {
   document.getElementById('qr-dodatno-overlay').classList.remove('hidden');
 }
 
-async function dodajSegment() {
+function formatirajUrQR(min) {
+  const u = Math.floor(min / 60), m = Math.round(min % 60);
+  return m > 0 ? `${u}u ${m}m` : `${u}u`;
+}
+
+async function posljiSegment(deloId, body) {
   const napaka = document.getElementById('qr-dodatno-napaka');
-  const deloId = Number(document.getElementById('qr-dodatno-select').value);
-  const casOd = document.getElementById('qr-dodatno-od').value;
-  const casDo = document.getElementById('qr-dodatno-do').value;
-  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do'; return; }
-  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do"'; return; }
   napaka.textContent = '';
   const res = await fetch('/api/qr-razporeditev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ zaposleniId: qrDodatnoZaposleniId, token, datum: qrDodatnoDatum, deloId, casOd, casDo })
+    body: JSON.stringify({ zaposleniId: qrDodatnoZaposleniId, token, datum: qrDodatnoDatum, deloId, ...body })
   });
   if (res.ok) {
-    const naziv = document.getElementById('qr-dodatno-select').selectedOptions[0].text;
+    const d = await res.json();
+    const naziv = document.getElementById('qr-dodatno-select').selectedOptions[0].text.split(' (')[0];
     const seg = document.createElement('div');
     seg.className = 'dodatno-segment';
-    seg.textContent = `${naziv}: ${casOd}–${casDo}`;
+    seg.textContent = body.celDan ? `${naziv} · cel dan` : `${naziv} · ${formatirajUrQR(d.trajanjeMinut || body.trajanje * 60)}`;
     document.getElementById('qr-dodatno-segmenti').appendChild(seg);
-    document.getElementById('qr-dodatno-od').value = '';
-    document.getElementById('qr-dodatno-do').value = '';
+    document.getElementById('qr-dodatno-trajanje').value = '';
   } else {
     const d = await res.json();
     napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
   }
 }
 
-document.getElementById('qr-btn-dodaj-seg').addEventListener('click', dodajSegment);
+document.getElementById('qr-btn-dodaj-seg').addEventListener('click', () => {
+  const deloId = Number(document.getElementById('qr-dodatno-select').value);
+  const trajanje = parseFloat(document.getElementById('qr-dodatno-trajanje').value);
+  const napaka = document.getElementById('qr-dodatno-napaka');
+  if (!trajanje || trajanje <= 0) { napaka.textContent = 'Vnesite trajanje v urah'; return; }
+  posljiSegment(deloId, { trajanje });
+});
+
+document.getElementById('qr-btn-cel-dan').addEventListener('click', () => {
+  const deloId = Number(document.getElementById('qr-dodatno-select').value);
+  posljiSegment(deloId, { celDan: true });
+});
 document.getElementById('qr-btn-zakljuci').addEventListener('click', async () => {
   const km = parseFloat(document.getElementById('qr-km-input').value) || 0;
   const strosek = parseFloat(document.getElementById('qr-strosek-input').value) || 0;

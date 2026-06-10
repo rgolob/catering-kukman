@@ -123,6 +123,7 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE evidenca ADD COLUMN delo_id INTEGER'); } catch(_) {}
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN strosek REAL NOT NULL DEFAULT 0'); } catch(_) {}
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN komentar TEXT'); } catch(_) {}
+  try { await db.execute('ALTER TABLE evidenca_razporeditev ADD COLUMN trajanje_minut INTEGER'); } catch(_) {}
 
   // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
@@ -219,6 +220,10 @@ function casOdDoMinute(casOd, casDo) {
   const [oh, om] = String(casOd).split(':').map(Number);
   const [dh, dm] = String(casDo).split(':').map(Number);
   return Math.max(0, (dh * 60 + dm) - (oh * 60 + om));
+}
+
+function razMin(r) {
+  return r.trajanje_minut != null ? Number(r.trajanje_minut) : casOdDoMinute(r.cas_od, r.cas_do);
 }
 
 // ── App factory ───────────────────────────────────────────────────────────────
@@ -385,7 +390,7 @@ function createApp() {
   });
 
   app.post('/api/qr-razporeditev', async (req, res) => {
-    const { zaposleniId, token, datum, deloId, casOd, casDo } = req.body;
+    const { zaposleniId, token, datum, deloId, casOd, casDo, trajanje, celDan } = req.body;
     if (!token || !validQrTokens().includes(token))
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     const { rows } = await req.db.execute({
@@ -394,14 +399,32 @@ function createApp() {
     if (!rows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
     if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
     if (!deloId) return res.status(400).json({ napaka: 'Izberi vrsto dela' });
-    if (!casOd || !casDo || !/^\d{2}:\d{2}$/.test(casOd) || !/^\d{2}:\d{2}$/.test(casDo))
-      return res.status(400).json({ napaka: 'Neveljaven čas' });
-    if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
+
+    let trajanjeMinut = null, casOdStore = '00:00', casDoStore = '00:00';
+    if (celDan) {
+      const { rows: ev } = await req.db.execute({
+        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC`,
+        args: [zaposleniId, datum]
+      });
+      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+    } else if (trajanje != null) {
+      trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
+      if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Vnesite veljavno trajanje' });
+    } else if (casOd && casDo) {
+      if (!/^\d{2}:\d{2}$/.test(casOd) || !/^\d{2}:\d{2}$/.test(casDo))
+        return res.status(400).json({ napaka: 'Neveljaven čas' });
+      if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
+      casOdStore = casOd; casDoStore = casDo;
+    } else {
+      return res.status(400).json({ napaka: 'Vnesite trajanje' });
+    }
+
     const r = await req.db.execute({
-      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
-      args: [zaposleniId, datum, deloId, casOd, casDo]
+      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do, trajanje_minut) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [zaposleniId, datum, deloId, casOdStore, casDoStore, trajanjeMinut]
     });
-    res.json({ ok: true, id: Number(r.lastInsertRowid) });
+    res.json({ ok: true, id: Number(r.lastInsertRowid), trajanjeMinut });
   });
 
   app.post('/api/qr-kilometrina', async (req, res) => {
@@ -602,7 +625,7 @@ function createApp() {
       req.db.execute({ sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [req.session.zaposleniId, od, do_] }),
       req.db.execute({ sql: `SELECT z.urna_postavka, z.privzeto_delo_id, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
       req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] }),
-      req.db.execute({ sql: `SELECT r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] }),
+      req.db.execute({ sql: `SELECT r.datum, r.cas_od, r.cas_do, r.trajanje_minut, d.naziv, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] }),
       req.db.execute({ sql: 'SELECT datum, km, strosek, komentar FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
     ]);
 
@@ -612,11 +635,16 @@ function createApp() {
     const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
 
     let dodatnaMinute = 0, dodatnaOsnova = 0;
+    const razPoDateh = new Map();
     for (const r of razRows) {
-      const min = casOdDoMinute(r.cas_od, r.cas_do);
+      const min = razMin(r);
       dodatnaMinute += min;
       const up = parseFloat(r.delo_up) || 0;
       if (up > 0) dodatnaOsnova += Math.round(min / 60 * up * 100) / 100;
+      if (r.datum) {
+        if (!razPoDateh.has(r.datum)) razPoDateh.set(r.datum, []);
+        razPoDateh.get(r.datum).push({ naziv: r.naziv, minute: min });
+      }
     }
     const privzetaMinuta = Math.max(0, skupajMinut - dodatnaMinute);
     const privzetaOsnova = privzetaUp > 0 ? Math.round(privzetaMinuta / 60 * privzetaUp * 100) / 100 : 0;
@@ -624,7 +652,11 @@ function createApp() {
     const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
 
     const kmPoDateh = new Map(kmRows.map(r => [String(r.datum), { gorivo: Number(r.km || 0), nakup: Number(r.strosek || 0), komentar: r.komentar || null }]));
-    const dneviZKm = dnevi.map(d => ({ ...d, ...( kmPoDateh.get(d.datum) || { gorivo: 0, nakup: 0 }) }));
+    const dneviZKm = dnevi.map(d => ({
+      ...d,
+      ...(kmPoDateh.get(d.datum) || { gorivo: 0, nakup: 0 }),
+      razporeditev: razPoDateh.get(d.datum) || []
+    }));
     const skupajGorivo = Math.round(kmRows.reduce((s, r) => s + (Number(r.km) || 0), 0) * 100) / 100;
     const skupajNakup = Math.round(kmRows.reduce((s, r) => s + (Number(r.strosek) || 0), 0) * 100) / 100;
     const skupajStroški = Math.round((skupajGorivo + skupajNakup) * 100) / 100;
@@ -648,7 +680,7 @@ function createApp() {
       req.db.execute({ sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas ASC', args: [req.session.zaposleniId] }),
       req.db.execute({ sql: `SELECT z.urna_postavka, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
       req.db.execute({ sql: 'SELECT mesec, SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? GROUP BY mesec', args: [req.session.zaposleniId] }),
-      req.db.execute({ sql: `SELECT r.datum, r.cas_od, r.cas_do, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? ORDER BY r.datum ASC`, args: [req.session.zaposleniId] })
+      req.db.execute({ sql: `SELECT r.datum, r.cas_od, r.cas_do, r.trajanje_minut, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? ORDER BY r.datum ASC`, args: [req.session.zaposleniId] })
     ]);
     const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
     const stimPoMesecih = new Map(stimRows.map(r => [r.mesec, parseFloat(r.skupaj) || 0]));
@@ -666,7 +698,7 @@ function createApp() {
       const mRaz = razPoMesecih.get(m.mesec) || [];
       let dodatnaMinute = 0, dodatnaOsnova = 0;
       for (const r of mRaz) {
-        const min = casOdDoMinute(r.cas_od, r.cas_do);
+        const min = razMin(r);
         dodatnaMinute += min;
         const up = parseFloat(r.delo_up) || 0;
         if (up > 0) dodatnaOsnova += Math.round(min / 60 * up * 100) / 100;
@@ -757,7 +789,7 @@ function createApp() {
     if (!datum) return res.json([]);
     try {
       const { rows } = await req.db.execute({
-        sql: `SELECT r.id, d.naziv, r.cas_od, r.cas_do
+        sql: `SELECT r.id, d.naziv, r.cas_od, r.cas_do, r.trajanje_minut
               FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
               WHERE r.zaposleni_id = ? AND r.datum = ? ORDER BY r.cas_od`,
         args: [req.session.zaposleniId, datum]
@@ -767,15 +799,32 @@ function createApp() {
   });
 
   app.post('/api/moj-cas/razporeditev', requirePinAuth, async (req, res) => {
-    const { datum, deloId, casOd, casDo } = req.body;
-    if (!datum || !deloId || !casOd || !casDo)
-      return res.status(400).json({ napaka: 'Manjkajoči podatki' });
-    try {
-      await req.db.execute({
-        sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
-        args: [req.session.zaposleniId, datum, deloId, casOd, casDo]
+    const { datum, deloId, casOd, casDo, trajanje, celDan } = req.body;
+    if (!datum || !deloId) return res.status(400).json({ napaka: 'Manjkajoči podatki' });
+
+    let trajanjeMinut = null, casOdStore = '00:00', casDoStore = '00:00';
+    if (celDan) {
+      const { rows: ev } = await req.db.execute({
+        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC`,
+        args: [req.session.zaposleniId, datum]
       });
-      res.json({ ok: true });
+      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+    } else if (trajanje != null) {
+      trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
+      if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Neveljavno trajanje' });
+    } else if (casOd && casDo) {
+      casOdStore = casOd; casDoStore = casDo;
+    } else {
+      return res.status(400).json({ napaka: 'Manjkajoči podatki' });
+    }
+
+    try {
+      const r = await req.db.execute({
+        sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do, trajanje_minut) VALUES (?, ?, ?, ?, ?, ?)',
+        args: [req.session.zaposleniId, datum, deloId, casOdStore, casDoStore, trajanjeMinut]
+      });
+      res.json({ ok: true, id: Number(r.lastInsertRowid), trajanjeMinut });
     } catch (e) { res.status(500).json({ napaka: 'Napaka pri shranjevanju' }); }
   });
 
@@ -983,7 +1032,7 @@ function createApp() {
 
   // ── Razporeditev API ──────────────────────────────────────────────────────────
   app.post('/api/razporeditev', async (req, res) => {
-    const { zaposleniId, pin, datum, deloId, casOd, casDo } = req.body;
+    const { zaposleniId, pin, datum, deloId, casOd, casDo, trajanje, celDan } = req.body;
     if (!zaposleniId || !pin) return res.status(401).json({ napaka: 'Ni pooblastil' });
     const { rows: zr } = await req.db.execute({
       sql: 'SELECT id FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
@@ -992,14 +1041,32 @@ function createApp() {
     if (!zr.length) return res.status(401).json({ napaka: 'Napačen PIN' });
     if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
     if (!deloId) return res.status(400).json({ napaka: 'Izberi vrsto dela' });
-    if (!casOd || !casDo || !/^\d{2}:\d{2}$/.test(casOd) || !/^\d{2}:\d{2}$/.test(casDo))
-      return res.status(400).json({ napaka: 'Neveljaven čas' });
-    if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
+
+    let trajanjeMinut = null, casOdStore = '00:00', casDoStore = '00:00';
+    if (celDan) {
+      const { rows: ev } = await req.db.execute({
+        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC`,
+        args: [zaposleniId, datum]
+      });
+      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+    } else if (trajanje != null) {
+      trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
+      if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Vnesite veljavno trajanje' });
+    } else if (casOd && casDo) {
+      if (!/^\d{2}:\d{2}$/.test(casOd) || !/^\d{2}:\d{2}$/.test(casDo))
+        return res.status(400).json({ napaka: 'Neveljaven čas' });
+      if (casOd >= casDo) return res.status(400).json({ napaka: 'Čas "od" mora biti pred "do"' });
+      casOdStore = casOd; casDoStore = casDo;
+    } else {
+      return res.status(400).json({ napaka: 'Vnesite trajanje' });
+    }
+
     const r = await req.db.execute({
-      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do) VALUES (?, ?, ?, ?, ?)',
-      args: [zaposleniId, datum, deloId, casOd, casDo]
+      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do, trajanje_minut) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [zaposleniId, datum, deloId, casOdStore, casDoStore, trajanjeMinut]
     });
-    res.json({ ok: true, id: Number(r.lastInsertRowid) });
+    res.json({ ok: true, id: Number(r.lastInsertRowid), trajanjeMinut });
   });
 
   app.get('/api/admin/razporeditev', requireAuth, async (req, res) => {
@@ -1111,7 +1178,7 @@ function createApp() {
       req.db.execute({ sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [od, do_] }),
       req.db.execute({ sql: 'SELECT zaposleni_id, SUM(znesek) as skupaj FROM stimulacija WHERE mesec = ? GROUP BY zaposleni_id', args: [mesecStr] }),
       req.db.execute({
-        sql: `SELECT r.zaposleni_id, r.delo_id, d.naziv AS delo_naziv, d.urna_postavka AS delo_up, r.cas_od, r.cas_do
+        sql: `SELECT r.zaposleni_id, r.delo_id, d.naziv AS delo_naziv, d.urna_postavka AS delo_up, r.cas_od, r.cas_do, r.trajanje_minut
               FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
               WHERE r.datum BETWEEN ? AND ?`,
         args: [od, do_]
@@ -1134,7 +1201,7 @@ function createApp() {
 
       const delaMap = new Map();
       for (const r of zRaz) {
-        const min = casOdDoMinute(r.cas_od, r.cas_do);
+        const min = razMin(r);
         if (!delaMap.has(r.delo_id)) {
           delaMap.set(r.delo_id, { naziv: r.delo_naziv, urna_postavka: parseFloat(r.delo_up) || 0, minute: 0 });
         }

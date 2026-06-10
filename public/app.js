@@ -303,8 +303,7 @@ function prikaziDodatnoDeloOverlay(zaposleniId, pin, datum, privzetoDelo, ostala
     sel.innerHTML = ostala_dela.map(d =>
       `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
     ).join('');
-    document.getElementById('dodatno-od').value = '';
-    document.getElementById('dodatno-do').value = '';
+    document.getElementById('dodatno-trajanje').value = '';
     document.getElementById('dodatno-segmenti').innerHTML = '';
     document.getElementById('dodatno-napaka').textContent = '';
     document.getElementById('dodatno-podnaslov').textContent =
@@ -319,38 +318,46 @@ function prikaziDodatnoDeloOverlay(zaposleniId, pin, datum, privzetoDelo, ostala
   document.getElementById('dodatno-overlay').classList.remove('hidden');
 }
 
-async function dodajSegment() {
-  const deloId = document.getElementById('dodatno-delo-select').value;
-  const casOd = document.getElementById('dodatno-od').value;
-  const casDo = document.getElementById('dodatno-do').value;
+function formatirajUrTab(min) {
+  const u = Math.floor(min / 60), m = Math.round(min % 60);
+  return m > 0 ? `${u}u ${m}m` : `${u}u`;
+}
+
+async function posljiSegmentTab(deloId, body) {
   const napaka = document.getElementById('dodatno-napaka');
-
-  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do.'; return; }
-  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do".'; return; }
   napaka.textContent = '';
-
   const res = await fetch('/api/razporeditev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ zaposleniId: odhodZaposleniId, pin: odhodPin, datum: odhodDatum, deloId, casOd, casDo })
+    body: JSON.stringify({ zaposleniId: odhodZaposleniId, pin: odhodPin, datum: odhodDatum, deloId, ...body })
   });
-
   if (res.ok) {
-    const deloNaziv = odhodDela.find(d => String(d.id) === String(deloId))?.naziv || '?';
+    const d = await res.json();
+    const deloNaziv = odhodDela.find(x => String(x.id) === String(deloId))?.naziv || '?';
     const seg = document.getElementById('dodatno-segmenti');
     const div = document.createElement('div');
     div.className = 'dodatno-segment';
-    div.textContent = `✓ ${deloNaziv}: ${casOd}–${casDo}`;
+    div.textContent = body.celDan ? `✓ ${deloNaziv} · cel dan` : `✓ ${deloNaziv} · ${formatirajUrTab(d.trajanjeMinut || body.trajanje * 60)}`;
     seg.appendChild(div);
-    document.getElementById('dodatno-od').value = '';
-    document.getElementById('dodatno-do').value = '';
+    document.getElementById('dodatno-trajanje').value = '';
   } else {
     const d = await res.json();
     napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
   }
 }
 
-document.getElementById('btn-dodaj-segment').addEventListener('click', dodajSegment);
+document.getElementById('btn-dodaj-segment').addEventListener('click', () => {
+  const deloId = document.getElementById('dodatno-delo-select').value;
+  const trajanje = parseFloat(document.getElementById('dodatno-trajanje').value);
+  const napaka = document.getElementById('dodatno-napaka');
+  if (!trajanje || trajanje <= 0) { napaka.textContent = 'Vnesite trajanje v urah.'; return; }
+  posljiSegmentTab(deloId, { trajanje });
+});
+
+document.getElementById('btn-cel-dan').addEventListener('click', () => {
+  const deloId = document.getElementById('dodatno-delo-select').value;
+  posljiSegmentTab(deloId, { celDan: true });
+});
 document.getElementById('btn-dodatno-zakljuci').addEventListener('click', async () => {
   const gorivo = parseFloat(document.getElementById('dodatno-gorivo').value) || 0;
   const nakup = parseFloat(document.getElementById('dodatno-nakup').value) || 0;
