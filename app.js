@@ -1084,7 +1084,7 @@ function createApp() {
     if (do_) { where += ' AND r.datum <= ?'; args.push(do_); }
     const { rows } = await req.db.execute({
       sql: `SELECT r.id, r.zaposleni_id, z.ime, r.datum, r.delo_id, d.naziv AS delo_naziv,
-            d.urna_postavka AS delo_up, r.cas_od, r.cas_do
+            d.urna_postavka AS delo_up, r.cas_od, r.cas_do, r.trajanje_minut
             FROM evidenca_razporeditev r
             JOIN zaposleni z ON z.id = r.zaposleni_id
             JOIN dela d ON d.id = r.delo_id
@@ -1092,6 +1092,31 @@ function createApp() {
       args
     });
     res.json(rows);
+  });
+
+  app.post('/api/admin/razporeditev', requireAuth, async (req, res) => {
+    const { zaposleniId, datum, deloId, trajanje, celDan } = req.body;
+    if (!zaposleniId || !datum || !deloId) return res.status(400).json({ napaka: 'Manjkajo podatki' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
+    let trajanjeMinut = null;
+    if (celDan) {
+      const { rows: ev } = await req.db.execute({
+        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC',
+        args: [zaposleniId, datum]
+      });
+      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+    } else if (trajanje != null) {
+      trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
+      if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Vnesite veljavno trajanje' });
+    } else {
+      return res.status(400).json({ napaka: 'Vnesite trajanje' });
+    }
+    const r = await req.db.execute({
+      sql: 'INSERT INTO evidenca_razporeditev (zaposleni_id, datum, delo_id, cas_od, cas_do, trajanje_minut) VALUES (?, ?, ?, ?, ?, ?)',
+      args: [zaposleniId, datum, deloId, '00:00', '00:00', trajanjeMinut]
+    });
+    res.json({ ok: true, id: Number(r.lastInsertRowid), trajanjeMinut });
   });
 
   app.delete('/api/admin/razporeditev/:id', requireAuth, async (req, res) => {
@@ -1112,6 +1137,41 @@ function createApp() {
 
   app.delete('/api/admin/evidenca/:id', requireAuth, async (req, res) => {
     await req.db.execute({ sql: 'DELETE FROM evidenca WHERE id = ?', args: [req.params.id] });
+    res.json({ ok: true });
+  });
+
+  app.get('/api/admin/kilometrina', requireAuth, async (req, res) => {
+    const { zaposleniId, od, do: do_ } = req.query;
+    if (!zaposleniId) return res.status(400).json({ napaka: 'Manjka zaposleniId' });
+    const args = [zaposleniId];
+    let where = 'zaposleni_id = ?';
+    if (od) { where += ' AND datum >= ?'; args.push(od); }
+    if (do_) { where += ' AND datum <= ?'; args.push(do_); }
+    const { rows } = await req.db.execute({
+      sql: `SELECT datum, km, strosek FROM kilometrina WHERE ${where} ORDER BY datum DESC`,
+      args
+    });
+    res.json(rows);
+  });
+
+  app.post('/api/admin/kilometrina', requireAuth, async (req, res) => {
+    const { zaposleniId, datum, km, strosek } = req.body;
+    if (!zaposleniId || !datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum))
+      return res.status(400).json({ napaka: 'Manjkajo podatki' });
+    const kmNum = parseFloat(km) || 0;
+    const strosekNum = parseFloat(strosek) || 0;
+    await req.db.execute({
+      sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
+      args: [zaposleniId, datum, kmNum, strosekNum]
+    });
+    res.json({ ok: true });
+  });
+
+  app.delete('/api/admin/kilometrina/:zaposleniId/:datum', requireAuth, async (req, res) => {
+    await req.db.execute({
+      sql: 'DELETE FROM kilometrina WHERE zaposleni_id = ? AND datum = ?',
+      args: [req.params.zaposleniId, req.params.datum]
+    });
     res.json({ ok: true });
   });
 

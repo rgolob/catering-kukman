@@ -779,16 +779,32 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
       </table>`;
     }
 
+    const mesecStr = `${leto}-${String(mesec).padStart(2,'0')}`;
+
+    // Naloži razporeditev, dela in km vzporedno
+    const [razRes, delaRes, kmRes] = await Promise.all([
+      fetch(`/api/admin/razporeditev?zaposleniId=${zaposleniId}&od=${mesecStr}-01&do=${mesecStr}-31`),
+      fetch('/api/admin/dela'),
+      fetch(`/api/admin/kilometrina?zaposleniId=${zaposleniId}&od=${mesecStr}-01&do=${mesecStr}-31`)
+    ]);
+    const [razporeditev, dela, kilometrina] = await Promise.all([
+      razRes.ok ? razRes.json() : [],
+      delaRes.ok ? delaRes.json() : [],
+      kmRes.ok ? kmRes.json() : []
+    ]);
+
     // Razporeditev del
     const razEl = document.getElementById('pris-modal-razporeditev');
-    function prikaziRazporeditev(razporeditev, dela) {
-      const razHtml = razporeditev.length ? razporeditev.map(r => `
-        <tr>
+    function prikaziRazporeditev(raz) {
+      const razHtml = raz.length ? raz.map(r => {
+        const ureStr = r.trajanje_minut ? formatUre(Number(r.trajanje_minut)) : `${r.cas_od}–${r.cas_do}`;
+        return `<tr>
           <td>${r.datum.slice(5).replace('-','.')}</td>
-          <td>${escHtml(r.delo_naziv)} <span class="td-ure-sub">€${parseFloat(r.urna_postavka).toFixed(2)}/h</span></td>
-          <td>${r.cas_od}–${r.cas_do}</td>
+          <td>${escHtml(r.delo_naziv)} <span class="td-ure-sub">€${parseFloat(r.delo_up || r.urna_postavka).toFixed(2)}/h</span></td>
+          <td>${ureStr}</td>
           <td><button class="btn-sm btn-danger btn-raz-brisi" data-id="${r.id}">×</button></td>
-        </tr>`).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni razporeditev</td></tr>`;
+        </tr>`;
+      }).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni razporeditev</td></tr>`;
 
       const delaOpts = dela.map(d => `<option value="${d.id}">${escHtml(d.naziv)} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`).join('');
 
@@ -796,40 +812,100 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
         <h3 style="margin:20px 0 8px;font-size:0.95rem;color:#4a5568">Razporeditev del</h3>
         <table class="tabela" style="margin-bottom:12px">
           <thead><tr><th>Datum</th><th>Delo</th><th>Ure</th><th></th></tr></thead>
-          <tbody id="raz-tbody">${razHtml}</tbody>
+          <tbody>${razHtml}</tbody>
         </table>
         <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
           <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="raz-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
           <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Delo<select id="raz-delo" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem">${delaOpts}</select></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Od<input type="time" id="raz-od" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Do<input type="time" id="raz-do" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
-          <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px">Dodaj</button>
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Trajanje (ur)<input type="number" id="raz-trajanje" min="0.5" max="24" step="0.5" placeholder="ur" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:68px" /></label>
+          <button id="raz-cel-dan" class="btn-sm" style="background:#276749;color:#fff;padding:6px 12px;align-self:flex-end">Cel dan</button>
+          <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Dodaj</button>
         </div>
         <div id="raz-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>`;
 
       razEl.querySelectorAll('.btn-raz-brisi').forEach(btn => {
         btn.addEventListener('click', async () => {
           const r = await fetch(`/api/admin/razporeditev/${btn.dataset.id}`, { method: 'DELETE' });
-          if (r.ok) { const fresh = await osveziRaz(); prikaziRazporeditev(fresh, dela); naloziObracun(); }
+          if (r.ok) { const fresh = await osveziRaz(); prikaziRazporeditev(fresh); naloziObracun(); }
           else prikaziToast('Napaka pri brisanju', 'napaka');
         });
       });
 
-      document.getElementById('raz-dodaj').addEventListener('click', async () => {
+      async function dodajRaz(body) {
         const napaka = document.getElementById('raz-napaka');
         napaka.textContent = '';
         const datum = document.getElementById('raz-datum').value;
         const deloId = document.getElementById('raz-delo').value;
-        const casOd = document.getElementById('raz-od').value;
-        const casDo = document.getElementById('raz-do').value;
-        if (!datum || !deloId || !casOd || !casDo) { napaka.textContent = 'Izpolni vsa polja.'; return; }
+        if (!datum || !deloId) { napaka.textContent = 'Izpolni datum in delo.'; return; }
         const res = await fetch('/api/admin/razporeditev', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ zaposleniId, datum, deloId: Number(deloId), casOd, casDo })
+          body: JSON.stringify({ zaposleniId, datum, deloId: Number(deloId), ...body })
         });
-        if (res.ok) { const fresh = await osveziRaz(); prikaziRazporeditev(fresh, dela); naloziObracun(); }
+        if (res.ok) { const fresh = await osveziRaz(); prikaziRazporeditev(fresh); naloziObracun(); }
         else { const e = await res.json(); napaka.textContent = e.napaka || 'Napaka'; }
+      }
+
+      document.getElementById('raz-dodaj').addEventListener('click', () => {
+        const trajanje = parseFloat(document.getElementById('raz-trajanje').value);
+        if (!trajanje || trajanje <= 0) { document.getElementById('raz-napaka').textContent = 'Vnesite trajanje v urah.'; return; }
+        dodajRaz({ trajanje });
+      });
+      document.getElementById('raz-cel-dan').addEventListener('click', () => dodajRaz({ celDan: true }));
+    }
+
+    // Stroški (gorivo/nakup)
+    const kmEl = document.getElementById('pris-modal-km');
+    function prikaziKilometrina(km) {
+      const kmHtml = km.length ? km.map(k => `
+        <tr>
+          <td>${k.datum.slice(5).replace('-','.')}</td>
+          <td class="td-r">${Number(k.km) > 0 ? `${k.km} km` : '—'}</td>
+          <td class="td-r">${Number(k.strosek) > 0 ? formatEur(Number(k.strosek)) : '—'}</td>
+          <td><button class="btn-sm btn-danger btn-km-brisi" data-datum="${k.datum}">×</button></td>
+        </tr>`).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni vnosov</td></tr>`;
+
+      kmEl.innerHTML = `
+        <h3 style="margin:20px 0 8px;font-size:0.95rem;color:#4a5568">⛽ Gorivo / 🛍 Nakup</h3>
+        <table class="tabela" style="margin-bottom:12px">
+          <thead><tr><th>Datum</th><th class="th-r">Gorivo (€)</th><th class="th-r">Nakup (€)</th><th></th></tr></thead>
+          <tbody>${kmHtml}</tbody>
+        </table>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="km-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">⛽ Gorivo (€)<input type="number" id="km-gorivo" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
+          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">🛍 Nakup (€)<input type="number" id="km-nakup" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
+          <button id="km-shrani" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Shrani</button>
+        </div>
+        <div id="km-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>`;
+
+      kmEl.querySelectorAll('.btn-km-brisi').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const r = await fetch(`/api/admin/kilometrina/${zaposleniId}/${btn.dataset.datum}`, { method: 'DELETE' });
+          if (r.ok) { const fresh = await osveziKm(); prikaziKilometrina(fresh); naloziObracun(); }
+          else prikaziToast('Napaka pri brisanju', 'napaka');
+        });
+      });
+
+      document.getElementById('km-shrani').addEventListener('click', async () => {
+        const napaka = document.getElementById('km-napaka');
+        napaka.textContent = '';
+        const datum = document.getElementById('km-datum').value;
+        const gorivo = parseFloat(document.getElementById('km-gorivo').value) || 0;
+        const nakup = parseFloat(document.getElementById('km-nakup').value) || 0;
+        if (!datum) { napaka.textContent = 'Izpolni datum.'; return; }
+        if (!gorivo && !nakup) { napaka.textContent = 'Vnesite gorivo ali nakup.'; return; }
+        const res = await fetch('/api/admin/kilometrina', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zaposleniId, datum, km: gorivo, strosek: nakup })
+        });
+        if (res.ok) {
+          document.getElementById('km-datum').value = '';
+          document.getElementById('km-gorivo').value = '';
+          document.getElementById('km-nakup').value = '';
+          const fresh = await osveziKm(); prikaziKilometrina(fresh); naloziObracun();
+        } else { const e = await res.json(); napaka.textContent = e.napaka || 'Napaka'; }
       });
     }
 
@@ -837,8 +913,13 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
       const r = await fetch(`/api/admin/razporeditev?zaposleniId=${zaposleniId}&od=${mesecStr}-01&do=${mesecStr}-31`);
       return r.ok ? await r.json() : [];
     }
-    const mesecStr = `${leto}-${String(mesec).padStart(2,'0')}`;
-    prikaziRazporeditev(d.razporeditev || [], d.dela || []);
+    async function osveziKm() {
+      const r = await fetch(`/api/admin/kilometrina?zaposleniId=${zaposleniId}&od=${mesecStr}-01&do=${mesecStr}-31`);
+      return r.ok ? await r.json() : [];
+    }
+
+    prikaziRazporeditev(razporeditev);
+    prikaziKilometrina(kilometrina);
 
     document.getElementById('pris-modal-overlay').classList.remove('hidden');
   } catch(e) { console.error(e); }
