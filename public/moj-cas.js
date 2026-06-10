@@ -64,6 +64,9 @@ async function naloziMesec() {
     prazno.style.display = 'block';
     document.getElementById('skupaj-ure').textContent = '0u';
     document.getElementById('placilo-box').style.display = 'none';
+    const zdajE = new Date();
+    document.getElementById('btn-naprej').disabled =
+      prikazanoLeto === zdajE.getFullYear() && prikazaniMesec === (zdajE.getMonth() + 1);
     return;
   }
   prazno.style.display = 'none';
@@ -342,14 +345,23 @@ document.getElementById('retro-btn-dodaj').addEventListener('click', async () =>
 document.getElementById('retro-shrani').addEventListener('click', async () => {
   const gorivo = parseFloat(document.getElementById('retro-gorivo').value) || 0;
   const nakup = parseFloat(document.getElementById('retro-nakup').value) || 0;
-  const res = await fetch('/api/moj-cas/kilometrina', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ datum: retroDatum, gorivo, nakup })
-  });
-  if (res.ok) {
-    document.getElementById('retro-overlay').classList.add('hidden');
-    naloziMesec();
+  const napaka = document.getElementById('retro-shrani-napaka');
+  napaka.textContent = '';
+  try {
+    const res = await fetch('/api/moj-cas/kilometrina', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ datum: retroDatum, gorivo, nakup })
+    });
+    if (res.ok) {
+      document.getElementById('retro-overlay').classList.add('hidden');
+      naloziMesec();
+    } else {
+      const d = await res.json().catch(() => ({}));
+      napaka.textContent = d.napaka || 'Napaka pri shranjevanju';
+    }
+  } catch (_) {
+    napaka.textContent = 'Napaka pri povezavi';
   }
 });
 
