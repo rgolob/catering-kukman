@@ -95,11 +95,11 @@
       <div id="dodatno-dela-sekcija">
         <div class="dodatno-form">
           <select id="dodatno-delo-select" class="dodatno-select"></select>
-          <div class="dodatno-cas-row">
-            <label>Od<input type="time" id="dodatno-od" /></label>
-            <label>Do<input type="time" id="dodatno-do" /></label>
+          <div class="trajanje-row">
+            <input type="number" id="dodatno-trajanje" class="trajanje-input" min="0.5" max="24" step="0.5" placeholder="ur" />
+            <button id="btn-cel-dan" class="btn-cel-dan">Cel dan</button>
+            <button id="btn-dodaj-segment" class="btn-dodaj-seg">Dodaj</button>
           </div>
-          <button id="btn-dodaj-segment" class="btn-dodaj-seg">Dodaj segment</button>
         </div>
         <div id="dodatno-napaka" class="dialog-pin-napaka"></div>
         <div id="dodatno-segmenti" class="dodatno-segmenti"></div>

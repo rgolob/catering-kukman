@@ -23,6 +23,12 @@ function isoNaCasInput(isoStr) {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 }
 
+function casOdDoMinuteFE(casOd, casDo) {
+  const [oh, om] = String(casOd || '00:00').split(':').map(Number);
+  const [dh, dm] = String(casDo || '00:00').split(':').map(Number);
+  return Math.max(0, (dh * 60 + dm) - (oh * 60 + om));
+}
+
 function formatirajDatum(datum) {
   const d = new Date(datum + 'T00:00:00');
   const dan = d.getDate();
@@ -91,10 +97,13 @@ async function naloziMesec() {
     const gorivoBadge = d.gorivo > 0 ? `<span class="km-badge">⛽ €${parseFloat(d.gorivo).toFixed(2)}</span>` : '';
     const nakupBadge = d.nakup > 0 ? `<span class="km-badge strosek-badge">🛒 €${parseFloat(d.nakup).toFixed(2)}</span>` : '';
     const badges = (gorivoBadge || nakupBadge) ? `<span class="dan-badges">${gorivoBadge}${nakupBadge}</span>` : '';
+    const delaBadges = d.razporeditev && d.razporeditev.length > 0
+      ? `<div class="dan-dela">${d.razporeditev.map(r => `<span class="dan-delo-chip">${r.naziv} ${formatirajUre(r.minute)}</span>`).join('')}</div>`
+      : '';
     return `<tr class="${jeDanes ? 'danes-row' : ''}">
       <td>
         <span>${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}</span>
-        ${badges}
+        ${badges}${delaBadges}
       </td>
       <td class="td-cas">${formatirajCas(d.prvPrihod)}</td>
       <td class="td-cas">${d.vTeku && !d.nepopoln ? '<span style="color:#38a169">v delu</span>' : formatirajCas(d.zadnjiOdhod)}</td>
@@ -292,8 +301,7 @@ async function odpriRetroModal(datum, gorivo, nakup, prihod, odhod, komentar) {
   document.getElementById('retro-odhod').value = odhod || '';
   document.getElementById('retro-komentar').value = komentar || '';
   document.getElementById('retro-shrani-napaka').textContent = '';
-  document.getElementById('retro-od').value = '';
-  document.getElementById('retro-do').value = '';
+  document.getElementById('retro-trajanje').value = '';
 
   try {
     const res = await fetch('/api/moj-cas/dela');
@@ -322,12 +330,13 @@ async function osveziRetroSegmente() {
     const segmenti = await res.json();
     const el = document.getElementById('retro-segmenti');
     if (!segmenti.length) { el.innerHTML = ''; return; }
-    el.innerHTML = segmenti.map(s =>
-      `<div class="retro-segment">
-        <span>${s.naziv}: ${s.cas_od}–${s.cas_do}</span>
+    el.innerHTML = segmenti.map(s => {
+      const min = s.trajanje_minut != null ? s.trajanje_minut : casOdDoMinuteFE(s.cas_od, s.cas_do);
+      return `<div class="retro-segment">
+        <span>${s.naziv} · ${formatirajUre(min)}</span>
         <button class="retro-del-btn" data-id="${s.id}">✕</button>
-      </div>`
-    ).join('');
+      </div>`;
+    }).join('');
     el.querySelectorAll('.retro-del-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         await fetch(`/api/moj-cas/razporeditev/${btn.dataset.id}`, { method: 'DELETE' });
@@ -339,20 +348,34 @@ async function osveziRetroSegmente() {
 
 document.getElementById('retro-btn-dodaj').addEventListener('click', async () => {
   const deloId = document.getElementById('retro-delo-select').value;
-  const casOd = document.getElementById('retro-od').value;
-  const casDo = document.getElementById('retro-do').value;
+  const trajanje = parseFloat(document.getElementById('retro-trajanje').value);
   const napaka = document.getElementById('retro-napaka');
-  if (!casOd || !casDo) { napaka.textContent = 'Vnesite čas od in do.'; return; }
-  if (casOd >= casDo) { napaka.textContent = 'Čas "od" mora biti pred "do".'; return; }
+  if (!trajanje || trajanje <= 0) { napaka.textContent = 'Vnesite trajanje v urah.'; return; }
   napaka.textContent = '';
   const res = await fetch('/api/moj-cas/razporeditev', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ datum: retroDatum, deloId, casOd, casDo })
+    body: JSON.stringify({ datum: retroDatum, deloId, trajanje })
   });
   if (res.ok) {
-    document.getElementById('retro-od').value = '';
-    document.getElementById('retro-do').value = '';
+    document.getElementById('retro-trajanje').value = '';
+    await osveziRetroSegmente();
+  } else {
+    const d = await res.json().catch(() => ({}));
+    napaka.textContent = d.napaka || 'Napaka';
+  }
+});
+
+document.getElementById('retro-btn-cel-dan').addEventListener('click', async () => {
+  const deloId = document.getElementById('retro-delo-select').value;
+  const napaka = document.getElementById('retro-napaka');
+  napaka.textContent = '';
+  const res = await fetch('/api/moj-cas/razporeditev', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ datum: retroDatum, deloId, celDan: true })
+  });
+  if (res.ok) {
     await osveziRetroSegmente();
   } else {
     const d = await res.json().catch(() => ({}));

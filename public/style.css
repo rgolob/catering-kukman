@@ -530,6 +530,10 @@ header p{ font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
 .dodatno-cas-row input[type="time"]{ flex: 1; padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; color: #1a202c; }
 .btn-dodaj-seg{ padding: 7px 14px; border: 1.5px solid #90cdf4; border-radius: 8px; background: #ebf8ff; color: #2b6cb0; font-weight: 600; cursor: pointer; font-size: 0.84rem; align-self: flex-start; }
 .btn-dodaj-seg:hover{ background: #bee3f8; }
+.trajanje-row{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.trajanje-input{ width: 72px; padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.93rem; color: #1a202c; }
+.btn-cel-dan{ padding: 7px 12px; border: 1.5px solid #c6f6d5; border-radius: 8px; background: #f0fff4; color: #276749; font-weight: 600; cursor: pointer; font-size: 0.84rem; white-space: nowrap; }
+.btn-cel-dan:hover{ background: #c6f6d5; }
 .dialog-pin-napaka{ color: #e53e3e; font-size: 0.82rem; min-height: 18px; margin: 6px 0; }
 .dodatno-segmenti{ margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
 .dodatno-segment{ background: #f0fff4; border: 1px solid #9ae6b4; border-radius: 6px; padding: 6px 10px; font-size: 0.88rem; color: #276749; }
@@ -631,6 +635,21 @@ header p{ font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
   flex-wrap: wrap;
   gap: 4px;
   margin-top: 2px;
+}
+
+.dan-dela{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+.dan-delo-chip{
+  font-size: 0.72rem;
+  background: #ebf8ff;
+  color: #2b6cb0;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-weight: 500;
 }
 
 /* Gumb za urejanje dne */
