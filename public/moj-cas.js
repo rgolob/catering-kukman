@@ -27,7 +27,6 @@ function formatirajDatum(datum) {
 async function naloziInfo() {
   const res = await fetch('/api/moj-cas/info');
   if (res.status === 401) { window.location.href = '/prisotnost/pin'; return; }
-  if (res.status === 403) { window.location.href = '/prisotnost/pin-setup'; return; }
   const data = await res.json();
 
   if (data.pinSetupRequired) { window.location.href = '/prisotnost/pin-setup'; return; }
@@ -83,12 +82,12 @@ async function naloziMesec() {
     else if (d.vTeku) { ureStr = formatirajUre(d.minute) + ' ▶'; ureClass = 'v-teku'; }
     else { ureStr = formatirajUre(d.minute); ureClass = ''; }
 
-    const kmBadge = d.gorivo > 0 ? `<span class="km-badge">⛽ €${parseFloat(d.gorivo).toFixed(2)}</span>` : '';
-    const strosekBadge = d.nakup > 0 ? `<span class="km-badge strosek-badge">🛒 €${parseFloat(d.nakup).toFixed(2)}</span>` : '';
-    const badges = (kmBadge || strosekBadge) ? `<span class="dan-badges">${kmBadge}${strosekBadge}</span>` : '';
+    const gorivoBadge = d.gorivo > 0 ? `<span class="km-badge">⛽ €${parseFloat(d.gorivo).toFixed(2)}</span>` : '';
+    const nakupBadge = d.nakup > 0 ? `<span class="km-badge strosek-badge">🛒 €${parseFloat(d.nakup).toFixed(2)}</span>` : '';
+    const badges = (gorivoBadge || nakupBadge) ? `<span class="dan-badges">${gorivoBadge}${nakupBadge}</span>` : '';
     return `<tr class="${jeDanes ? 'danes-row' : ''}">
       <td>
-        <span class="dan-ime">${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}</span>
+        <span>${formatirajDatum(d.datum)}${jeDanes ? ' <b>danes</b>' : ''}</span>
         ${badges}
       </td>
       <td class="td-cas">${formatirajCas(d.prvPrihod)}</td>
@@ -101,7 +100,11 @@ async function naloziMesec() {
   }).join('');
 
   tbody.querySelectorAll('.btn-uredi-dan').forEach(btn => {
-    btn.addEventListener('click', () => odpriRetroModal(btn.dataset.datum, parseFloat(btn.dataset.gorivo), parseFloat(btn.dataset.nakup)));
+    btn.addEventListener('click', () => odpriRetroModal(
+      btn.dataset.datum,
+      parseFloat(btn.dataset.gorivo),
+      parseFloat(btn.dataset.nakup)
+    ));
   });
 
   // Prikaz plačila
@@ -276,7 +279,7 @@ async function odpriRetroModal(datum, gorivo, nakup) {
     `${DNEVI[d.getDay()]} ${d.getDate()}. ${MESECI[d.getMonth()].toLowerCase()} ${d.getFullYear()}`;
   document.getElementById('retro-gorivo').value = gorivo > 0 ? gorivo : '';
   document.getElementById('retro-nakup').value = nakup > 0 ? nakup : '';
-  document.getElementById('retro-napaka').textContent = '';
+  document.getElementById('retro-shrani-napaka').textContent = '';
   document.getElementById('retro-od').value = '';
   document.getElementById('retro-do').value = '';
 
@@ -288,11 +291,14 @@ async function odpriRetroModal(datum, gorivo, nakup) {
       document.getElementById('retro-delo-select').innerHTML = dela.map(d =>
         `<option value="${d.id}">${d.naziv} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`
       ).join('');
+      document.getElementById('retro-napaka').textContent = '';
       delaSekcija.style.display = '';
     } else {
       delaSekcija.style.display = 'none';
     }
-  } catch(_) {}
+  } catch (_) {
+    document.getElementById('retro-dela-sekcija').style.display = 'none';
+  }
 
   await osveziRetroSegmente();
   document.getElementById('retro-overlay').classList.remove('hidden');
@@ -316,7 +322,7 @@ async function osveziRetroSegmente() {
         await osveziRetroSegmente();
       });
     });
-  } catch(_) {}
+  } catch (_) {}
 }
 
 document.getElementById('retro-btn-dodaj').addEventListener('click', async () => {
@@ -337,7 +343,7 @@ document.getElementById('retro-btn-dodaj').addEventListener('click', async () =>
     document.getElementById('retro-do').value = '';
     await osveziRetroSegmente();
   } else {
-    const d = await res.json();
+    const d = await res.json().catch(() => ({}));
     napaka.textContent = d.napaka || 'Napaka';
   }
 });
