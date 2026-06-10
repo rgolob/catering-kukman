@@ -1,22 +1,15 @@
-const CACHE = 'kukman-v40';
+const CACHE = 'kukman-v42';
 
 const STATIC = [
   '/style.css',
   '/app.js',
-  '/admin.css',
   '/admin.js',
-  '/pin.css',
   '/pin.js',
   '/pin-setup.js',
-  '/moj-cas.css',
   '/moj-cas.js',
-  '/qr.css',
   '/qr.js',
-  '/moj-prihod.html',
   '/moj-prihod.js',
-  '/moj.html',
   '/moj.js',
-  '/moj.css',
   '/manifest.json',
   '/icon-192.png',
   '/icon-512.png',
