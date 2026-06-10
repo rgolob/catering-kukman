@@ -532,6 +532,13 @@ function createApp() {
     res.json(rows);
   });
 
+  app.get('/api/device-check', async (req, res) => {
+    const token = req.headers['x-device-token'];
+    if (!token) return res.status(403).json({ registriran: false });
+    const { rows } = await req.db.execute({ sql: 'SELECT token FROM device_tokens WHERE token = ?', args: [token] });
+    res.status(rows.length ? 200 : 403).json({ registriran: rows.length > 0 });
+  });
+
   app.post('/api/belezi', requireDeviceToken, async (req, res) => {
     const { zaposleni_id, tip, pin } = req.body;
     if (!zaposleni_id || !['PRIHOD', 'ODHOD'].includes(tip))

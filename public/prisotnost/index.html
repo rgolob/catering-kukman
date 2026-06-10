@@ -11,6 +11,13 @@
   <meta name="apple-mobile-web-app-title" content="Kukman" />
   <link rel="apple-touch-icon" href="/icon-192.png" />
   <link rel="stylesheet" href="/style.css" />
+  <script>
+    (function() {
+      var dt = localStorage.getItem('kukman_device_token') ||
+        ((document.cookie.match(/(?:^|;\s*)kukman_dt=([^;]+)/) || [])[1] || '');
+      if (!dt) { document.documentElement.style.display = 'none'; location.replace('/prisotnost/pin'); }
+    })();
+  </script>
 </head>
 <body>
   <header>
