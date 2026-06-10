@@ -379,17 +379,17 @@ main {
 .btn-uredi-dan {
   background: none;
   border: none;
-  color: #cbd5e0;
+  color: #a0aec0;
   cursor: pointer;
-  font-size: 0.75rem;
-  padding: 2px 4px;
+  font-size: 0.8rem;
+  padding: 2px 5px;
   margin-left: 4px;
   border-radius: 4px;
   vertical-align: middle;
-  transition: color 0.15s;
+  transition: color 0.15s, background 0.15s;
   line-height: 1;
 }
-.btn-uredi-dan:hover { color: #4299e1; }
+.btn-uredi-dan:hover { color: #2b6cb0; background: #ebf8ff; }
 
 /* Retroaktivni modal */
 .retro-strosek-row {
