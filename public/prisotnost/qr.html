@@ -20,17 +20,38 @@
       <p>Prosimo, skenirajte aktualno QR kodo na tablici.</p>
     </div>
 
-    <!-- Personaliziran pogled (zaposleni, ki ga telefon že pozna) -->
-    <div id="qr-oseba-wrap" class="hidden">
-      <p class="qr-navodilo" id="qr-oseba-pozdrav"></p>
-      <button id="qr-oseba-btn" class="qr-oseba-btn"></button>
-      <button id="qr-nisem-jaz" class="qr-nisem-jaz">Nisem jaz</button>
-    </div>
-
-    <!-- Seznam vseh (prvič ali po resetiranju) -->
+    <!-- Seznam vseh (prvič ali po "Nisem jaz") -->
     <div id="qr-seznam-wrap" class="hidden">
       <h2 class="qr-navodilo">Tapnite vaše ime</h2>
       <div id="qr-seznam" class="qr-seznam"></div>
+    </div>
+
+    <!-- PIN vnos (po izbiri iz seznama ali za prepoznano osebo) -->
+    <div id="qr-pin-wrap" class="hidden qr-oseba-wrap">
+      <p class="qr-navodilo" id="qr-pin-pozdrav"></p>
+      <p class="qr-pin-akcija" id="qr-pin-akcija"></p>
+      <div class="dialog-pin-prikaz tresenje-wrap" id="qr-pin-dots-row">
+        <div class="pin-dot" id="qr-dp0"></div>
+        <div class="pin-dot" id="qr-dp1"></div>
+        <div class="pin-dot" id="qr-dp2"></div>
+        <div class="pin-dot" id="qr-dp3"></div>
+      </div>
+      <div id="qr-pin-napaka" class="qr-pin-napaka"></div>
+      <div class="dialog-tipkovnica">
+        <button class="dialog-tipka" data-qr-digit="1">1</button>
+        <button class="dialog-tipka" data-qr-digit="2">2</button>
+        <button class="dialog-tipka" data-qr-digit="3">3</button>
+        <button class="dialog-tipka" data-qr-digit="4">4</button>
+        <button class="dialog-tipka" data-qr-digit="5">5</button>
+        <button class="dialog-tipka" data-qr-digit="6">6</button>
+        <button class="dialog-tipka" data-qr-digit="7">7</button>
+        <button class="dialog-tipka" data-qr-digit="8">8</button>
+        <button class="dialog-tipka" data-qr-digit="9">9</button>
+        <button class="dialog-tipka dialog-tipka-brisi" id="qr-pin-brisi">⌫</button>
+        <button class="dialog-tipka" data-qr-digit="0">0</button>
+        <button class="dialog-tipka dialog-tipka-prazna"></button>
+      </div>
+      <button id="qr-nisem-jaz" class="qr-nisem-jaz">Nisem jaz</button>
     </div>
 
     <div id="qr-rezultat" class="qr-rezultat hidden">
