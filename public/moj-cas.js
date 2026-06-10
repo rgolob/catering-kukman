@@ -64,6 +64,9 @@ async function naloziMesec() {
     prazno.style.display = 'block';
     document.getElementById('skupaj-ure').textContent = '0u';
     document.getElementById('placilo-box').style.display = 'none';
+    const zdajE = new Date();
+    document.getElementById('btn-naprej').disabled =
+      prikazanoLeto === zdajE.getFullYear() && prikazaniMesec === (zdajE.getMonth() + 1);
     return;
   }
   prazno.style.display = 'none';
