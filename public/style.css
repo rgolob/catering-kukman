@@ -2079,6 +2079,10 @@ input[type="time"].rv-input{ min-width: 110px; }
   color: #6b7280; flex: 1;
 }
 .vnos-label input{ margin-top: 2px; }
+.vnos-skupaj-info{
+  background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 7px;
+  padding: 6px 10px; font-size: 0.83rem; color: #2c5282; font-weight: 500;
+}
 
 .akt-popup-overlay{
   position: fixed; inset: 0;

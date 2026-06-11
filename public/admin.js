@@ -593,7 +593,7 @@ async function naloziObracun() {
       btn.addEventListener('click', () => {
         const zid = Number(btn.dataset.id);
         const z = obracun.find(x => x.id === zid);
-        odpriVnosPopup(zid, z ? z.ime : '', aktPoId.get(zid) || []);
+        odpriVnosPopup(zid, z ? z.ime : '', aktPoId.get(zid) || [], z ? z.skupaj : null);
       });
     });
 
@@ -648,10 +648,11 @@ async function naloziStimulacije(stimulacije) {
   });
 }
 
-let _vnosZaposleniId = null;
+let _vnosZaposleniId = null, _vnosSkupaj = null;
 
-async function odpriVnosPopup(zaposleniId, ime, zAkt) {
+async function odpriVnosPopup(zaposleniId, ime, zAkt, skupaj) {
   _vnosZaposleniId = zaposleniId;
+  _vnosSkupaj = skupaj;
   document.getElementById('vnos-popup-ime').textContent = ime;
   document.getElementById('vnos-popup-datum').value = '';
   document.getElementById('vnos-gorivo').value = '';
@@ -659,10 +660,7 @@ async function odpriVnosPopup(zaposleniId, ime, zAkt) {
   document.getElementById('vnos-znesek').value = '';
   document.getElementById('vnos-popup-komentar').value = '';
   document.getElementById('vnos-popup-napaka').textContent = '';
-  // Nastavi tip na strošek
-  document.querySelectorAll('.vnos-tip-btn').forEach(b => b.classList.toggle('active', b.dataset.tip === 'strosek'));
-  document.getElementById('vnos-strosek-polja').style.display = '';
-  document.getElementById('vnos-akt-polja').style.display = 'none';
+  posodobiVnosTip('strosek');
 
   // Naloži in prikaži obstoječe vnose
   const mesecStr = `${obrLeto}-${String(obrMesec).padStart(2,'0')}`;
@@ -719,14 +717,22 @@ document.getElementById('vnos-popup-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('vnos-popup-overlay')) zapriVnosPopup();
 });
 
+function posodobiVnosTip(tip) {
+  const jeAkt = tip === 'akontacija';
+  document.querySelectorAll('.vnos-tip-btn').forEach(b => b.classList.toggle('active', b.dataset.tip === tip));
+  document.getElementById('vnos-strosek-polja').style.display = jeAkt ? 'none' : '';
+  document.getElementById('vnos-akt-polja').style.display = jeAkt ? '' : 'none';
+  const infoEl = document.getElementById('vnos-skupaj-info');
+  if (jeAkt && _vnosSkupaj != null) {
+    infoEl.textContent = `Zaslužil ta mesec: ${formatEur(_vnosSkupaj)}`;
+    infoEl.style.display = '';
+  } else {
+    infoEl.style.display = 'none';
+  }
+}
+
 document.querySelectorAll('.vnos-tip-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.vnos-tip-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const jeAkt = btn.dataset.tip === 'akontacija';
-    document.getElementById('vnos-strosek-polja').style.display = jeAkt ? 'none' : '';
-    document.getElementById('vnos-akt-polja').style.display = jeAkt ? '' : 'none';
-  });
+  btn.addEventListener('click', () => posodobiVnosTip(btn.dataset.tip));
 });
 
 document.getElementById('vnos-popup-dodaj').addEventListener('click', async () => {
