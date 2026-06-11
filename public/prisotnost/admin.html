@@ -184,6 +184,8 @@
               <th class="th-r">Gorivo</th>
               <th class="th-r">Nakup</th>
               <th class="th-r">Skupaj</th>
+              <th class="th-r">Akontacija</th>
+              <th class="th-r">Preostalo</th>
             </tr>
           </thead>
           <tbody id="obracun-tbody"></tbody>
@@ -208,6 +210,7 @@
         </table>
         <div id="stim-prazno" class="prazno" style="display:none">Ni stimulacij za ta mesec.</div>
       </div>
+
     </div>
 
     <!-- Tab: Dela -->
@@ -319,6 +322,38 @@
       <p id="pris-modal-povzetek" class="pris-modal-povzetek"></p>
       <div id="pris-modal-vsebina"></div>
       <div id="pris-modal-razporeditev" class="pris-modal-raz-sekcija"></div>
+      <div id="pris-modal-km" class="pris-modal-raz-sekcija"></div>
+    </div>
+  </div>
+
+  <!-- Vnos popup (stroški + akontacija) -->
+  <div id="vnos-popup-overlay" class="akt-popup-overlay hidden">
+    <div class="akt-popup">
+      <div class="akt-popup-header">
+        <span id="vnos-popup-ime"></span>
+        <button id="vnos-popup-zapri" class="akt-popup-zapri">&#x2715;</button>
+      </div>
+      <div id="vnos-popup-seznam"></div>
+      <div class="akt-popup-form">
+        <div class="vnos-tip-toggle">
+          <button class="vnos-tip-btn active" data-tip="strosek">Strošek</button>
+          <button class="vnos-tip-btn" data-tip="akontacija">Akontacija</button>
+        </div>
+        <div id="vnos-skupaj-info" class="vnos-skupaj-info" style="display:none"></div>
+        <input type="date" id="vnos-popup-datum" />
+        <div id="vnos-strosek-polja">
+          <div class="akt-popup-row">
+            <label class="vnos-label">⛽ Gorivo €<input type="number" id="vnos-gorivo" placeholder="0.00" min="0" step="0.01" /></label>
+            <label class="vnos-label">🛍 Nakup €<input type="number" id="vnos-nakup" placeholder="0.00" min="0" step="0.01" /></label>
+          </div>
+        </div>
+        <div id="vnos-akt-polja" style="display:none">
+          <input type="number" id="vnos-znesek" placeholder="Znesek €" min="0.01" step="0.01" />
+        </div>
+        <input type="text" id="vnos-popup-komentar" placeholder="Komentar (neobvezno)" maxlength="80" />
+        <div id="vnos-popup-napaka" class="inline-napaka"></div>
+        <button id="vnos-popup-dodaj" class="akt-popup-btn-dodaj">Dodaj</button>
+      </div>
     </div>
   </div>
 

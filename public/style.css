@@ -1806,10 +1806,10 @@ button:hover{ background: #1a365d; }
 .pris-modal{
   background: white;
   border-radius: 16px;
-  padding: 28px 30px;
+  padding: 18px 20px;
   width: 94%;
   max-width: 640px;
-  max-height: 82vh;
+  max-height: 88vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   animation: prisPop 0.18s ease;
@@ -1821,10 +1821,10 @@ button:hover{ background: #1a365d; }
 
 .pris-modal-header{
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .pris-modal-header h2{
-  font-size: 1.25rem; text-transform: none; letter-spacing: 0; color: #1a202c;
+  font-size: 1.1rem; text-transform: none; letter-spacing: 0; color: #1a202c;
 }
 .pris-modal-zapri{
   background: none; border: none; font-size: 1.1rem;
@@ -1834,14 +1834,16 @@ button:hover{ background: #1a365d; }
 .pris-modal-zapri:hover{ color: #4a5568; background: #f7fafc; }
 
 .pris-modal-povzetek{
-  color: #718096; font-size: 0.88rem; margin-bottom: 18px;
+  color: #718096; font-size: 0.82rem; margin-bottom: 12px;
 }
 
 .pris-tabela td, .pris-tabela th{
-  padding: 7px 10px; font-size: 0.88rem;
+  padding: 4px 8px; font-size: 0.83rem;
 }
 .pris-td-datum{ color: #4a5568; white-space: nowrap; }
 .pris-td-ure{ font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.pris-modal-raz-sekcija h3{ font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; margin: 14px 0 6px; }
 
 .pris-row-nepopoln td{ background: #fff5f5; color: #c53030; }
 
@@ -2053,3 +2055,83 @@ input[type="time"].rv-input{ min-width: 110px; }
 
 .copyright-link{ color: #a0aec0; text-decoration: none; }
 .copyright-link:hover{ color: #4a5568; text-decoration: underline; }
+
+/* Vnos popup (stroški + akontacija) */
+.obr-vnos-btn{
+  background: none; border: 1.5px solid #cbd5e0; border-radius: 50%;
+  width: 20px; height: 20px; font-size: 0.85rem; line-height: 1;
+  cursor: pointer; color: #4a5568; vertical-align: middle;
+  padding: 0; display: inline-flex; align-items: center; justify-content: center;
+}
+.obr-vnos-btn:hover{ background: #ebf4ff; border-color: #4299e1; color: #2b6cb0; }
+
+.vnos-tip-toggle{
+  display: flex; border: 1px solid #d1d5db; border-radius: 8px; overflow: hidden;
+}
+.vnos-tip-btn{
+  flex: 1; padding: 7px 0; border: none; background: #f9fafb;
+  font-size: 0.88rem; cursor: pointer; color: #6b7280; font-weight: 500;
+  transition: background 0.15s;
+}
+.vnos-tip-btn.active{ background: #2b6cb0; color: #fff; }
+.vnos-label{
+  display: flex; flex-direction: column; gap: 3px; font-size: 0.8rem;
+  color: #6b7280; flex: 1;
+}
+.vnos-label input{ margin-top: 2px; }
+.vnos-skupaj-info{
+  background: #ebf8ff; border: 1px solid #bee3f8; border-radius: 7px;
+  padding: 6px 10px; font-size: 0.83rem; color: #2c5282; font-weight: 500;
+}
+
+.akt-popup-overlay{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300;
+  backdrop-filter: blur(2px);
+}
+.akt-popup-overlay.hidden{ display: none; }
+
+.akt-popup{
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  width: 92%;
+  max-width: 360px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+}
+.akt-popup-header{
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 700; font-size: 1rem; color: #1a202c;
+  margin-bottom: 14px;
+}
+.akt-popup-zapri{
+  background: none; border: none; cursor: pointer;
+  color: #6b7280; font-size: 1.3rem; line-height: 1; padding: 0 2px;
+}
+.akt-popup-zapri:hover{ color: #1a202c; }
+.akt-popup-item{
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid #f3f4f6;
+  font-size: 0.88rem; color: #374151; gap: 8px;
+}
+.akt-popup-item:last-child{ border-bottom: none; }
+.akt-popup-prazno{ font-size: 0.83rem; color: #9ca3af; margin-bottom: 8px; }
+.akt-popup-form{
+  display: flex; flex-direction: column; gap: 8px;
+  border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 8px;
+}
+.akt-popup-row{ display: flex; gap: 8px; }
+.akt-popup-row input[type="date"]{ flex: 1.2; }
+.akt-popup-row input[type="number"]{ flex: 1; }
+.akt-popup-form input{
+  padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 0.88rem; width: 100%; box-sizing: border-box;
+}
+.akt-popup-btn-dodaj{
+  background: #2b6cb0; color: #fff; border: none; border-radius: 8px;
+  padding: 8px 14px; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; width: 100%;
+}
+.akt-popup-btn-dodaj:hover{ background: #2c5282; }
