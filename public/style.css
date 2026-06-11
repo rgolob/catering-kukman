@@ -1806,10 +1806,10 @@ button:hover{ background: #1a365d; }
 .pris-modal{
   background: white;
   border-radius: 16px;
-  padding: 28px 30px;
+  padding: 18px 20px;
   width: 94%;
   max-width: 640px;
-  max-height: 82vh;
+  max-height: 88vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
   animation: prisPop 0.18s ease;
@@ -1821,10 +1821,10 @@ button:hover{ background: #1a365d; }
 
 .pris-modal-header{
   display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 .pris-modal-header h2{
-  font-size: 1.25rem; text-transform: none; letter-spacing: 0; color: #1a202c;
+  font-size: 1.1rem; text-transform: none; letter-spacing: 0; color: #1a202c;
 }
 .pris-modal-zapri{
   background: none; border: none; font-size: 1.1rem;
@@ -1834,14 +1834,16 @@ button:hover{ background: #1a365d; }
 .pris-modal-zapri:hover{ color: #4a5568; background: #f7fafc; }
 
 .pris-modal-povzetek{
-  color: #718096; font-size: 0.88rem; margin-bottom: 18px;
+  color: #718096; font-size: 0.82rem; margin-bottom: 12px;
 }
 
 .pris-tabela td, .pris-tabela th{
-  padding: 7px 10px; font-size: 0.88rem;
+  padding: 4px 8px; font-size: 0.83rem;
 }
 .pris-td-datum{ color: #4a5568; white-space: nowrap; }
 .pris-td-ure{ font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.pris-modal-raz-sekcija h3{ font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px; color: #a0aec0; margin: 14px 0 6px; }
 
 .pris-row-nepopoln td{ background: #fff5f5; color: #c53030; }
 
