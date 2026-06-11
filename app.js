@@ -1083,6 +1083,25 @@ function createApp() {
     res.json({ ok: true, id: Number(r.lastInsertRowid), trajanjeMinut });
   });
 
+  app.post('/api/kilometrina-pin', async (req, res) => {
+    const { zaposleniId, pin, datum, gorivo, nakup } = req.body;
+    if (!zaposleniId || !pin) return res.status(401).json({ napaka: 'Ni pooblastil' });
+    const { rows: zr } = await req.db.execute({
+      sql: 'SELECT id FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
+      args: [zaposleniId, pin]
+    });
+    if (!zr.length) return res.status(401).json({ napaka: 'Napačen PIN' });
+    if (!datum || !/^\d{4}-\d{2}-\d{2}$/.test(datum)) return res.status(400).json({ napaka: 'Neveljaven datum' });
+    const km = parseFloat(gorivo) || 0;
+    const strosek = parseFloat(nakup) || 0;
+    if (km <= 0 && strosek <= 0) return res.status(400).json({ napaka: 'Vnesite gorivo ali nakup' });
+    await req.db.execute({
+      sql: 'INSERT OR REPLACE INTO kilometrina (zaposleni_id, datum, km, strosek) VALUES (?, ?, ?, ?)',
+      args: [zaposleniId, datum, km, strosek]
+    });
+    res.json({ ok: true });
+  });
+
   app.get('/api/admin/razporeditev', requireAuth, async (req, res) => {
     const { zaposleniId, od, do: do_ } = req.query;
     const args = [];
@@ -1295,7 +1314,7 @@ function createApp() {
       const stimulacija = stimMap.get(zid) || 0;
       const { km: gorivo = 0, strosek: nakup = 0 } = kmMap.get(zid) || {};
       const akontacija = aktMap.get(zid) || 0;
-      const hasData = osnova !== null || stimulacija > 0 || gorivo > 0 || nakup > 0;
+      const hasData = osnova !== null || stimulacija > 0 || gorivo > 0 || nakup > 0 || akontacija > 0;
       const skupaj = hasData ? Math.round(((osnova || 0) + stimulacija + gorivo + nakup) * 100) / 100 : null;
 
       return {
