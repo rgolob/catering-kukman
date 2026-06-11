@@ -2055,3 +2055,60 @@ input[type="time"].rv-input{ min-width: 110px; }
 
 .copyright-link{ color: #a0aec0; text-decoration: none; }
 .copyright-link:hover{ color: #4a5568; text-decoration: underline; }
+
+/* Akontacija popup */
+.obr-akt-cell{ cursor: pointer; }
+.obr-akt-cell:hover{ background: #eef2ff !important; }
+.obr-akt-plus{ color: #9ca3af; font-size: 0.85em; }
+
+.akt-popup-overlay{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 300;
+  backdrop-filter: blur(2px);
+}
+.akt-popup-overlay.hidden{ display: none; }
+
+.akt-popup{
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  width: 92%;
+  max-width: 360px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+}
+.akt-popup-header{
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 700; font-size: 1rem; color: #1a202c;
+  margin-bottom: 14px;
+}
+.akt-popup-zapri{
+  background: none; border: none; cursor: pointer;
+  color: #6b7280; font-size: 1.3rem; line-height: 1; padding: 0 2px;
+}
+.akt-popup-zapri:hover{ color: #1a202c; }
+.akt-popup-item{
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid #f3f4f6;
+  font-size: 0.88rem; color: #374151; gap: 8px;
+}
+.akt-popup-item:last-child{ border-bottom: none; }
+.akt-popup-prazno{ font-size: 0.83rem; color: #9ca3af; margin-bottom: 8px; }
+.akt-popup-form{
+  display: flex; flex-direction: column; gap: 8px;
+  border-top: 1px solid #e5e7eb; padding-top: 12px; margin-top: 8px;
+}
+.akt-popup-row{ display: flex; gap: 8px; }
+.akt-popup-row input[type="date"]{ flex: 1.2; }
+.akt-popup-row input[type="number"]{ flex: 1; }
+.akt-popup-form input{
+  padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px;
+  font-size: 0.88rem; width: 100%; box-sizing: border-box;
+}
+.akt-popup-btn-dodaj{
+  background: #2b6cb0; color: #fff; border: none; border-radius: 8px;
+  padding: 8px 14px; font-size: 0.9rem; font-weight: 600;
+  cursor: pointer; width: 100%;
+}
+.akt-popup-btn-dodaj:hover{ background: #2c5282; }

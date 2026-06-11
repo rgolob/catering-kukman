@@ -536,6 +536,14 @@ async function naloziObracun() {
     const tbody = document.getElementById('obracun-tbody');
     const prazno = document.getElementById('obracun-prazno');
 
+    // Grupiranje akontacij po zaposlenem za prikaz v celici
+    const aktPoId = new Map();
+    akontacije.forEach(a => {
+      const zid = Number(a.zaposleni_id);
+      if (!aktPoId.has(zid)) aktPoId.set(zid, []);
+      aktPoId.get(zid).push(a);
+    });
+
     let skupajMin = 0, skupajOsnova = 0, skupajStim = 0, skupajVse = 0, skupajGorivo = 0, skupajNakup = 0, skupajAkt = 0, skupajPreostalo = 0;
     tbody.innerHTML = obracun.map(z => {
       skupajMin += z.minute || 0;
@@ -552,13 +560,17 @@ async function naloziObracun() {
       const delaBreakdown = vsaDela.length > 1
         ? '<br><span class="td-ure-sub">' + vsaDela.map(d => `${formatUre(d.minute)} ${escHtml(d.naziv)}`).join(' + ') + '</span>'
         : vsaDela.length === 1 ? `<br><span class="td-ure-sub">${escHtml(vsaDela[0].naziv)}</span>` : '';
+      const zAkt = aktPoId.get(z.id) || [];
+      const aktSubtext = zAkt.map(a =>
+        `<br><span class="td-ure-sub">${a.datum.slice(5).replace('-','.')} ${formatEur(a.znesek)}${a.opomba ? ` · ${escHtml(a.opomba)}` : ''}</span>`
+      ).join('');
       return `<tr>
         <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span></td>
         <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
         <td class="td-r">${z.gorivo ? formatEur(z.gorivo) : '—'}</td>
         <td class="td-r">${z.nakup ? formatEur(z.nakup) : '—'}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
-        <td class="td-r">${z.akontacija ? formatEur(z.akontacija) : '—'}</td>
+        <td class="td-r obr-akt-cell" data-id="${z.id}">${z.akontacija ? formatEur(z.akontacija) : '<span class="obr-akt-plus">+</span>'}${aktSubtext}</td>
         <td class="td-r td-skupaj">${z.preostalo != null ? `<strong>${formatEur(z.preostalo)}</strong>` : '—'}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
@@ -577,11 +589,16 @@ async function naloziObracun() {
       el.addEventListener('click', () => odpriPrisModal(Number(el.dataset.id), obrLeto, obrMesec));
     });
 
+    tbody.querySelectorAll('.obr-akt-cell').forEach(cell => {
+      cell.addEventListener('click', () => {
+        const zid = Number(cell.dataset.id);
+        const z = obracun.find(x => x.id === zid);
+        odpriAktPopup(zid, z ? z.ime : '', aktPoId.get(zid) || []);
+      });
+    });
+
     // Stimulacija tabela + dropdown
     await naloziStimulacije(stimulacije);
-
-    // Akontacije tabela + dropdown
-    await naloziAkontacije(akontacije);
 
   } catch(e) {
     prikaziToast('Napaka pri nalaganju', 'napaka');
@@ -631,60 +648,58 @@ async function naloziStimulacije(stimulacije) {
   });
 }
 
-async function naloziAkontacije(akontacije) {
-  try {
-    const res = await fetch('/api/admin/zaposleni');
-    if (res.ok) {
-      const zaposleni = await res.json();
-      const sel = document.getElementById('akt-zaposleni');
-      sel.innerHTML = zaposleni.filter(z => z.aktiven).map(z =>
-        `<option value="${z.id}">${escHtml(z.ime)}</option>`
-      ).join('');
-    }
-  } catch(_) {}
-  const tbody = document.getElementById('akt-tbody');
-  const prazno = document.getElementById('akt-prazno');
-  if (!Array.isArray(akontacije) || akontacije.length === 0) {
-    tbody.innerHTML = '';
-    prazno.style.display = 'block';
-    return;
-  }
-  prazno.style.display = 'none';
-  tbody.innerHTML = akontacije.map(a => `
-    <tr>
-      <td>${escHtml(a.ime)}</td>
-      <td>${a.datum ? a.datum.slice(5).replace('-','.') : '—'}</td>
-      <td class="td-r">${formatEur(a.znesek)}</td>
-      <td>${escHtml(a.opomba || '')}</td>
-      <td><button class="btn-sm btn-danger btn-akt-brisi" data-id="${a.id}">Izbriši</button></td>
-    </tr>`).join('');
-  tbody.querySelectorAll('.btn-akt-brisi').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('Izbrisati to akontacijo?')) return;
-      const res = await fetch(`/api/admin/akontacija/${btn.dataset.id}`, { method: 'DELETE' });
-      if (res.ok) naloziObracun();
-      else prikaziToast('Napaka pri brisanju', 'napaka');
+function odpriAktPopup(zaposleniId, ime, zAkt) {
+  document.getElementById('akt-popup-ime').textContent = ime;
+  const seznam = document.getElementById('akt-popup-seznam');
+  if (zAkt.length) {
+    seznam.innerHTML = zAkt.map(a => `
+      <div class="akt-popup-item">
+        <span>${a.datum ? a.datum.slice(5).replace('-','.') : '—'} — <strong>${formatEur(a.znesek)}</strong>${a.opomba ? ` <span class="td-ure-sub">· ${escHtml(a.opomba)}</span>` : ''}</span>
+        <button class="btn-sm btn-danger btn-akt-brisi" data-id="${a.id}">×</button>
+      </div>`).join('');
+    seznam.querySelectorAll('.btn-akt-brisi').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const res = await fetch(`/api/admin/akontacija/${btn.dataset.id}`, { method: 'DELETE' });
+        if (res.ok) { zapriAktPopup(); naloziObracun(); }
+        else prikaziToast('Napaka pri brisanju', 'napaka');
+      });
     });
-  });
+  } else {
+    seznam.innerHTML = '<div class="akt-popup-prazno">Ni akontacij za ta mesec.</div>';
+  }
+  document.getElementById('akt-popup-datum').value = '';
+  document.getElementById('akt-popup-znesek').value = '';
+  document.getElementById('akt-popup-opomba').value = '';
+  document.getElementById('akt-popup-napaka').textContent = '';
+  document.getElementById('akt-popup-dodaj').dataset.zaposleniId = zaposleniId;
+  document.getElementById('akt-popup-overlay').classList.remove('hidden');
 }
 
-document.getElementById('btn-dodaj-akt').addEventListener('click', async () => {
-  const napaka = document.getElementById('akt-napaka');
+function zapriAktPopup() {
+  document.getElementById('akt-popup-overlay').classList.add('hidden');
+}
+
+document.getElementById('akt-popup-zapri').addEventListener('click', zapriAktPopup);
+document.getElementById('akt-popup-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('akt-popup-overlay')) zapriAktPopup();
+});
+
+document.getElementById('akt-popup-dodaj').addEventListener('click', async () => {
+  const napaka = document.getElementById('akt-popup-napaka');
   napaka.textContent = '';
-  const zaposleniId = document.getElementById('akt-zaposleni').value;
-  const datum = document.getElementById('akt-datum').value;
-  const znesek = document.getElementById('akt-znesek').value;
-  const opomba = document.getElementById('akt-opomba').value.trim();
+  const zaposleniId = document.getElementById('akt-popup-dodaj').dataset.zaposleniId;
+  const datum = document.getElementById('akt-popup-datum').value;
+  const znesek = document.getElementById('akt-popup-znesek').value;
+  const opomba = document.getElementById('akt-popup-opomba').value.trim();
   const mesec = `${obrLeto}-${String(obrMesec).padStart(2,'0')}`;
-  if (!zaposleniId || !datum || !znesek) { napaka.textContent = 'Izpolni vsa polja.'; return; }
+  if (!datum || !znesek) { napaka.textContent = 'Izpolni datum in znesek.'; return; }
   const res = await fetch('/api/admin/akontacija', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ zaposleniId: Number(zaposleniId), mesec, datum, znesek: parseFloat(znesek), opomba })
   });
   if (res.ok) {
-    document.getElementById('akt-znesek').value = '';
-    document.getElementById('akt-opomba').value = '';
+    zapriAktPopup();
     naloziObracun();
   } else {
     const e = await res.json();
