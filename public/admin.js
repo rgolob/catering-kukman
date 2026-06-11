@@ -565,12 +565,12 @@ async function naloziObracun() {
         `<br><span class="td-ure-sub">${a.datum.slice(5).replace('-','.')} ${formatEur(a.znesek)}${a.opomba ? ` · ${escHtml(a.opomba)}` : ''}</span>`
       ).join('');
       return `<tr>
-        <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span></td>
+        <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span> <button class="obr-vnos-btn" data-id="${z.id}" title="Dodaj strošek / akontacijo">+</button></td>
         <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
         <td class="td-r">${z.gorivo ? formatEur(z.gorivo) : '—'}</td>
         <td class="td-r">${z.nakup ? formatEur(z.nakup) : '—'}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
-        <td class="td-r obr-akt-cell" data-id="${z.id}">${z.akontacija ? formatEur(z.akontacija) : '<span class="obr-akt-plus">+</span>'}${aktSubtext}</td>
+        <td class="td-r">${z.akontacija ? formatEur(z.akontacija) : '—'}${aktSubtext}</td>
         <td class="td-r td-skupaj">${z.preostalo != null ? `<strong>${formatEur(z.preostalo)}</strong>` : '—'}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
@@ -589,11 +589,11 @@ async function naloziObracun() {
       el.addEventListener('click', () => odpriPrisModal(Number(el.dataset.id), obrLeto, obrMesec));
     });
 
-    tbody.querySelectorAll('.obr-akt-cell').forEach(cell => {
-      cell.addEventListener('click', () => {
-        const zid = Number(cell.dataset.id);
+    tbody.querySelectorAll('.obr-vnos-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const zid = Number(btn.dataset.id);
         const z = obracun.find(x => x.id === zid);
-        odpriAktPopup(zid, z ? z.ime : '', aktPoId.get(zid) || []);
+        odpriVnosPopup(zid, z ? z.ime : '', aktPoId.get(zid) || []);
       });
     });
 
@@ -648,63 +648,118 @@ async function naloziStimulacije(stimulacije) {
   });
 }
 
-function odpriAktPopup(zaposleniId, ime, zAkt) {
-  document.getElementById('akt-popup-ime').textContent = ime;
-  const seznam = document.getElementById('akt-popup-seznam');
-  if (zAkt.length) {
-    seznam.innerHTML = zAkt.map(a => `
-      <div class="akt-popup-item">
-        <span>${a.datum ? a.datum.slice(5).replace('-','.') : '—'} — <strong>${formatEur(a.znesek)}</strong>${a.opomba ? ` <span class="td-ure-sub">· ${escHtml(a.opomba)}</span>` : ''}</span>
-        <button class="btn-sm btn-danger btn-akt-brisi" data-id="${a.id}">×</button>
-      </div>`).join('');
-    seznam.querySelectorAll('.btn-akt-brisi').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const res = await fetch(`/api/admin/akontacija/${btn.dataset.id}`, { method: 'DELETE' });
-        if (res.ok) { zapriAktPopup(); naloziObracun(); }
-        else prikaziToast('Napaka pri brisanju', 'napaka');
-      });
-    });
-  } else {
-    seznam.innerHTML = '<div class="akt-popup-prazno">Ni akontacij za ta mesec.</div>';
+let _vnosZaposleniId = null;
+
+async function odpriVnosPopup(zaposleniId, ime, zAkt) {
+  _vnosZaposleniId = zaposleniId;
+  document.getElementById('vnos-popup-ime').textContent = ime;
+  document.getElementById('vnos-popup-datum').value = '';
+  document.getElementById('vnos-gorivo').value = '';
+  document.getElementById('vnos-nakup').value = '';
+  document.getElementById('vnos-znesek').value = '';
+  document.getElementById('vnos-popup-komentar').value = '';
+  document.getElementById('vnos-popup-napaka').textContent = '';
+  // Nastavi tip na strošek
+  document.querySelectorAll('.vnos-tip-btn').forEach(b => b.classList.toggle('active', b.dataset.tip === 'strosek'));
+  document.getElementById('vnos-strosek-polja').style.display = '';
+  document.getElementById('vnos-akt-polja').style.display = 'none';
+
+  // Naloži in prikaži obstoječe vnose
+  const mesecStr = `${obrLeto}-${String(obrMesec).padStart(2,'0')}`;
+  const seznam = document.getElementById('vnos-popup-seznam');
+  seznam.innerHTML = '<div class="akt-popup-prazno">Nalaganje…</div>';
+  document.getElementById('vnos-popup-overlay').classList.remove('hidden');
+
+  const kmRes = await fetch(`/api/admin/kilometrina?zaposleniId=${zaposleniId}&od=${mesecStr}-01&do=${mesecStr}-31`).catch(() => null);
+  const kmVnosi = kmRes && kmRes.ok ? await kmRes.json() : [];
+  prikaziVnosSeznam(zaposleniId, zAkt, kmVnosi);
+}
+
+function prikaziVnosSeznam(zaposleniId, zAkt, kmVnosi) {
+  const seznam = document.getElementById('vnos-popup-seznam');
+  const vsi = [
+    ...kmVnosi.filter(k => k.km > 0 || k.strosek > 0).map(k => ({
+      tip: 'km', datum: k.datum,
+      label: `${k.datum.slice(5).replace('-','.')} ${k.km > 0 ? `⛽ ${formatEur(k.km)}` : ''} ${k.strosek > 0 ? `🛍 ${formatEur(k.strosek)}` : ''}`.trim(),
+      brisiUrl: `/api/admin/kilometrina/${zaposleniId}/${k.datum}`
+    })),
+    ...zAkt.map(a => ({
+      tip: 'akt', datum: a.datum,
+      label: `${a.datum ? a.datum.slice(5).replace('-','.') : '—'} 💰 ${formatEur(a.znesek)}${a.opomba ? ` · ${escHtml(a.opomba)}` : ''}`,
+      brisiUrl: `/api/admin/akontacija/${a.id}`
+    }))
+  ].sort((a, b) => a.datum < b.datum ? -1 : 1);
+
+  if (!vsi.length) {
+    seznam.innerHTML = '<div class="akt-popup-prazno">Ni vnosov za ta mesec.</div>';
+    return;
   }
-  document.getElementById('akt-popup-datum').value = '';
-  document.getElementById('akt-popup-znesek').value = '';
-  document.getElementById('akt-popup-opomba').value = '';
-  document.getElementById('akt-popup-napaka').textContent = '';
-  document.getElementById('akt-popup-dodaj').dataset.zaposleniId = zaposleniId;
-  document.getElementById('akt-popup-overlay').classList.remove('hidden');
+  seznam.innerHTML = vsi.map((v, i) => `
+    <div class="akt-popup-item">
+      <span>${v.label}</span>
+      <button class="btn-sm btn-danger btn-vnos-brisi" data-i="${i}">×</button>
+    </div>`).join('');
+  seznam.querySelectorAll('.btn-vnos-brisi').forEach(btn => {
+    const v = vsi[Number(btn.dataset.i)];
+    btn.addEventListener('click', async () => {
+      const res = await fetch(v.brisiUrl, { method: 'DELETE' });
+      if (res.ok) { zapriVnosPopup(); naloziObracun(); }
+      else prikaziToast('Napaka pri brisanju', 'napaka');
+    });
+  });
 }
 
-function zapriAktPopup() {
-  document.getElementById('akt-popup-overlay').classList.add('hidden');
+function zapriVnosPopup() {
+  document.getElementById('vnos-popup-overlay').classList.add('hidden');
+  _vnosZaposleniId = null;
 }
 
-document.getElementById('akt-popup-zapri').addEventListener('click', zapriAktPopup);
-document.getElementById('akt-popup-overlay').addEventListener('click', e => {
-  if (e.target === document.getElementById('akt-popup-overlay')) zapriAktPopup();
+document.getElementById('vnos-popup-zapri').addEventListener('click', zapriVnosPopup);
+document.getElementById('vnos-popup-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('vnos-popup-overlay')) zapriVnosPopup();
 });
 
-document.getElementById('akt-popup-dodaj').addEventListener('click', async () => {
-  const napaka = document.getElementById('akt-popup-napaka');
-  napaka.textContent = '';
-  const zaposleniId = document.getElementById('akt-popup-dodaj').dataset.zaposleniId;
-  const datum = document.getElementById('akt-popup-datum').value;
-  const znesek = document.getElementById('akt-popup-znesek').value;
-  const opomba = document.getElementById('akt-popup-opomba').value.trim();
-  const mesec = `${obrLeto}-${String(obrMesec).padStart(2,'0')}`;
-  if (!datum || !znesek) { napaka.textContent = 'Izpolni datum in znesek.'; return; }
-  const res = await fetch('/api/admin/akontacija', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ zaposleniId: Number(zaposleniId), mesec, datum, znesek: parseFloat(znesek), opomba })
+document.querySelectorAll('.vnos-tip-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.vnos-tip-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const jeAkt = btn.dataset.tip === 'akontacija';
+    document.getElementById('vnos-strosek-polja').style.display = jeAkt ? 'none' : '';
+    document.getElementById('vnos-akt-polja').style.display = jeAkt ? '' : 'none';
   });
-  if (res.ok) {
-    zapriAktPopup();
-    naloziObracun();
+});
+
+document.getElementById('vnos-popup-dodaj').addEventListener('click', async () => {
+  const napaka = document.getElementById('vnos-popup-napaka');
+  napaka.textContent = '';
+  const zaposleniId = _vnosZaposleniId;
+  const datum = document.getElementById('vnos-popup-datum').value;
+  const komentar = document.getElementById('vnos-popup-komentar').value.trim();
+  const mesec = `${obrLeto}-${String(obrMesec).padStart(2,'0')}`;
+  if (!datum) { napaka.textContent = 'Izberi datum.'; return; }
+
+  const jeAkt = document.querySelector('.vnos-tip-btn.active')?.dataset.tip === 'akontacija';
+  let res;
+  if (jeAkt) {
+    const znesek = parseFloat(document.getElementById('vnos-znesek').value);
+    if (!znesek) { napaka.textContent = 'Vnesite znesek.'; return; }
+    res = await fetch('/api/admin/akontacija', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zaposleniId, mesec, datum, znesek, opomba: komentar })
+    });
   } else {
-    const e = await res.json();
-    napaka.textContent = e.napaka || 'Napaka';
+    const gorivo = parseFloat(document.getElementById('vnos-gorivo').value) || 0;
+    const nakup = parseFloat(document.getElementById('vnos-nakup').value) || 0;
+    if (!gorivo && !nakup) { napaka.textContent = 'Vnesite gorivo ali nakup.'; return; }
+    res = await fetch('/api/admin/kilometrina', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zaposleniId, datum, km: gorivo, strosek: nakup })
+    });
   }
+  if (res.ok) { zapriVnosPopup(); naloziObracun(); }
+  else { const d = await res.json(); napaka.textContent = d.napaka || 'Napaka'; }
 });
 
 document.getElementById('obr-btn-prej').addEventListener('click', () => {
