@@ -1454,12 +1454,19 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows: zRows }, { rows: vnosi }] = await Promise.all([
-      req.db.execute({ sql: 'SELECT id, ime FROM zaposleni WHERE id = ?', args: [req.params.id] }),
+    const [{ rows: zRows }, { rows: vnosi }, { rows: razVnosi }] = await Promise.all([
+      req.db.execute({ sql: 'SELECT id, ime, privzeto_delo_id FROM zaposleni WHERE id = ?', args: [req.params.id] }),
       req.db.execute({
         sql: `SELECT id, tip, cas, naknadno FROM evidenca
               WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ?
               ORDER BY cas ASC`,
+        args: [req.params.id, od, do_]
+      }),
+      req.db.execute({
+        sql: `SELECT r.datum, d.naziv AS delo_naziv, r.trajanje_minut, r.cas_od, r.cas_do
+              FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
+              WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?
+              ORDER BY r.datum`,
         args: [req.params.id, od, do_]
       })
     ]);
@@ -1498,11 +1505,21 @@ function createApp() {
       }
     }
 
+    const razPoDateh = new Map();
+    for (const r of razVnosi) {
+      if (!razPoDateh.has(r.datum)) razPoDateh.set(r.datum, []);
+      razPoDateh.get(r.datum).push({
+        naziv: r.delo_naziv,
+        minute: razMin(r)
+      });
+    }
+
     const dnevi = [...poDnevih.entries()].sort().map(([datum, d]) => ({
       datum,
       minute: Math.round(d.minute),
       nepopoln: d.odprtPrihod !== null && datum !== danes,
-      vnosi: d.vnosi
+      vnosi: d.vnosi,
+      dela: razPoDateh.get(datum) || []
     }));
 
     res.json({
