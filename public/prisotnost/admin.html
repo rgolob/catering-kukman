@@ -184,6 +184,8 @@
               <th class="th-r">Gorivo</th>
               <th class="th-r">Nakup</th>
               <th class="th-r">Skupaj</th>
+              <th class="th-r">Akontacija</th>
+              <th class="th-r">Preostalo</th>
             </tr>
           </thead>
           <tbody id="obracun-tbody"></tbody>
@@ -207,6 +209,25 @@
           <tbody id="stim-tbody"></tbody>
         </table>
         <div id="stim-prazno" class="prazno" style="display:none">Ni stimulacij za ta mesec.</div>
+      </div>
+
+      <div class="card">
+        <h2>Akontacije (vmesna izplačila)</h2>
+        <div class="stim-form-row">
+          <select id="akt-zaposleni" class="stim-select"></select>
+          <input type="date" id="akt-datum" class="stim-input" style="min-width:130px" />
+          <input type="number" id="akt-znesek" class="stim-input" placeholder="Znesek €" min="0.01" step="0.01" />
+          <input type="text" id="akt-opomba" class="stim-input-opomba" placeholder="Opomba (neobvezno)" maxlength="80" />
+          <button id="btn-dodaj-akt">Dodaj</button>
+        </div>
+        <div id="akt-napaka" class="inline-napaka"></div>
+        <table id="akt-tabela" class="tabela" style="margin-top:12px">
+          <thead>
+            <tr><th>Zaposleni</th><th>Datum</th><th class="th-r">Znesek</th><th>Opomba</th><th></th></tr>
+          </thead>
+          <tbody id="akt-tbody"></tbody>
+        </table>
+        <div id="akt-prazno" class="prazno" style="display:none">Ni akontacij za ta mesec.</div>
       </div>
     </div>
 

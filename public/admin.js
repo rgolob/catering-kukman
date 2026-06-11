@@ -521,20 +521,22 @@ async function naloziObracun() {
   document.getElementById('obr-btn-naprej').disabled = jeTekochiMesec;
 
   try {
-    const [resObr, resStim] = await Promise.all([
+    const [resObr, resStim, resAkt] = await Promise.all([
       fetch(`/api/admin/obracun?leto=${obrLeto}&mesec=${obrMesec}`),
-      fetch(`/api/admin/stimulacija?mesec=${obrLeto}-${String(obrMesec).padStart(2,'0')}`)
+      fetch(`/api/admin/stimulacija?mesec=${obrLeto}-${String(obrMesec).padStart(2,'0')}`),
+      fetch(`/api/admin/akontacija?mesec=${obrLeto}-${String(obrMesec).padStart(2,'0')}`)
     ]);
 
     if (!resObr.ok) { prikaziToast('Napaka pri nalaganju obračuna', 'napaka'); return; }
     const { obracun } = await resObr.json();
     const stimulacije = resStim.ok ? await resStim.json() : [];
+    const akontacije = resAkt.ok ? await resAkt.json() : [];
 
     // Obračun tabela
     const tbody = document.getElementById('obracun-tbody');
     const prazno = document.getElementById('obracun-prazno');
 
-    let skupajMin = 0, skupajOsnova = 0, skupajStim = 0, skupajVse = 0, skupajGorivo = 0, skupajNakup = 0;
+    let skupajMin = 0, skupajOsnova = 0, skupajStim = 0, skupajVse = 0, skupajGorivo = 0, skupajNakup = 0, skupajAkt = 0, skupajPreostalo = 0;
     tbody.innerHTML = obracun.map(z => {
       skupajMin += z.minute || 0;
       skupajOsnova += z.osnova || 0;
@@ -542,6 +544,8 @@ async function naloziObracun() {
       skupajVse += z.skupaj || 0;
       skupajGorivo += z.gorivo || 0;
       skupajNakup += z.nakup || 0;
+      skupajAkt += z.akontacija || 0;
+      skupajPreostalo += z.preostalo || 0;
       const vsaDela = [];
       if (z.privzetaMinuta > 0 && z.privzetoDelo) vsaDela.push({ minute: z.privzetaMinuta, naziv: z.privzetoDelo.naziv });
       (z.dodatnaDela || []).forEach(d => vsaDela.push({ minute: d.minute, naziv: d.naziv }));
@@ -554,6 +558,8 @@ async function naloziObracun() {
         <td class="td-r">${z.gorivo ? formatEur(z.gorivo) : '—'}</td>
         <td class="td-r">${z.nakup ? formatEur(z.nakup) : '—'}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
+        <td class="td-r">${z.akontacija ? formatEur(z.akontacija) : '—'}</td>
+        <td class="td-r td-skupaj">${z.preostalo != null ? `<strong>${formatEur(z.preostalo)}</strong>` : '—'}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
@@ -561,6 +567,8 @@ async function naloziObracun() {
         <td class="td-r">${skupajGorivo ? `<strong>${formatEur(skupajGorivo)}</strong>` : '—'}</td>
         <td class="td-r">${skupajNakup ? `<strong>${formatEur(skupajNakup)}</strong>` : '—'}</td>
         <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong>${skupajStim ? `<br><span class="td-ure-sub">+ ${formatEur(skupajStim)} stim</span>` : ''}</td>
+        <td class="td-r">${skupajAkt ? `<strong>${formatEur(skupajAkt)}</strong>` : '—'}</td>
+        <td class="td-r td-skupaj"><strong>${formatEur(skupajPreostalo)}</strong></td>
       </tr>` : '');
 
     prazno.style.display = obracun.length ? 'none' : 'block';
@@ -571,6 +579,9 @@ async function naloziObracun() {
 
     // Stimulacija tabela + dropdown
     await naloziStimulacije(stimulacije);
+
+    // Akontacije tabela + dropdown
+    await naloziAkontacije(akontacije);
 
   } catch(e) {
     prikaziToast('Napaka pri nalaganju', 'napaka');
@@ -619,6 +630,67 @@ async function naloziStimulacije(stimulacije) {
     });
   });
 }
+
+async function naloziAkontacije(akontacije) {
+  try {
+    const res = await fetch('/api/admin/zaposleni');
+    if (res.ok) {
+      const zaposleni = await res.json();
+      const sel = document.getElementById('akt-zaposleni');
+      sel.innerHTML = zaposleni.filter(z => z.aktiven).map(z =>
+        `<option value="${z.id}">${escHtml(z.ime)}</option>`
+      ).join('');
+    }
+  } catch(_) {}
+  const tbody = document.getElementById('akt-tbody');
+  const prazno = document.getElementById('akt-prazno');
+  if (!Array.isArray(akontacije) || akontacije.length === 0) {
+    tbody.innerHTML = '';
+    prazno.style.display = 'block';
+    return;
+  }
+  prazno.style.display = 'none';
+  tbody.innerHTML = akontacije.map(a => `
+    <tr>
+      <td>${escHtml(a.ime)}</td>
+      <td>${a.datum ? a.datum.slice(5).replace('-','.') : '—'}</td>
+      <td class="td-r">${formatEur(a.znesek)}</td>
+      <td>${escHtml(a.opomba || '')}</td>
+      <td><button class="btn-sm btn-danger btn-akt-brisi" data-id="${a.id}">Izbriši</button></td>
+    </tr>`).join('');
+  tbody.querySelectorAll('.btn-akt-brisi').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Izbrisati to akontacijo?')) return;
+      const res = await fetch(`/api/admin/akontacija/${btn.dataset.id}`, { method: 'DELETE' });
+      if (res.ok) naloziObracun();
+      else prikaziToast('Napaka pri brisanju', 'napaka');
+    });
+  });
+}
+
+document.getElementById('btn-dodaj-akt').addEventListener('click', async () => {
+  const napaka = document.getElementById('akt-napaka');
+  napaka.textContent = '';
+  const zaposleniId = document.getElementById('akt-zaposleni').value;
+  const datum = document.getElementById('akt-datum').value;
+  const znesek = document.getElementById('akt-znesek').value;
+  const opomba = document.getElementById('akt-opomba').value.trim();
+  const mesec = `${obrLeto}-${String(obrMesec).padStart(2,'0')}`;
+  if (!zaposleniId || !datum || !znesek) { napaka.textContent = 'Izpolni vsa polja.'; return; }
+  const res = await fetch('/api/admin/akontacija', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ zaposleniId: Number(zaposleniId), mesec, datum, znesek: parseFloat(znesek), opomba })
+  });
+  if (res.ok) {
+    document.getElementById('akt-znesek').value = '';
+    document.getElementById('akt-opomba').value = '';
+    naloziObracun();
+  } else {
+    const e = await res.json();
+    napaka.textContent = e.napaka || 'Napaka';
+  }
+});
 
 document.getElementById('obr-btn-prej').addEventListener('click', () => {
   obrMesec--;

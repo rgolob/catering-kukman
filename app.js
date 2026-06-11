@@ -71,6 +71,14 @@ async function ensureDb() {
         znesek REAL NOT NULL DEFAULT 0,
         opomba TEXT
       )`, args: [] },
+    { sql: `CREATE TABLE IF NOT EXISTS akontacija (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        zaposleni_id INTEGER NOT NULL,
+        mesec TEXT NOT NULL,
+        datum TEXT NOT NULL,
+        znesek REAL NOT NULL DEFAULT 0,
+        opomba TEXT
+      )`, args: [] },
     { sql: `CREATE TABLE IF NOT EXISTS zahtevki (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         zaposleni_id INTEGER NOT NULL,
@@ -1234,7 +1242,7 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }, { rows: kmRows }] = await Promise.all([
+    const [{ rows: zaposleni }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }, { rows: kmRows }, { rows: akontacije }] = await Promise.all([
       req.db.execute(
         `SELECT z.id, z.ime, z.urna_postavka, z.privzeto_delo_id,
                 d.naziv AS priv_naziv, d.urna_postavka AS priv_up
@@ -1249,11 +1257,13 @@ function createApp() {
               WHERE r.datum BETWEEN ? AND ?`,
         args: [od, do_]
       }),
-      req.db.execute({ sql: `SELECT zaposleni_id, SUM(km) AS skupaj_km, SUM(strosek) AS skupaj_strosek FROM kilometrina WHERE datum BETWEEN ? AND ? GROUP BY zaposleni_id`, args: [od, do_] })
+      req.db.execute({ sql: `SELECT zaposleni_id, SUM(km) AS skupaj_km, SUM(strosek) AS skupaj_strosek FROM kilometrina WHERE datum BETWEEN ? AND ? GROUP BY zaposleni_id`, args: [od, do_] }),
+      req.db.execute({ sql: 'SELECT zaposleni_id, SUM(znesek) as skupaj FROM akontacija WHERE mesec = ? GROUP BY zaposleni_id', args: [mesecStr] })
     ]);
 
     const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
     const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { km: parseFloat(r.skupaj_km) || 0, strosek: parseFloat(r.skupaj_strosek) || 0 }]));
+    const aktMap = new Map(akontacije.map(a => [Number(a.zaposleni_id), parseFloat(a.skupaj) || 0]));
 
     const obracun = zaposleni.map(z => {
       const zid = Number(z.id);
@@ -1283,7 +1293,10 @@ function createApp() {
       const hasRate = privzetaUp > 0 || delaMap.size > 0;
       const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
       const stimulacija = stimMap.get(zid) || 0;
-      const { km = 0, strosek = 0 } = kmMap.get(zid) || {};
+      const { km: gorivo = 0, strosek: nakup = 0 } = kmMap.get(zid) || {};
+      const akontacija = aktMap.get(zid) || 0;
+      const hasData = osnova !== null || stimulacija > 0 || gorivo > 0 || nakup > 0;
+      const skupaj = hasData ? Math.round(((osnova || 0) + stimulacija + gorivo + nakup) * 100) / 100 : null;
 
       return {
         id: zid, ime: z.ime,
@@ -1293,8 +1306,10 @@ function createApp() {
         privzetaMinuta,
         dodatnaDela: [...delaMap.entries()].map(([id, d]) => ({ id, ...d })),
         osnova, stimulacija: stimulacija || null,
-        km, strosek,
-        skupaj: (osnova !== null || stimulacija > 0) ? Math.round(((osnova || 0) + stimulacija) * 100) / 100 : null
+        gorivo, nakup,
+        skupaj,
+        akontacija: akontacija || null,
+        preostalo: hasData ? Math.round((skupaj - akontacija) * 100) / 100 : null
       };
     });
     res.json({ leto, mesec, obracun });
@@ -1330,6 +1345,41 @@ function createApp() {
 
   app.delete('/api/admin/stimulacija/:id', requireAuth, async (req, res) => {
     await req.db.execute({ sql: 'DELETE FROM stimulacija WHERE id = ?', args: [req.params.id] });
+    res.json({ ok: true });
+  });
+
+  app.get('/api/admin/akontacija', requireAuth, async (req, res) => {
+    const { mesec } = req.query;
+    if (!mesec) return res.status(400).json({ napaka: 'Manjka mesec' });
+    const { rows } = await req.db.execute({
+      sql: `SELECT a.id, a.zaposleni_id, z.ime, a.datum, a.znesek, a.opomba
+            FROM akontacija a JOIN zaposleni z ON z.id = a.zaposleni_id
+            WHERE a.mesec = ? ORDER BY z.ime, a.datum`,
+      args: [mesec]
+    });
+    res.json(rows);
+  });
+
+  app.post('/api/admin/akontacija', requireAuth, async (req, res) => {
+    const { zaposleniId, mesec, datum, znesek, opomba } = req.body;
+    if (!zaposleniId || !mesec || !datum || znesek == null)
+      return res.status(400).json({ napaka: 'Manjkajo podatki' });
+    if (!/^\d{4}-\d{2}$/.test(mesec))
+      return res.status(400).json({ napaka: 'Neveljaven format meseca (YYYY-MM)' });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(datum))
+      return res.status(400).json({ napaka: 'Neveljaven datum' });
+    const vrednost = parseFloat(znesek);
+    if (isNaN(vrednost) || vrednost <= 0)
+      return res.status(400).json({ napaka: 'Znesek mora biti pozitivno število' });
+    const r = await req.db.execute({
+      sql: 'INSERT INTO akontacija (zaposleni_id, mesec, datum, znesek, opomba) VALUES (?, ?, ?, ?, ?)',
+      args: [zaposleniId, mesec, datum, vrednost, opomba || null]
+    });
+    res.json({ id: Number(r.lastInsertRowid), ok: true });
+  });
+
+  app.delete('/api/admin/akontacija/:id', requireAuth, async (req, res) => {
+    await req.db.execute({ sql: 'DELETE FROM akontacija WHERE id = ?', args: [req.params.id] });
     res.json({ ok: true });
   });
 
@@ -1591,6 +1641,7 @@ function createApp() {
         { sql: 'DELETE FROM evidenca', args: [] },
         { sql: 'DELETE FROM zahtevki', args: [] },
         { sql: 'DELETE FROM stimulacija', args: [] },
+        { sql: 'DELETE FROM akontacija', args: [] },
         { sql: 'DELETE FROM zaposleni', args: [] },
       ], 'write');
       res.json({ ok: true, sporocilo: 'Vsi zaposleni in evidence so izbrisani.' });
@@ -1685,6 +1736,7 @@ function createApp() {
         { sql: 'DELETE FROM evidenca', args: [] },
         { sql: 'DELETE FROM zahtevki', args: [] },
         { sql: 'DELETE FROM stimulacija', args: [] },
+        { sql: 'DELETE FROM akontacija', args: [] },
         { sql: 'DELETE FROM zaposleni', args: [] },
       ], 'write');
 
