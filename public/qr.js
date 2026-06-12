@@ -209,7 +209,7 @@ async function potrdiQrPin() {
       setTimeout(async () => {
         rez.classList.add('hidden');
         await prikaziPinView(pinZaposleniId, pinIme);
-      }, 3000);
+      }, d.pinSetupRequired ? 10000 : 3000);
     }
   } catch (_) {
     prikaziQrPinNapako('Napaka pri povezavi');
