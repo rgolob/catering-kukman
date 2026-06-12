@@ -132,6 +132,8 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN strosek REAL NOT NULL DEFAULT 0'); } catch(_) {}
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN komentar TEXT'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca_razporeditev ADD COLUMN trajanje_minut INTEGER'); } catch(_) {}
+  // Zaposleni z defaultnim PIN 1234 morajo nastaviti lasten PIN
+  try { await db.execute("UPDATE zaposleni SET pin_setup_required = 1 WHERE pin = '1234' AND pin_setup_required = 0"); } catch(_) {}
 
   // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
