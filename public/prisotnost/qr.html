@@ -54,6 +54,33 @@
       <button id="qr-nisem-jaz" class="qr-nisem-jaz">Nisem jaz</button>
     </div>
 
+    <!-- PIN setup (pred evidentiranjem) -->
+    <div id="qr-pin-setup-wrap" class="hidden qr-oseba-wrap">
+      <p class="qr-navodilo">Nastavite lasten PIN</p>
+      <p class="qr-pin-akcija" id="qr-setup-akcija">Vnesite nov 4-mestni PIN</p>
+      <div class="dialog-pin-prikaz tresenje-wrap" id="qr-setup-dots-row">
+        <div class="pin-dot" id="qr-sdp0"></div>
+        <div class="pin-dot" id="qr-sdp1"></div>
+        <div class="pin-dot" id="qr-sdp2"></div>
+        <div class="pin-dot" id="qr-sdp3"></div>
+      </div>
+      <div id="qr-setup-napaka" class="qr-pin-napaka"></div>
+      <div class="dialog-tipkovnica">
+        <button class="dialog-tipka" data-setup-digit="1">1</button>
+        <button class="dialog-tipka" data-setup-digit="2">2</button>
+        <button class="dialog-tipka" data-setup-digit="3">3</button>
+        <button class="dialog-tipka" data-setup-digit="4">4</button>
+        <button class="dialog-tipka" data-setup-digit="5">5</button>
+        <button class="dialog-tipka" data-setup-digit="6">6</button>
+        <button class="dialog-tipka" data-setup-digit="7">7</button>
+        <button class="dialog-tipka" data-setup-digit="8">8</button>
+        <button class="dialog-tipka" data-setup-digit="9">9</button>
+        <button class="dialog-tipka dialog-tipka-brisi" id="qr-setup-brisi">⌫</button>
+        <button class="dialog-tipka" data-setup-digit="0">0</button>
+        <button class="dialog-tipka dialog-tipka-prazna"></button>
+      </div>
+    </div>
+
     <div id="qr-rezultat" class="qr-rezultat hidden">
       <div class="qr-check" id="qr-check-ikona">✓</div>
       <h2 id="qr-rez-ime"></h2>
