@@ -590,18 +590,20 @@ header p{ font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
 .btn-zakljuci-btn{
   display: block;
   width: 100%;
-  margin-top: 18px;
+  margin-top: 22px;
   background: #276749;
   border: none;
-  color: #fff;
-  font-size: 1.1rem;
+  color: #fff !important;
+  font-size: 1.15rem;
   font-weight: 700;
   cursor: pointer;
-  padding: 16px;
+  padding: 18px;
   border-radius: 14px;
-  transition: background 0.15s;
+  box-shadow: 0 3px 10px rgba(39,103,73,0.35);
+  transition: background 0.15s, box-shadow 0.15s;
+  text-decoration: none !important;
 }
-.btn-zakljuci-btn:hover{ background: #22543d; }
+.btn-zakljuci-btn:hover{ background: #22543d; box-shadow: 0 4px 14px rgba(39,103,73,0.4); }
 .btn-zakljuci-btn:active{ transform: scale(0.98); }
 .form-skupina label{
   display: block; font-size: 0.8rem; font-weight: 600;
