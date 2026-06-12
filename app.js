@@ -361,7 +361,7 @@ function createApp() {
     if (!token || !validQrTokens().includes(token))
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     const { rows } = await req.db.execute({
-      sql: 'SELECT id, ime FROM zaposleni WHERE id = ? AND aktiven = 1',
+      sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE id = ? AND aktiven = 1',
       args: [zaposleniId]
     });
     if (!rows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
@@ -383,6 +383,8 @@ function createApp() {
       args: [zaposleniId, tip, cas]
     });
 
+    const pinSetupRequired = !!rows[0].pin_setup_required;
+
     if (tip === 'ODHOD') {
       const [{ rows: zd }, { rows: ostala }] = await Promise.all([
         req.db.execute({
@@ -397,10 +399,10 @@ function createApp() {
       const privzetoDelo = zd[0]?.privzeto_delo_id
         ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
         : null;
-      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala });
+      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala, pinSetupRequired });
     }
 
-    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes });
+    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, pinSetupRequired });
   });
 
   app.post('/api/qr-razporeditev', async (req, res) => {
@@ -1785,7 +1787,7 @@ function createApp() {
       for (const emp of employees) {
         const privzetoDeloId = delaMap.get(emp.dela[0]) || null;
         const r = await db.execute({
-          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 0)',
+          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 1)',
           args: [emp.ime, emp.pin, privzetoDeloId]
         });
         const zaposleniId = Number(r.lastInsertRowid);
