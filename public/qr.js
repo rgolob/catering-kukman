@@ -11,6 +11,11 @@ let qrDodatnoDatum = '';
 let qrDodatnoOstala = [];
 let danesDatum = '';
 
+let setupStariPin = '';
+let setupFaza = 'novi';
+let setupNoviPin = '';
+let setupPotrditev = '';
+
 const MESECI = ['januar','februar','marec','april','maj','junij',
                 'julij','avgust','september','oktober','november','december'];
 const DNEVI  = ['nedelja','ponedeljek','torek','sreda','četrtek','petek','sobota'];
@@ -151,6 +156,46 @@ function prikaziQrPinNapako(sporocilo) {
 
 // ── Record ────────────────────────────────────────────────────────────────────
 
+function prikaziRezultat(d) {
+  setQrCookie(pinZaposleniId, pinIme);
+  localStorage.setItem(LS_KEY, JSON.stringify({ id: pinZaposleniId, ime: pinIme, datum: danesDatum }));
+
+  document.getElementById('qr-rez-ime').textContent = d.ime;
+  document.getElementById('qr-rez-tip').textContent = d.tip === 'PRIHOD' ? 'Prihod zabeležen ✓' : 'Odhod zabeležen ✓';
+  document.getElementById('qr-rez-cas').textContent = String(d.cas).slice(11, 16);
+
+  const ikona = document.getElementById('qr-check-ikona');
+  ikona.className = 'qr-check ' + (d.tip === 'PRIHOD' ? 'prihod' : 'odhod');
+
+  const linkEl = document.getElementById('qr-rez-link');
+  if (d.tip === 'PRIHOD') {
+    linkEl.href = '/prisotnost/moj';
+    linkEl.textContent = 'Shranite to stran za evidenco in pregled ur →';
+    linkEl.style.color = '';
+    linkEl.classList.remove('hidden');
+  } else {
+    linkEl.classList.add('hidden');
+  }
+
+  const rez = document.getElementById('qr-rezultat');
+  rez.classList.remove('hidden');
+
+  if (d.tip === 'ODHOD') {
+    qrDodatnoZaposleniId = pinZaposleniId;
+    qrDodatnoDatum = d.datum;
+    qrDodatnoOstala = d.ostala_dela || [];
+    setTimeout(() => {
+      rez.classList.add('hidden');
+      prikaziDodatnoOverlay();
+    }, 2000);
+  } else {
+    setTimeout(async () => {
+      rez.classList.add('hidden');
+      await prikaziPinView(pinZaposleniId, pinIme);
+    }, 3000);
+  }
+}
+
 async function potrdiQrPin() {
   const pin = pinVnos;
   try {
@@ -166,53 +211,112 @@ async function potrdiQrPin() {
       return;
     }
 
-    setQrCookie(pinZaposleniId, pinIme);
-    localStorage.setItem(LS_KEY, JSON.stringify({ id: pinZaposleniId, ime: pinIme, datum: danesDatum }));
+    if (d.pinSetupRequired) {
+      setupStariPin = pin;
+      prikaziSetupView();
+      return;
+    }
 
     document.getElementById('qr-pin-wrap').classList.add('hidden');
-
-    document.getElementById('qr-rez-ime').textContent = d.ime;
-    document.getElementById('qr-rez-tip').textContent = d.tip === 'PRIHOD' ? 'Prihod zabeležen ✓' : 'Odhod zabeležen ✓';
-    document.getElementById('qr-rez-cas').textContent = String(d.cas).slice(11, 16);
-
-    const ikona = document.getElementById('qr-check-ikona');
-    ikona.className = 'qr-check ' + (d.tip === 'PRIHOD' ? 'prihod' : 'odhod');
-
-    const linkEl = document.getElementById('qr-rez-link');
-    if (d.tip === 'PRIHOD') {
-      if (d.pinSetupRequired) {
-        linkEl.href = '/prisotnost/pin';
-        linkEl.textContent = '⚠️ Zamenjajte privzet PIN na svojem telefonu →';
-        linkEl.style.color = '#c05621';
-      } else {
-        linkEl.href = '/prisotnost/moj';
-        linkEl.textContent = 'Shranite to stran za evidenco in pregled ur →';
-        linkEl.style.color = '';
-      }
-      linkEl.classList.remove('hidden');
-    } else {
-      linkEl.classList.add('hidden');
-    }
-
-    const rez = document.getElementById('qr-rezultat');
-    rez.classList.remove('hidden');
-
-    if (d.tip === 'ODHOD') {
-      qrDodatnoZaposleniId = pinZaposleniId;
-      qrDodatnoDatum = d.datum;
-      qrDodatnoOstala = d.ostala_dela || [];
-      setTimeout(() => {
-        rez.classList.add('hidden');
-        prikaziDodatnoOverlay();
-      }, 2000);
-    } else {
-      setTimeout(async () => {
-        rez.classList.add('hidden');
-        await prikaziPinView(pinZaposleniId, pinIme);
-      }, d.pinSetupRequired ? 10000 : 3000);
-    }
+    prikaziRezultat(d);
   } catch (_) {
     prikaziQrPinNapako('Napaka pri povezavi');
+  }
+}
+
+// ── PIN setup flow ────────────────────────────────────────────────────────────
+
+function prikaziSetupView() {
+  setupFaza = 'novi';
+  setupNoviPin = '';
+  setupPotrditev = '';
+  document.getElementById('qr-setup-akcija').textContent = 'Vnesite nov 4-mestni PIN';
+  document.getElementById('qr-setup-napaka').textContent = '';
+  posodobiSetupDots();
+  document.getElementById('qr-pin-wrap').classList.add('hidden');
+  document.getElementById('qr-pin-setup-wrap').classList.remove('hidden');
+}
+
+function posodobiSetupDots() {
+  const pin = setupFaza === 'novi' ? setupNoviPin : setupPotrditev;
+  for (let i = 0; i < 4; i++) {
+    const dot = document.getElementById('qr-sdp' + i);
+    dot.classList.toggle('vnesen', i < pin.length);
+    dot.classList.remove('napaka-anim');
+  }
+}
+
+function dodajSetupCifro(c) {
+  document.getElementById('qr-setup-napaka').textContent = '';
+  if (setupFaza === 'novi') {
+    if (setupNoviPin.length >= 4) return;
+    setupNoviPin += c;
+    posodobiSetupDots();
+    if (setupNoviPin.length === 4) {
+      setTimeout(() => {
+        setupFaza = 'potrditev';
+        setupPotrditev = '';
+        document.getElementById('qr-setup-akcija').textContent = 'Potrdite nov PIN';
+        posodobiSetupDots();
+      }, 300);
+    }
+  } else {
+    if (setupPotrditev.length >= 4) return;
+    setupPotrditev += c;
+    posodobiSetupDots();
+    if (setupPotrditev.length === 4) potrdiNovPin();
+  }
+}
+
+function brisiSetupPin() {
+  document.getElementById('qr-setup-napaka').textContent = '';
+  if (setupFaza === 'novi') {
+    if (!setupNoviPin.length) return;
+    setupNoviPin = setupNoviPin.slice(0, -1);
+  } else {
+    if (!setupPotrditev.length) return;
+    setupPotrditev = setupPotrditev.slice(0, -1);
+  }
+  posodobiSetupDots();
+}
+
+function prikaziSetupNapako(sporocilo) {
+  const row = document.getElementById('qr-setup-dots-row');
+  row.classList.remove('tresenje');
+  void row.offsetWidth;
+  row.classList.add('tresenje');
+  for (let i = 0; i < 4; i++) document.getElementById('qr-sdp' + i).classList.add('napaka-anim');
+  document.getElementById('qr-setup-napaka').textContent = sporocilo;
+  setupFaza = 'novi';
+  setupNoviPin = '';
+  setupPotrditev = '';
+  setTimeout(() => {
+    posodobiSetupDots();
+    document.getElementById('qr-setup-napaka').textContent = '';
+    document.getElementById('qr-setup-akcija').textContent = 'Vnesite nov 4-mestni PIN';
+  }, 800);
+}
+
+async function potrdiNovPin() {
+  if (setupNoviPin !== setupPotrditev) {
+    prikaziSetupNapako('PIN-a se ne ujemata');
+    return;
+  }
+  try {
+    const res = await fetch('/api/qr-nastavi-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zaposleniId: pinZaposleniId, token, stariPin: setupStariPin, noviPin: setupNoviPin })
+    });
+    const d = await res.json();
+    if (!res.ok) {
+      prikaziSetupNapako(d.napaka || 'Napaka');
+      return;
+    }
+    document.getElementById('qr-pin-setup-wrap').classList.add('hidden');
+    prikaziRezultat(d);
+  } catch (_) {
+    prikaziSetupNapako('Napaka pri povezavi');
   }
 }
 
@@ -222,6 +326,10 @@ document.querySelectorAll('.dialog-tipka[data-qr-digit]').forEach(btn => {
   btn.addEventListener('click', () => dodajQrPinCifro(btn.dataset.qrDigit));
 });
 document.getElementById('qr-pin-brisi').addEventListener('click', brisiQrPin);
+document.querySelectorAll('.dialog-tipka[data-setup-digit]').forEach(btn => {
+  btn.addEventListener('click', () => dodajSetupCifro(btn.dataset.setupDigit));
+});
+document.getElementById('qr-setup-brisi').addEventListener('click', brisiSetupPin);
 document.getElementById('qr-nisem-jaz').addEventListener('click', async () => {
   clearQrCookie();
   document.getElementById('qr-pin-wrap').classList.add('hidden');

@@ -373,6 +373,7 @@ function createApp() {
       args: [zaposleniId, pin]
     });
     if (!pinRows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
+    if (rows[0].pin_setup_required) return res.json({ pinSetupRequired: true });
     const danes = localDate();
     const { rows: zadnji } = await req.db.execute({
       sql: 'SELECT tip FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
@@ -384,8 +385,6 @@ function createApp() {
       sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)',
       args: [zaposleniId, tip, cas]
     });
-
-    const pinSetupRequired = !!rows[0].pin_setup_required;
 
     if (tip === 'ODHOD') {
       const [{ rows: zd }, { rows: ostala }] = await Promise.all([
@@ -401,10 +400,55 @@ function createApp() {
       const privzetoDelo = zd[0]?.privzeto_delo_id
         ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
         : null;
-      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala, pinSetupRequired });
+      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala });
     }
 
-    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, pinSetupRequired });
+    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes });
+  });
+
+  app.post('/api/qr-nastavi-pin', async (req, res) => {
+    const { zaposleniId, token, stariPin, noviPin } = req.body;
+    if (!token || !validQrTokens().includes(token))
+      return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
+    if (!noviPin || !/^\d{4}$/.test(noviPin))
+      return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
+    const { rows } = await req.db.execute({
+      sql: 'SELECT id, ime FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
+      args: [zaposleniId, stariPin]
+    });
+    if (!rows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
+    await req.db.execute({
+      sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = 0 WHERE id = ?',
+      args: [noviPin, zaposleniId]
+    });
+    const danes = localDate();
+    const { rows: zadnji } = await req.db.execute({
+      sql: 'SELECT tip FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
+      args: [zaposleniId, danes]
+    });
+    const tip = zadnji[0]?.tip === 'PRIHOD' ? 'ODHOD' : 'PRIHOD';
+    const cas = localTime();
+    await req.db.execute({
+      sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)',
+      args: [zaposleniId, tip, cas]
+    });
+    if (tip === 'ODHOD') {
+      const [{ rows: zd }, { rows: ostala }] = await Promise.all([
+        req.db.execute({
+          sql: 'SELECT z.privzeto_delo_id, d.naziv, d.urna_postavka FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?',
+          args: [zaposleniId]
+        }),
+        req.db.execute({
+          sql: `SELECT d.id, d.naziv, d.urna_postavka FROM zaposleni_dela zd JOIN dela d ON d.id = zd.delo_id WHERE zd.zaposleni_id = ? AND zd.delo_id != COALESCE((SELECT privzeto_delo_id FROM zaposleni WHERE id = ?), 0) ORDER BY d.urna_postavka, d.naziv`,
+          args: [zaposleniId, zaposleniId]
+        })
+      ]);
+      const privzetoDelo = zd[0]?.privzeto_delo_id
+        ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
+        : null;
+      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala });
+    }
+    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes });
   });
 
   app.post('/api/qr-razporeditev', async (req, res) => {
