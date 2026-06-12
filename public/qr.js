@@ -177,7 +177,22 @@ async function potrdiQrPin() {
 
     const ikona = document.getElementById('qr-check-ikona');
     ikona.className = 'qr-check ' + (d.tip === 'PRIHOD' ? 'prihod' : 'odhod');
-    document.getElementById('qr-rez-link').classList.toggle('hidden', d.tip !== 'PRIHOD');
+
+    const linkEl = document.getElementById('qr-rez-link');
+    if (d.tip === 'PRIHOD') {
+      if (d.pinSetupRequired) {
+        linkEl.href = '/prisotnost/pin';
+        linkEl.textContent = '⚠️ Zamenjajte privzet PIN na svojem telefonu →';
+        linkEl.style.color = '#c05621';
+      } else {
+        linkEl.href = '/prisotnost/moj';
+        linkEl.textContent = 'Shranite to stran za evidenco in pregled ur →';
+        linkEl.style.color = '';
+      }
+      linkEl.classList.remove('hidden');
+    } else {
+      linkEl.classList.add('hidden');
+    }
 
     const rez = document.getElementById('qr-rezultat');
     rez.classList.remove('hidden');
@@ -194,7 +209,7 @@ async function potrdiQrPin() {
       setTimeout(async () => {
         rez.classList.add('hidden');
         await prikaziPinView(pinZaposleniId, pinIme);
-      }, 3000);
+      }, d.pinSetupRequired ? 10000 : 3000);
     }
   } catch (_) {
     prikaziQrPinNapako('Napaka pri povezavi');

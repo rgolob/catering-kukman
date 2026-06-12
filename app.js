@@ -132,6 +132,8 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN strosek REAL NOT NULL DEFAULT 0'); } catch(_) {}
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN komentar TEXT'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca_razporeditev ADD COLUMN trajanje_minut INTEGER'); } catch(_) {}
+  // Zaposleni z defaultnim PIN 1234 morajo nastaviti lasten PIN
+  try { await db.execute("UPDATE zaposleni SET pin_setup_required = 1 WHERE pin = '1234' AND pin_setup_required = 0"); } catch(_) {}
 
   // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
@@ -361,7 +363,7 @@ function createApp() {
     if (!token || !validQrTokens().includes(token))
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     const { rows } = await req.db.execute({
-      sql: 'SELECT id, ime FROM zaposleni WHERE id = ? AND aktiven = 1',
+      sql: 'SELECT id, ime, pin_setup_required FROM zaposleni WHERE id = ? AND aktiven = 1',
       args: [zaposleniId]
     });
     if (!rows.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
@@ -383,6 +385,8 @@ function createApp() {
       args: [zaposleniId, tip, cas]
     });
 
+    const pinSetupRequired = !!rows[0].pin_setup_required;
+
     if (tip === 'ODHOD') {
       const [{ rows: zd }, { rows: ostala }] = await Promise.all([
         req.db.execute({
@@ -397,10 +401,10 @@ function createApp() {
       const privzetoDelo = zd[0]?.privzeto_delo_id
         ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
         : null;
-      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala });
+      return res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, privzetoDelo, ostala_dela: ostala, pinSetupRequired });
     }
 
-    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes });
+    res.json({ ok: true, ime: rows[0].ime, tip, cas, datum: danes, pinSetupRequired });
   });
 
   app.post('/api/qr-razporeditev', async (req, res) => {
@@ -1454,12 +1458,19 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows: zRows }, { rows: vnosi }] = await Promise.all([
-      req.db.execute({ sql: 'SELECT id, ime FROM zaposleni WHERE id = ?', args: [req.params.id] }),
+    const [{ rows: zRows }, { rows: vnosi }, { rows: razVnosi }] = await Promise.all([
+      req.db.execute({ sql: 'SELECT id, ime, privzeto_delo_id FROM zaposleni WHERE id = ?', args: [req.params.id] }),
       req.db.execute({
         sql: `SELECT id, tip, cas, naknadno FROM evidenca
               WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ?
               ORDER BY cas ASC`,
+        args: [req.params.id, od, do_]
+      }),
+      req.db.execute({
+        sql: `SELECT r.datum, d.naziv AS delo_naziv, r.trajanje_minut, r.cas_od, r.cas_do
+              FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
+              WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?
+              ORDER BY r.datum`,
         args: [req.params.id, od, do_]
       })
     ]);
@@ -1498,11 +1509,21 @@ function createApp() {
       }
     }
 
+    const razPoDateh = new Map();
+    for (const r of razVnosi) {
+      if (!razPoDateh.has(r.datum)) razPoDateh.set(r.datum, []);
+      razPoDateh.get(r.datum).push({
+        naziv: r.delo_naziv,
+        minute: razMin(r)
+      });
+    }
+
     const dnevi = [...poDnevih.entries()].sort().map(([datum, d]) => ({
       datum,
       minute: Math.round(d.minute),
       nepopoln: d.odprtPrihod !== null && datum !== danes,
-      vnosi: d.vnosi
+      vnosi: d.vnosi,
+      dela: razPoDateh.get(datum) || []
     }));
 
     res.json({
@@ -1768,7 +1789,7 @@ function createApp() {
       for (const emp of employees) {
         const privzetoDeloId = delaMap.get(emp.dela[0]) || null;
         const r = await db.execute({
-          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 0)',
+          sql: 'INSERT INTO zaposleni (ime, pin, privzeto_delo_id, pin_setup_required) VALUES (?, ?, ?, 1)',
           args: [emp.ime, emp.pin, privzetoDeloId]
         });
         const zaposleniId = Number(r.lastInsertRowid);
