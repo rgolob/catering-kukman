@@ -376,10 +376,17 @@ function createApp() {
     if (rows[0].pin_setup_required) return res.json({ pinSetupRequired: true });
     const danes = localDate();
     const { rows: zadnji } = await req.db.execute({
-      sql: 'SELECT tip FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
+      sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
       args: [zaposleniId, danes]
     });
     const tip = zadnji[0]?.tip === 'PRIHOD' ? 'ODHOD' : 'PRIHOD';
+    if (tip === 'ODHOD' && zadnji[0]?.cas) {
+      const minutesSince = (new Date(localTime().replace(' ','T')) - new Date(zadnji[0].cas.replace(' ','T'))) / 60000;
+      if (minutesSince < 10) {
+        const preostalo = Math.ceil(10 - minutesSince);
+        return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+      }
+    }
     const cas = localTime();
     await req.db.execute({
       sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)',
@@ -423,10 +430,17 @@ function createApp() {
     });
     const danes = localDate();
     const { rows: zadnji } = await req.db.execute({
-      sql: 'SELECT tip FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
+      sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
       args: [zaposleniId, danes]
     });
     const tip = zadnji[0]?.tip === 'PRIHOD' ? 'ODHOD' : 'PRIHOD';
+    if (tip === 'ODHOD' && zadnji[0]?.cas) {
+      const minutesSince = (new Date(localTime().replace(' ','T')) - new Date(zadnji[0].cas.replace(' ','T'))) / 60000;
+      if (minutesSince < 10) {
+        const preostalo = Math.ceil(10 - minutesSince);
+        return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+      }
+    }
     const cas = localTime();
     await req.db.execute({
       sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)',
@@ -1201,11 +1215,14 @@ function createApp() {
 
   app.get('/api/admin/evidenca', requireAuth, async (req, res) => {
     const od = req.query.od || '1970-01-01', do_ = req.query.do || '9999-12-31';
+    const zapId = req.query.zaposleniId ? Number(req.query.zaposleniId) : null;
     const { rows } = await req.db.execute({
       sql: `SELECT e.id, z.ime, e.tip, e.cas, e.naknadno FROM evidenca e
             JOIN zaposleni z ON z.id = e.zaposleni_id
-            WHERE substr(e.cas,1,10) BETWEEN ? AND ? ORDER BY e.cas DESC`,
-      args: [od, do_]
+            WHERE substr(e.cas,1,10) BETWEEN ? AND ?
+            ${zapId ? 'AND e.zaposleni_id = ?' : ''}
+            ORDER BY e.cas DESC`,
+      args: zapId ? [od, do_, zapId] : [od, do_]
     });
     res.json(rows);
   });

@@ -390,18 +390,23 @@ document.getElementById('novo-ime').addEventListener('keydown', e => {
 
 // ── EVIDENCA TAB ──────────────────────────────────────────────────────────────
 
-// Default date range: current month (1st to today)
+// Default date range: last 3 days
+function lokalniDatumStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
 const danes = new Date();
-const prviDan = new Date(danes.getFullYear(), danes.getMonth(), 1);
-document.getElementById('filter-od').value = prviDan.toISOString().slice(0, 10);
-document.getElementById('filter-do').value = danes.toISOString().slice(0, 10);
+const pred2Dnevi = new Date(danes); pred2Dnevi.setDate(danes.getDate() - 2);
+document.getElementById('filter-od').value = lokalniDatumStr(pred2Dnevi);
+document.getElementById('filter-do').value = lokalniDatumStr(danes);
 
 async function naloziEvidenco() {
   const od  = document.getElementById('filter-od').value;
   const do_ = document.getElementById('filter-do').value;
+  const zapId = document.getElementById('filter-zaposleni').value;
 
   try {
-    const res = await fetch(`/api/admin/evidenca?od=${od}&do=${do_}`);
+    const url = `/api/admin/evidenca?od=${od}&do=${do_}` + (zapId ? `&zaposleniId=${zapId}` : '');
+    const res = await fetch(url);
     if (res.status === 401 || res.redirected || res.url.includes('/login')) { window.location.href = '/prisotnost/login'; return; }
     if (!res.ok) { prikaziToast(`Napaka strežnika (${res.status})`, 'napaka'); return; }
     const zapisi = await res.json();
@@ -1387,11 +1392,14 @@ async function naloziRvZaposlene() {
   const res = await fetch('/api/admin/zaposleni');
   if (!res.ok) return;
   const zaposleni = await res.json();
+  const aktivni = zaposleni.filter(z => z.aktiven === 1);
+  const opcije = aktivni.map(z => `<option value="${z.id}">${escHtml(z.ime)}</option>`).join('');
   const sel = document.getElementById('rv-zaposleni');
-  sel.innerHTML = zaposleni
-    .filter(z => z.aktiven === 1)
-    .map(z => `<option value="${z.id}">${escHtml(z.ime)}</option>`)
-    .join('');
+  sel.innerHTML = opcije;
+  const filterSel = document.getElementById('filter-zaposleni');
+  const obstojecaVrednost = filterSel.value;
+  filterSel.innerHTML = '<option value="">Vsi</option>' + opcije;
+  if (obstojecaVrednost) filterSel.value = obstojecaVrednost;
 }
 
 document.getElementById('rv-datum').value = new Date().toISOString().slice(0, 10);

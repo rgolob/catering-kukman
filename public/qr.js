@@ -157,7 +157,6 @@ function prikaziQrPinNapako(sporocilo) {
 // ── Record ────────────────────────────────────────────────────────────────────
 
 function prikaziRezultat(d) {
-  setQrCookie(pinZaposleniId, pinIme);
   localStorage.setItem(LS_KEY, JSON.stringify({ id: pinZaposleniId, ime: pinIme, datum: danesDatum }));
 
   document.getElementById('qr-rez-ime').textContent = d.ime;
@@ -191,8 +190,9 @@ function prikaziRezultat(d) {
   } else {
     setTimeout(async () => {
       rez.classList.add('hidden');
-      await prikaziPinView(pinZaposleniId, pinIme);
-    }, 3000);
+      clearQrCookie();
+      await prikaziSeznam();
+    }, 6000);
   }
 }
 
@@ -407,7 +407,8 @@ document.getElementById('qr-btn-zakljuci').addEventListener('click', async () =>
     } catch (_) {}
   }
   document.getElementById('qr-dodatno-overlay').classList.add('hidden');
-  await prikaziPinView(qrDodatnoZaposleniId, pinIme);
+  clearQrCookie();
+  await prikaziSeznam();
 });
 
 init();
