@@ -1,3 +1,15 @@
+// ── Accordion ────────────────────────────────────────────────────────────────
+document.querySelectorAll('.accordion-toggle').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const card = btn.closest('.card-accordion');
+    const body = card.querySelector('.accordion-body');
+    const ikona = btn.querySelector('.accordion-ikona');
+    const isOpen = card.classList.toggle('open');
+    body.style.display = isOpen ? 'block' : 'none';
+    ikona.textContent = isOpen ? '▾' : '▸';
+  });
+});
+
 // ── Tabs ─────────────────────────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(btn => {
   btn.addEventListener('click', () => {
