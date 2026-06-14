@@ -62,29 +62,28 @@
       <div class="card card-accordion">
         <button class="accordion-toggle">Ročni vnos <span class="accordion-ikona">▸</span></button>
         <div class="accordion-body" style="display:none">
-          <div class="rv-form">
-            <div class="rv-vrstica">
-              <label class="rv-label">Zaposleni</label>
-              <select id="rv-zaposleni" class="rv-select"></select>
+          <div class="admin-form-grid">
+            <div class="afg-polje afg-full">
+              <label>Zaposleni</label>
+              <select id="rv-zaposleni"></select>
             </div>
-            <div class="rv-vrstica">
-              <label class="rv-label">Datum</label>
-              <input type="date" id="rv-datum" class="rv-input" />
+            <div class="afg-polje afg-full">
+              <label>Datum</label>
+              <input type="date" id="rv-datum" />
             </div>
-            <div class="rv-vrstica">
-              <label class="rv-label">Prihod</label>
-              <input type="time" id="rv-prihod" class="rv-input" />
+            <div class="afg-polje">
+              <label>Prihod</label>
+              <input type="time" id="rv-prihod" />
             </div>
-            <div class="rv-vrstica">
-              <label class="rv-label">Odhod</label>
-              <input type="time" id="rv-odhod" class="rv-input" />
+            <div class="afg-polje">
+              <label>Odhod</label>
+              <input type="time" id="rv-odhod" />
             </div>
-            <div class="rv-vrstica">
-              <label class="rv-label"></label>
-              <div>
-                <button id="btn-rv-shrani">Shrani vnos</button>
-                <div id="rv-napaka" class="inline-napaka" style="margin-top:8px"></div>
-              </div>
+            <div class="afg-full afg-gumbi">
+              <button id="btn-rv-shrani">Shrani vnos</button>
+            </div>
+            <div class="afg-full">
+              <div id="rv-napaka" class="inline-napaka"></div>
             </div>
           </div>
         </div>
@@ -93,25 +92,22 @@
       <div class="card card-accordion open">
         <button class="accordion-toggle">Filter <span class="accordion-ikona">▾</span></button>
         <div class="accordion-body">
-          <div class="filter-grid">
-            <div class="filter-polje">
+          <div class="admin-form-grid">
+            <div class="afg-polje afg-full">
               <label>Zaposleni</label>
               <select id="filter-zaposleni"><option value="">Vsi</option></select>
             </div>
-            <div class="filter-polje">
+            <div class="afg-polje">
               <label>Od</label>
               <input type="date" id="filter-od" />
             </div>
-            <div class="filter-polje">
+            <div class="afg-polje">
               <label>Do</label>
               <input type="date" id="filter-do" />
             </div>
-            <div class="filter-polje filter-gumbi">
-              <label>&nbsp;</label>
-              <div class="filter-btn-row">
-                <button id="btn-iskanje">Prikaži</button>
-                <button id="btn-izvoz" class="btn-izvoz">⬇ Izvozi</button>
-              </div>
+            <div class="afg-full afg-gumbi">
+              <button id="btn-iskanje">Prikaži</button>
+              <button id="btn-izvoz" class="btn-izvoz">⬇ Izvozi</button>
             </div>
           </div>
         </div>
