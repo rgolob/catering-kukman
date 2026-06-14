@@ -1992,14 +1992,36 @@ button:hover{ background: #1a365d; }
 .accordion-ikona{ font-size: 0.72rem; color: #a0aec0; }
 .accordion-body{ margin-top: 16px; }
 
+/* Filter grid (2-col) */
+.filter-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.filter-polje{
+  display: flex; flex-direction: column; gap: 4px;
+}
+.filter-polje > label{
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.4px; color: #718096;
+}
+.filter-polje input,
+.filter-polje select{
+  padding: 6px 9px; font-size: 0.85rem;
+  border: 1.5px solid #e2e8f0; border-radius: 7px;
+  width: 100%; box-sizing: border-box; color: #1a202c;
+  background: #fff; outline: none;
+}
+.filter-polje input:focus,
+.filter-polje select:focus{ border-color: #4299e1; }
+.filter-btn-row{
+  display: flex; gap: 6px;
+}
+.filter-btn-row button{
+  flex: 1; padding: 6px 8px; font-size: 0.83rem;
+}
+
 /* Compact elements in evidenca tab */
-.tab-evidenca .filter-row input,
-.tab-evidenca .filter-row select {
-  padding: 5px 8px; font-size: 0.83rem;
-}
-.tab-evidenca .filter-row button {
-  padding: 5px 11px; font-size: 0.83rem;
-}
 .tab-evidenca .rv-select,
 .tab-evidenca .rv-input {
   padding: 5px 8px; font-size: 0.85rem;

@@ -93,12 +93,26 @@
       <div class="card card-accordion open">
         <button class="accordion-toggle">Filter <span class="accordion-ikona">▾</span></button>
         <div class="accordion-body">
-          <div class="filter-row">
-            <label>Zaposleni: <select id="filter-zaposleni"><option value="">Vsi</option></select></label>
-            <label>Od: <input type="date" id="filter-od" /></label>
-            <label>Do: <input type="date" id="filter-do" /></label>
-            <button id="btn-iskanje">Prikaži</button>
-            <button id="btn-izvoz" class="btn-izvoz">⬇ Izvozi Excel</button>
+          <div class="filter-grid">
+            <div class="filter-polje">
+              <label>Zaposleni</label>
+              <select id="filter-zaposleni"><option value="">Vsi</option></select>
+            </div>
+            <div class="filter-polje">
+              <label>Od</label>
+              <input type="date" id="filter-od" />
+            </div>
+            <div class="filter-polje">
+              <label>Do</label>
+              <input type="date" id="filter-do" />
+            </div>
+            <div class="filter-polje filter-gumbi">
+              <label>&nbsp;</label>
+              <div class="filter-btn-row">
+                <button id="btn-iskanje">Prikaži</button>
+                <button id="btn-izvoz" class="btn-izvoz">⬇ Izvozi</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
