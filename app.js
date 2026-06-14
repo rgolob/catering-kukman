@@ -1215,11 +1215,14 @@ function createApp() {
 
   app.get('/api/admin/evidenca', requireAuth, async (req, res) => {
     const od = req.query.od || '1970-01-01', do_ = req.query.do || '9999-12-31';
+    const zapId = req.query.zaposleniId ? Number(req.query.zaposleniId) : null;
     const { rows } = await req.db.execute({
       sql: `SELECT e.id, z.ime, e.tip, e.cas, e.naknadno FROM evidenca e
             JOIN zaposleni z ON z.id = e.zaposleni_id
-            WHERE substr(e.cas,1,10) BETWEEN ? AND ? ORDER BY e.cas DESC`,
-      args: [od, do_]
+            WHERE substr(e.cas,1,10) BETWEEN ? AND ?
+            ${zapId ? 'AND e.zaposleni_id = ?' : ''}
+            ORDER BY e.cas DESC`,
+      args: zapId ? [od, do_, zapId] : [od, do_]
     });
     res.json(rows);
   });
