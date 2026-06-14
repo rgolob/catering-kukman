@@ -1992,33 +1992,35 @@ button:hover{ background: #1a365d; }
 .accordion-ikona{ font-size: 0.72rem; color: #a0aec0; }
 .accordion-body{ margin-top: 16px; }
 
-/* Filter grid (2-col) */
-.filter-grid{
+/* Admin form grid (filter + ročni vnos) */
+.admin-form-grid{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
-.filter-polje{
+.afg-polje{
   display: flex; flex-direction: column; gap: 4px;
 }
-.filter-polje > label{
+.afg-polje > label{
   font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.4px; color: #718096;
 }
-.filter-polje input,
-.filter-polje select{
-  padding: 6px 9px; font-size: 0.85rem;
+.afg-polje input,
+.afg-polje select,
+.admin-form-grid select {
+  padding: 7px 9px; font-size: 0.85rem;
   border: 1.5px solid #e2e8f0; border-radius: 7px;
   width: 100%; box-sizing: border-box; color: #1a202c;
   background: #fff; outline: none;
 }
-.filter-polje input:focus,
-.filter-polje select:focus{ border-color: #4299e1; }
-.filter-btn-row{
-  display: flex; gap: 6px;
+.afg-polje input:focus,
+.afg-polje select:focus{ border-color: #4299e1; }
+.afg-full{ grid-column: 1 / -1; }
+.afg-gumbi{
+  display: flex; justify-content: center; gap: 10px; margin-top: 2px;
 }
-.filter-btn-row button{
-  flex: 1; padding: 6px 8px; font-size: 0.83rem;
+.afg-gumbi button{
+  padding: 7px 22px; font-size: 0.85rem;
 }
 
 /* Compact elements in evidenca tab */
