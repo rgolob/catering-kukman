@@ -133,7 +133,7 @@ async function ensureDb() {
   try { await db.execute('ALTER TABLE kilometrina ADD COLUMN komentar TEXT'); } catch(_) {}
   try { await db.execute('ALTER TABLE evidenca_razporeditev ADD COLUMN trajanje_minut INTEGER'); } catch(_) {}
   // Zaposleni z defaultnim PIN 1234 morajo nastaviti lasten PIN
-  try { await db.execute("UPDATE zaposleni SET pin_setup_required = 1 WHERE pin = '1234' AND pin_setup_required = 0"); } catch(_) {}
+  try { await db.execute("UPDATE zaposleni SET pin_setup_required = 1 WHERE pin = '1234' AND (pin_setup_required = 0 OR pin_setup_required IS NULL)"); } catch(_) {}
 
   // Seed work types (INSERT OR IGNORE — safe to run multiple times)
   await db.batch([
@@ -373,7 +373,7 @@ function createApp() {
       args: [zaposleniId, pin]
     });
     if (!pinRows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
-    if (rows[0].pin_setup_required) return res.json({ pinSetupRequired: true });
+    if (rows[0].pin_setup_required || pin === '1234') return res.json({ pinSetupRequired: true });
     const danes = localDate();
     const { rows: zadnji } = await req.db.execute({
       sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
@@ -419,6 +419,8 @@ function createApp() {
       return res.status(401).json({ napaka: 'QR koda ni veljavna ali je potekla' });
     if (!noviPin || !/^\d{4}$/.test(noviPin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
+    if (noviPin === '1234')
+      return res.status(400).json({ napaka: 'Izberite drugačen PIN kot privzeti' });
     const { rows } = await req.db.execute({
       sql: 'SELECT id, ime FROM zaposleni WHERE id = ? AND pin = ? AND aktiven = 1',
       args: [zaposleniId, stariPin]
@@ -1029,8 +1031,8 @@ function createApp() {
     if (pin && !/^\d{4}$/.test(pin))
       return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
     await req.db.execute({
-      sql: 'UPDATE zaposleni SET pin = ? WHERE id = ?',
-      args: [pin || null, req.params.id]
+      sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = ? WHERE id = ?',
+      args: [pin || null, pin === '1234' ? 1 : 0, req.params.id]
     });
     res.json({ ok: true });
   });
