@@ -694,6 +694,74 @@ function createApp() {
     res.json(zapis);
   });
 
+  app.post('/api/tablet-nastavi-pin', requireDeviceToken, async (req, res) => {
+    const { zaposleni_id, stari_pin, novi_pin, tip } = req.body;
+    if (!zaposleni_id || !['PRIHOD', 'ODHOD'].includes(tip))
+      return res.status(400).json({ napaka: 'Neveljavni podatki' });
+    if (!novi_pin || !/^\d{4}$/.test(novi_pin))
+      return res.status(400).json({ napaka: 'PIN mora biti 4-mestna številka' });
+    if (novi_pin === '1234')
+      return res.status(400).json({ napaka: 'Izberite drugačen PIN kot privzeti' });
+
+    const { rows: zr } = await req.db.execute({
+      sql: 'SELECT pin FROM zaposleni WHERE id = ? AND aktiven = 1',
+      args: [zaposleni_id]
+    });
+    if (!zr.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
+    if (zr[0].pin !== stari_pin) return res.status(401).json({ napaka: 'Napačen PIN' });
+
+    await req.db.execute({
+      sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = 0 WHERE id = ?',
+      args: [novi_pin, zaposleni_id]
+    });
+
+    if (tip === 'ODHOD') {
+      const danes = localDate();
+      const { rows: zadnji } = await req.db.execute({
+        sql: "SELECT cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? AND tip = 'PRIHOD' ORDER BY cas DESC LIMIT 1",
+        args: [zaposleni_id, danes]
+      });
+      if (zadnji[0]?.cas) {
+        const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
+        if (minutesSince < 10) {
+          const preostalo = Math.ceil(10 - minutesSince);
+          return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+        }
+      }
+    }
+
+    const cas = localTime();
+    const r = await req.db.execute({
+      sql: 'INSERT INTO evidenca (zaposleni_id, tip, cas) VALUES (?, ?, ?)',
+      args: [zaposleni_id, tip, cas]
+    });
+    const { rows } = await req.db.execute({
+      sql: `SELECT e.id, z.ime, e.tip, e.cas FROM evidenca e
+            JOIN zaposleni z ON z.id = e.zaposleni_id WHERE e.id = ?`,
+      args: [Number(r.lastInsertRowid)]
+    });
+    const zapis = rows[0];
+
+    if (tip === 'ODHOD') {
+      const [{ rows: zd }, { rows: ostala }] = await Promise.all([
+        req.db.execute({
+          sql: `SELECT z.privzeto_delo_id, d.naziv, d.urna_postavka FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`,
+          args: [zaposleni_id]
+        }),
+        req.db.execute({
+          sql: `SELECT d.id, d.naziv, d.urna_postavka FROM zaposleni_dela zd JOIN dela d ON d.id = zd.delo_id WHERE zd.zaposleni_id = ? AND zd.delo_id != COALESCE((SELECT privzeto_delo_id FROM zaposleni WHERE id = ?), 0) ORDER BY d.urna_postavka, d.naziv`,
+          args: [zaposleni_id, zaposleni_id]
+        })
+      ]);
+      const privzetoDelo = zd[0]?.privzeto_delo_id
+        ? { id: Number(zd[0].privzeto_delo_id), naziv: zd[0].naziv, urna_postavka: zd[0].urna_postavka }
+        : null;
+      return res.json({ ...zapis, privzetoDelo, ostala_dela: ostala });
+    }
+
+    res.json(zapis);
+  });
+
   // ── Moj čas API ───────────────────────────────────────────────────────────────
   app.get('/api/moj-cas/info', requirePinAuth, async (req, res) => {
     const danes = localDate();
