@@ -1,6 +1,18 @@
 let izbraniZaposleni = null;
 let izbraniTip = null;
 let dialogPin = '';
+let pinSetupFaza = null; // null | 'novi' | 'potrdi'
+let pinSetupNoviPin = '';
+let pinSetupStariPin = '';
+
+function getDeviceToken() {
+  const ls = localStorage.getItem('kukman_device_token');
+  if (ls) return ls;
+  const m = document.cookie.match(/(?:^|; )kukman_dt=([^;]+)/);
+  const c = m ? m[1] : '';
+  if (c) localStorage.setItem('kukman_device_token', c);
+  return c;
+}
 
 // State for the "additional work" overlay after ODHOD
 let odhodZaposleniId = null;
@@ -155,6 +167,9 @@ function prikaziPinNapako(sporocilo) {
 function odpriDialog(id, ime, jePrisoten) {
   izbraniZaposleni = id;
   izbraniTip = jePrisoten ? 'ODHOD' : 'PRIHOD';
+  pinSetupFaza = null;
+  pinSetupNoviPin = '';
+  pinSetupStariPin = '';
   resetDialogPin();
 
   const badge = document.getElementById('dialog-tip-badge');
@@ -177,6 +192,9 @@ function zapriDialog() {
   resetDialogPin();
   izbraniZaposleni = null;
   izbraniTip = null;
+  pinSetupFaza = null;
+  pinSetupNoviPin = '';
+  pinSetupStariPin = '';
 }
 
 // Takoj posodobi kartico po potrditvi
@@ -196,24 +214,87 @@ function posodobiKarticoTakoj(id, tip, cas) {
   posodobiPretecenCas();
 }
 
+function prikaziPinSetup(stariPin) {
+  pinSetupFaza = 'novi';
+  pinSetupNoviPin = '';
+  pinSetupStariPin = stariPin;
+  dialogPin = '';
+  posodobiDialogPin();
+  document.getElementById('dialog-vprasanje').textContent = 'Izberite nov 4-mestni PIN';
+  document.getElementById('dialog-pin-napaka').textContent = '';
+}
+
+async function nastaviPinInBelezi(noviPin) {
+  try {
+    const res = await fetch('/api/tablet-nastavi-pin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': getDeviceToken() },
+      body: JSON.stringify({ zaposleni_id: izbraniZaposleni, stari_pin: pinSetupStariPin, novi_pin: noviPin, tip: izbraniTip })
+    });
+    const zapis = await res.json();
+    if (!res.ok) {
+      pinSetupFaza = 'novi';
+      pinSetupNoviPin = '';
+      prikaziPinNapako(zapis.napaka || 'Napaka');
+      setTimeout(() => {
+        document.getElementById('dialog-vprasanje').textContent = 'Izberite nov 4-mestni PIN';
+      }, 850);
+      return;
+    }
+
+    const tipZaDodatno = izbraniTip;
+    const idZaDodatno = izbraniZaposleni;
+
+    posodobiKarticoTakoj(izbraniZaposleni, izbraniTip, new Date(zapis.cas));
+    zapriDialog();
+    prikaziToast(zapis.ime, tipZaDodatno);
+
+    if (tipZaDodatno === 'ODHOD') {
+      prikaziDodatnoDeloOverlay(idZaDodatno, noviPin, String(zapis.cas).slice(0, 10), zapis.privzetoDelo, zapis.ostala_dela || []);
+    }
+
+    naloziZaposlene();
+    naloziEvidenco();
+  } catch (e) {
+    console.error('Napaka:', e);
+    prikaziPinNapako('Napaka pri povezavi');
+  }
+}
+
 // Potrdi zapis (kliče se samodejno po 4 vnesenih cifrach)
 async function potrdiZapis() {
+  if (pinSetupFaza === 'novi') {
+    pinSetupNoviPin = dialogPin;
+    dialogPin = '';
+    posodobiDialogPin();
+    document.getElementById('dialog-vprasanje').textContent = 'Potrdite nov PIN';
+    document.getElementById('dialog-pin-napaka').textContent = '';
+    pinSetupFaza = 'potrdi';
+    return;
+  }
+
+  if (pinSetupFaza === 'potrdi') {
+    if (dialogPin !== pinSetupNoviPin) {
+      pinSetupFaza = 'novi';
+      pinSetupNoviPin = '';
+      prikaziPinNapako('PIN-a se ne ujemata — poskusite znova');
+      setTimeout(() => {
+        document.getElementById('dialog-vprasanje').textContent = 'Izberite nov 4-mestni PIN';
+      }, 850);
+      return;
+    }
+    await nastaviPinInBelezi(dialogPin);
+    return;
+  }
+
   if (!izbraniZaposleni || !izbraniTip || dialogPin.length !== 4) return;
 
   const pinZaPoslati = dialogPin;
 
   try {
-    const deviceToken = (() => {
-      const ls = localStorage.getItem('kukman_device_token');
-      if (ls) return ls;
-      const m = document.cookie.match(/(?:^|; )kukman_dt=([^;]+)/);
-      const c = m ? m[1] : '';
-      if (c) localStorage.setItem('kukman_device_token', c);
-      return c;
-    })();
     const res = await fetch('/api/belezi', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Device-Token': deviceToken },
+      headers: { 'Content-Type': 'application/json', 'X-Device-Token': getDeviceToken() },
       body: JSON.stringify({ zaposleni_id: izbraniZaposleni, tip: izbraniTip, pin: pinZaPoslati })
     });
 
@@ -229,7 +310,7 @@ async function potrdiZapis() {
 
     const zapis = await res.json();
     if (zapis.pinSetupRequired) {
-      prikaziPinNapako('Spremenite privzeti PIN — skenirajte QR kodo ali obiščite /prisotnost/pin-setup');
+      prikaziPinSetup(pinZaPoslati);
       return;
     }
     if (!res.ok) {
@@ -237,12 +318,10 @@ async function potrdiZapis() {
       return;
     }
 
-    // Save before zapriDialog() resets them
     const tipZaDodatno = izbraniTip;
     const idZaDodatno = izbraniZaposleni;
     const pinZaDodatno = pinZaPoslati;
 
-    // Takoj posodobi kartico
     posodobiKarticoTakoj(izbraniZaposleni, izbraniTip, new Date(zapis.cas));
     zapriDialog();
     prikaziToast(zapis.ime, tipZaDodatno);
