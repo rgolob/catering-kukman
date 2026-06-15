@@ -4,6 +4,54 @@ const DNEVI  = ['Ned','Pon','Tor','Sre','Čet','Pet','Sob'];
 
 let prikazanoLeto, prikazaniMesec;
 
+// ── Bližnjica na domači zaslon ─────────────────────────────────────────────
+let deferredInstallPrompt = null;
+
+const jeStandalone = () =>
+  window.matchMedia('(display-mode: standalone)').matches || !!navigator.standalone;
+
+const jeIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  prikaziBliznjico();
+});
+
+function prikaziBliznjico() {
+  if (jeStandalone()) return;
+  if (localStorage.getItem('kukman_bliznjica_skrita')) return;
+
+  const card = document.getElementById('card-bliznjica');
+  const opis = document.getElementById('bliznjica-opis');
+  const btnDodaj = document.getElementById('btn-bliznjica-dodaj');
+
+  if (deferredInstallPrompt) {
+    opis.textContent = 'Za hiter dostop dodajte to stran na domači zaslon.';
+    btnDodaj.style.display = '';
+    card.classList.remove('hidden');
+    btnDodaj.onclick = async () => {
+      deferredInstallPrompt.prompt();
+      const { outcome } = await deferredInstallPrompt.userChoice;
+      if (outcome === 'accepted') card.classList.add('hidden');
+      deferredInstallPrompt = null;
+    };
+  } else if (jeIOS()) {
+    opis.innerHTML = 'Tapnite <strong>⎋ Deli</strong> v Safariju in izberite <strong>Dodaj na začetni zaslon</strong>.';
+    btnDodaj.style.display = 'none';
+    card.classList.remove('hidden');
+  }
+
+  document.getElementById('btn-bliznjica-zapri').onclick = () => {
+    card.classList.add('hidden');
+    localStorage.setItem('kukman_bliznjica_skrita', '1');
+  };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!jeStandalone() && jeIOS()) prikaziBliznjico();
+});
+
 function formatirajUre(minute) {
   if (minute <= 0) return '0u 0m';
   const u = Math.floor(minute / 60);
@@ -11,16 +59,16 @@ function formatirajUre(minute) {
   return m === 0 ? `${u}u` : `${u}u ${m}m`;
 }
 
-function formatirajCas(isoStr) {
-  if (!isoStr) return '—';
-  const d = new Date(isoStr);
-  return d.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
+function formatirajCas(casStr) {
+  if (!casStr) return '—';
+  // Strežnik vrne lokalni čas brez timezone ('YYYY-MM-DDTHH:MM:SS').
+  // new Date() brez Z ga razloži kot lokalni čas → pravilni prikaz.
+  return new Date(casStr).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 }
 
-function isoNaCasInput(isoStr) {
-  if (!isoStr) return '';
-  const d = new Date(isoStr);
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+function isoNaCasInput(casStr) {
+  if (!casStr) return '';
+  return casStr.slice(11, 16); // 'YYYY-MM-DDTHH:MM:SS' → 'HH:MM'
 }
 
 function casOdDoMinuteFE(casOd, casDo) {

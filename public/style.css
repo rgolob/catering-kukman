@@ -329,6 +329,9 @@ h2{
 }
 .qr-tablica-img{ width: 160px; height: 160px; display: block; border-radius: 8px; }
 .qr-tablica-napis{ font-size: 0.82rem; color: #718096; }
+.ali-locnik{ display: flex; align-items: center; gap: 12px; padding: 4px 20px; }
+.ali-locnik::before,.ali-locnik::after{ content:''; flex:1; height:1px; background:#e2e8f0; }
+.ali-locnik span{ font-size: 0.78rem; font-weight: 600; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.08em; }
 .dodatno-stroški-sekcija{
   margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 14px;
 }
@@ -1152,6 +1155,16 @@ header h1{ font-size: 1.4rem; font-weight: 700; }
   transition: background 0.15s;
 }
 .btn-link:hover{ background: rgba(255,255,255,0.15); opacity: 1; }
+
+.card-bliznjica{ display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.card-bliznjica.hidden{ display: none; }
+.bliznjica-vsebina{ display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.bliznjica-ikona{ font-size: 1.5rem; flex-shrink: 0; }
+.bliznjica-naslov{ font-weight: 600; font-size: 0.88rem; color: #1a202c; }
+.bliznjica-opis{ font-size: 0.8rem; color: #718096; margin-top: 2px; line-height: 1.4; }
+.bliznjica-gumbi{ display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.btn-bliznjica-dodaj{ background: #276749; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.btn-bliznjica-zapri{ background: none; border: none; color: #a0aec0; font-size: 1rem; cursor: pointer; padding: 4px 6px; line-height: 1; }
 
 .btn-odjava{
   background: rgba(255,255,255,0.15);
