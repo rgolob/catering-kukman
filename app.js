@@ -645,7 +645,7 @@ function createApp() {
     if (!zr.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
     if (zr[0].pin !== pin) return res.status(401).json({ napaka: 'Napačen PIN' });
     if (zr[0].pin_setup_required || pin === '1234')
-      return res.json({ pinSetupRequired: true });
+      return res.status(422).json({ pinSetupRequired: true, napaka: 'Najprej spremenite PIN — obiščite /prisotnost/pin-setup ali skenirajte QR kodo' });
 
     if (tip === 'ODHOD') {
       const danes = localDate();
