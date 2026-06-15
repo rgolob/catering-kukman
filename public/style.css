@@ -329,6 +329,9 @@ h2{
 }
 .qr-tablica-img{ width: 160px; height: 160px; display: block; border-radius: 8px; }
 .qr-tablica-napis{ font-size: 0.82rem; color: #718096; }
+.ali-locnik{ display: flex; align-items: center; gap: 12px; padding: 4px 20px; }
+.ali-locnik::before,.ali-locnik::after{ content:''; flex:1; height:1px; background:#e2e8f0; }
+.ali-locnik span{ font-size: 0.78rem; font-weight: 600; color: #a0aec0; text-transform: uppercase; letter-spacing: 0.08em; }
 .dodatno-stroški-sekcija{
   margin-top: 16px; border-top: 1px solid #e2e8f0; padding-top: 14px;
 }
