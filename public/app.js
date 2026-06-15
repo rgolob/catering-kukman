@@ -147,7 +147,7 @@ function resetDialogPin() {
   document.getElementById('dialog-pin-napaka').textContent = '';
 }
 
-function prikaziPinNapako(sporocilo) {
+function prikaziPinNapako(sporocilo, duracija = 800) {
   const prikaz = document.getElementById('dialog-pin-prikaz');
   prikaz.classList.remove('tresenje');
   void prikaz.offsetWidth;
@@ -160,7 +160,7 @@ function prikaziPinNapako(sporocilo) {
   setTimeout(() => {
     posodobiDialogPin();
     document.getElementById('dialog-pin-napaka').textContent = '';
-  }, 800);
+  }, duracija);
 }
 
 // Odpri potrditveni dialog
@@ -317,7 +317,7 @@ async function potrdiZapis() {
       return;
     }
     if (!res.ok) {
-      prikaziPinNapako(zapis.napaka || 'Napaka');
+      prikaziPinNapako(zapis.napaka || 'Napaka', res.status === 400 ? 6000 : 800);
       return;
     }
 
