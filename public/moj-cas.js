@@ -59,16 +59,16 @@ function formatirajUre(minute) {
   return m === 0 ? `${u}u` : `${u}u ${m}m`;
 }
 
-function formatirajCas(isoStr) {
-  if (!isoStr) return '—';
-  const d = new Date(isoStr);
-  return d.toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
+function formatirajCas(casStr) {
+  if (!casStr) return '—';
+  // Strežnik vrne lokalni čas brez timezone ('YYYY-MM-DDTHH:MM:SS').
+  // new Date() brez Z ga razloži kot lokalni čas → pravilni prikaz.
+  return new Date(casStr).toLocaleTimeString('sl-SI', { hour: '2-digit', minute: '2-digit' });
 }
 
-function isoNaCasInput(isoStr) {
-  if (!isoStr) return '';
-  const d = new Date(isoStr);
-  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+function isoNaCasInput(casStr) {
+  if (!casStr) return '';
+  return casStr.slice(11, 16); // 'YYYY-MM-DDTHH:MM:SS' → 'HH:MM'
 }
 
 function casOdDoMinuteFE(casOd, casDo) {

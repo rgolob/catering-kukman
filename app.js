@@ -163,7 +163,7 @@ function izracunajDnevneUre(zapisi, zdaj = new Date()) {
   // Sortiraj vse zapise kronološko in jih pari: vsak ODHOD gre k zadnjemu PRIHODU
   // Izmena se pripiše datumu PRIHODA (ne ODHODA) — pravilno za izmene čez polnoč
   const sorted = [...zapisi]
-    .map(z => ({ tip: z.tip, naknadno: z.naknadno, cas: new Date(String(z.cas).replace(' ', 'T')), datum: String(z.cas).slice(0, 10) }))
+    .map(z => ({ tip: z.tip, naknadno: z.naknadno, cas: new Date(String(z.cas).replace(' ', 'T')), casStr: String(z.cas).replace(' ', 'T'), datum: String(z.cas).slice(0, 10) }))
     .sort((a, b) => a.cas - b.cas);
 
   const poDnevih = new Map();
@@ -172,19 +172,20 @@ function izracunajDnevneUre(zapisi, zdaj = new Date()) {
   for (const v of sorted) {
     if (v.tip === 'PRIHOD') {
       odprtPrihod = v;
-      if (!poDnevih.has(v.datum)) poDnevih.set(v.datum, { minute: 0, prvPrihod: v.cas, zadnjiOdhod: null, vTeku: true, odprtPrihod: v });
+      if (!poDnevih.has(v.datum)) poDnevih.set(v.datum, { minute: 0, prvPrihod: v.cas, prvPrihodStr: v.casStr, zadnjiOdhod: null, zadnjiOdhodStr: null, vTeku: true, odprtPrihod: v });
       else {
         const d = poDnevih.get(v.datum);
-        if (!d.prvPrihod || v.cas < d.prvPrihod) d.prvPrihod = v.cas;
+        if (!d.prvPrihod || v.cas < d.prvPrihod) { d.prvPrihod = v.cas; d.prvPrihodStr = v.casStr; }
         d.vTeku = true;
         d.odprtPrihod = v;
       }
     } else if (v.tip === 'ODHOD' && odprtPrihod) {
       const datum = odprtPrihod.datum; // pripiši datumu PRIHODA
-      if (!poDnevih.has(datum)) poDnevih.set(datum, { minute: 0, prvPrihod: odprtPrihod.cas, zadnjiOdhod: null, vTeku: false, odprtPrihod: null });
+      if (!poDnevih.has(datum)) poDnevih.set(datum, { minute: 0, prvPrihod: odprtPrihod.cas, prvPrihodStr: odprtPrihod.casStr, zadnjiOdhod: null, zadnjiOdhodStr: null, vTeku: false, odprtPrihod: null });
       const d = poDnevih.get(datum);
       d.minute += (v.cas - odprtPrihod.cas) / 60000;
       d.zadnjiOdhod = v.cas;
+      d.zadnjiOdhodStr = v.casStr;
       d.vTeku = false;
       d.odprtPrihod = null;
       odprtPrihod = null;
@@ -204,8 +205,8 @@ function izracunajDnevneUre(zapisi, zdaj = new Date()) {
     datum,
     minute: Math.round(d.minute),
     vTeku: d.vTeku,
-    prvPrihod: d.prvPrihod ? d.prvPrihod.toISOString() : null,
-    zadnjiOdhod: d.zadnjiOdhod ? d.zadnjiOdhod.toISOString() : null,
+    prvPrihod: d.prvPrihodStr || null,
+    zadnjiOdhod: d.zadnjiOdhodStr || null,
     nepopoln: d.vTeku && datum !== danasnji
   })).sort((a, b) => a.datum.localeCompare(b.datum));
 }
