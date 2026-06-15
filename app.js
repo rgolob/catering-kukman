@@ -639,11 +639,28 @@ function createApp() {
     if (!pin) return res.status(400).json({ napaka: 'PIN je zahtevan' });
 
     const { rows: zr } = await req.db.execute({
-      sql: 'SELECT pin FROM zaposleni WHERE id = ? AND aktiven = 1',
+      sql: 'SELECT pin, pin_setup_required FROM zaposleni WHERE id = ? AND aktiven = 1',
       args: [zaposleni_id]
     });
     if (!zr.length) return res.status(404).json({ napaka: 'Zaposleni ni najden' });
     if (zr[0].pin !== pin) return res.status(401).json({ napaka: 'Napačen PIN' });
+    if (zr[0].pin_setup_required || pin === '1234')
+      return res.json({ pinSetupRequired: true });
+
+    if (tip === 'ODHOD') {
+      const danes = localDate();
+      const { rows: zadnji } = await req.db.execute({
+        sql: "SELECT cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? AND tip = 'PRIHOD' ORDER BY cas DESC LIMIT 1",
+        args: [zaposleni_id, danes]
+      });
+      if (zadnji[0]?.cas) {
+        const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
+        if (minutesSince < 10) {
+          const preostalo = Math.ceil(10 - minutesSince);
+          return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+        }
+      }
+    }
 
     const cas = localTime();
     const r = await req.db.execute({
