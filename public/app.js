@@ -228,6 +228,10 @@ async function potrdiZapis() {
     }
 
     const zapis = await res.json();
+    if (zapis.pinSetupRequired) {
+      prikaziPinNapako('Spremenite privzeti PIN — skenirajte QR kodo ali obiščite /prisotnost/pin-setup');
+      return;
+    }
     if (!res.ok) {
       prikaziPinNapako(zapis.napaka || 'Napaka');
       return;
