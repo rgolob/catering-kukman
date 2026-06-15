@@ -518,6 +518,8 @@ header p{ font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
 @keyframes popIn{ from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 .dialog h2{ font-size: 1.5rem; color: #1a202c; margin-bottom: 8px; text-transform: none; letter-spacing: 0; }
 .dialog-vprasanje{ font-size: 0.92rem; color: #718096; margin-bottom: 20px; }
+.dialog-setup-opozorilo{ font-size: 0.88rem; color: #c53030; font-weight: 600; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 8px; padding: 10px 14px; margin: -10px 0 16px; line-height: 1.5; text-align: center; }
+.dialog-setup-opozorilo.hidden{ display: none; }
 
 .dialog-dodatno{ text-align: left; }
 .dialog-dodatno h2{ text-align: center; }
