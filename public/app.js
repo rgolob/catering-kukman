@@ -170,6 +170,7 @@ function odpriDialog(id, ime, jePrisoten) {
   pinSetupFaza = null;
   pinSetupNoviPin = '';
   pinSetupStariPin = '';
+  document.getElementById('dialog-setup-opozorilo').classList.add('hidden');
   resetDialogPin();
 
   const badge = document.getElementById('dialog-tip-badge');
@@ -189,6 +190,7 @@ function odpriDialog(id, ime, jePrisoten) {
 // Zapri dialog
 function zapriDialog() {
   document.getElementById('overlay').classList.add('hidden');
+  document.getElementById('dialog-setup-opozorilo').classList.add('hidden');
   resetDialogPin();
   izbraniZaposleni = null;
   izbraniTip = null;
@@ -222,6 +224,7 @@ function prikaziPinSetup(stariPin) {
   posodobiDialogPin();
   document.getElementById('dialog-vprasanje').textContent = 'Izberite nov 4-mestni PIN';
   document.getElementById('dialog-pin-napaka').textContent = '';
+  document.getElementById('dialog-setup-opozorilo').classList.remove('hidden');
 }
 
 async function nastaviPinInBelezi(noviPin) {
