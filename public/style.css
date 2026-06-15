@@ -1153,6 +1153,16 @@ header h1{ font-size: 1.4rem; font-weight: 700; }
 }
 .btn-link:hover{ background: rgba(255,255,255,0.15); opacity: 1; }
 
+.card-bliznjica{ display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
+.card-bliznjica.hidden{ display: none; }
+.bliznjica-vsebina{ display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0; }
+.bliznjica-ikona{ font-size: 1.5rem; flex-shrink: 0; }
+.bliznjica-naslov{ font-weight: 600; font-size: 0.88rem; color: #1a202c; }
+.bliznjica-opis{ font-size: 0.8rem; color: #718096; margin-top: 2px; line-height: 1.4; }
+.bliznjica-gumbi{ display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.btn-bliznjica-dodaj{ background: #276749; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.btn-bliznjica-zapri{ background: none; border: none; color: #a0aec0; font-size: 1rem; cursor: pointer; padding: 4px 6px; line-height: 1; }
+
 .btn-odjava{
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.3);
