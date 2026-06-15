@@ -650,10 +650,12 @@ function createApp() {
     if (tip === 'ODHOD') {
       const danes = localDate();
       const { rows: zadnji } = await req.db.execute({
-        sql: "SELECT cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? AND tip = 'PRIHOD' ORDER BY cas DESC LIMIT 1",
+        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
         args: [zaposleni_id, danes]
       });
-      if (zadnji[0]?.cas) {
+      if (zadnji[0]?.tip === 'ODHOD')
+        return res.status(400).json({ napaka: 'Odhod je že zabeležen.' });
+      if (zadnji[0]?.tip === 'PRIHOD' && zadnji[0]?.cas) {
         const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
         if (minutesSince < 10) {
           const preostalo = Math.ceil(10 - minutesSince);
@@ -718,10 +720,12 @@ function createApp() {
     if (tip === 'ODHOD') {
       const danes = localDate();
       const { rows: zadnji } = await req.db.execute({
-        sql: "SELECT cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? AND tip = 'PRIHOD' ORDER BY cas DESC LIMIT 1",
+        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
         args: [zaposleni_id, danes]
       });
-      if (zadnji[0]?.cas) {
+      if (zadnji[0]?.tip === 'ODHOD')
+        return res.status(400).json({ napaka: 'Odhod je že zabeležen.' });
+      if (zadnji[0]?.tip === 'PRIHOD' && zadnji[0]?.cas) {
         const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
         if (minutesSince < 10) {
           const preostalo = Math.ceil(10 - minutesSince);
