@@ -835,6 +835,93 @@ function naloziObracunTab() {
     obrMesec = zdaj.getMonth() + 1;
   }
   naloziObracun();
+  naloziPolmesec();
+}
+
+async function naloziPolmesec() {
+  const mesec = `${obrLeto}-${String(obrMesec).padStart(2, '0')}`;
+  document.getElementById('polmesec-mesec-napis').textContent = `— ${MESECI_OBR[obrMesec - 1]} ${obrLeto}`;
+  const vsebina = document.getElementById('polmesec-vsebina');
+  vsebina.innerHTML = '<p class="prazno">Nalaganje…</p>';
+
+  try {
+    const res = await fetch(`/api/admin/polmesec?mesec=${mesec}`);
+    const data = await res.json();
+
+    if (!data.zaposleni?.length) {
+      vsebina.innerHTML = '<p class="prazno">Ni evidenčnih ur za 1–14. tega meseca.</p>';
+      return;
+    }
+
+    const skupajPotrjeno = data.zaposleni.filter(z => z.potrjeno).reduce((s, z) => s + (z.akontacijaZnesek || 0), 0);
+    const skupajZnesek = data.zaposleni.filter(z => z.osnova != null).reduce((s, z) => s + z.osnova, 0);
+
+    vsebina.innerHTML = `
+      <table class="tabela polmesec-tabela">
+        <thead>
+          <tr>
+            <th>Zaposleni</th>
+            <th class="th-r">Ure (1–14)</th>
+            <th class="th-r">Zasluženo</th>
+            <th>Izplačilo</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.zaposleni.map(z => `
+            <tr data-zid="${z.id}">
+              <td>${escHtml(z.ime)}</td>
+              <td class="td-r">${formatUre(z.minute)}</td>
+              <td class="td-r">${z.osnova != null ? formatEur(z.osnova) : '—'}</td>
+              <td class="td-polmesec-status">
+                ${z.potrjeno
+                  ? `<span class="polmesec-potrjeno">✓ ${formatEur(z.akontacijaZnesek)} izplačano</span>
+                     <button class="btn-polmesec-razveljavi" data-akt-id="${z.akontacijaId}">Razveljavi</button>`
+                  : z.osnova != null
+                    ? `<input type="number" class="polmesec-vnos" value="${z.osnova.toFixed(2)}" step="0.01" min="0" />
+                       <button class="btn-polmesec-potrdi" data-zid="${z.id}" data-mesec="${mesec}">Potrdi izplačilo</button>`
+                    : '<span class="brez-postavke">Ni urne postavke</span>'
+                }
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2"></td>
+            <td class="td-r"><strong>${formatEur(skupajZnesek)}</strong></td>
+            <td>${skupajPotrjeno > 0 ? `<strong class="polmesec-potrjeno">${formatEur(skupajPotrjeno)} potrjeno</strong>` : ''}</td>
+          </tr>
+        </tfoot>
+      </table>
+    `;
+
+    vsebina.querySelectorAll('.btn-polmesec-potrdi').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('tr');
+        const znesek = parseFloat(row.querySelector('.polmesec-vnos').value);
+        if (isNaN(znesek) || znesek < 0) return;
+        btn.disabled = true;
+        const res = await fetch('/api/admin/polmesec/potrdi', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ zaposleni_id: parseInt(btn.dataset.zid), mesec: btn.dataset.mesec, znesek })
+        });
+        if (res.ok) { naloziPolmesec(); naloziObracun(); }
+        else btn.disabled = false;
+      });
+    });
+
+    vsebina.querySelectorAll('.btn-polmesec-razveljavi').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!confirm('Razveljaviš potrjeno akontacijo?')) return;
+        const res = await fetch(`/api/admin/akontacija/${btn.dataset.aktId}`, { method: 'DELETE' });
+        if (res.ok) { naloziPolmesec(); naloziObracun(); }
+      });
+    });
+
+  } catch (e) {
+    vsebina.innerHTML = '<p class="prazno">Napaka pri nalaganju.</p>';
+  }
 }
 
 // ── PRISOTNOST TAB ────────────────────────────────────────────────────────────

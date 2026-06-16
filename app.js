@@ -1559,6 +1559,62 @@ function createApp() {
     res.json({ ok: true });
   });
 
+  app.get('/api/admin/polmesec', requireAuth, async (req, res) => {
+    const mesecStr = req.query.mesec || localDate().slice(0, 7);
+    const od = `${mesecStr}-01`, do_ = `${mesecStr}-14`;
+
+    const [{ rows: zaposleni }, { rows: evidenca }, { rows: razporeditev }, { rows: akontacije }] = await Promise.all([
+      req.db.execute(
+        `SELECT z.id, z.ime, z.urna_postavka, d.urna_postavka AS priv_up
+         FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id
+         WHERE z.aktiven = 1 ORDER BY z.ime`
+      ),
+      req.db.execute({ sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [od, do_] }),
+      req.db.execute({
+        sql: `SELECT r.zaposleni_id, r.cas_od, r.cas_do, r.trajanje_minut, d.urna_postavka AS delo_up
+              FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.datum BETWEEN ? AND ?`,
+        args: [od, do_]
+      }),
+      req.db.execute({ sql: `SELECT id, zaposleni_id, znesek FROM akontacija WHERE mesec = ? AND opomba = 'polmesec'`, args: [mesecStr] })
+    ]);
+
+    const aktMap = new Map(akontacije.map(a => [Number(a.zaposleni_id), { id: Number(a.id), znesek: parseFloat(a.znesek) }]));
+    const zdaj = new Date();
+
+    const rezultat = zaposleni.map(z => {
+      const zid = Number(z.id);
+      const dnevi = izracunajDnevneUre(evidenca.filter(e => Number(e.zaposleni_id) === zid), zdaj);
+      const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
+      const privzetaUp = parseFloat(z.priv_up) || parseFloat(z.urna_postavka) || 0;
+      const zRaz = razporeditev.filter(r => Number(r.zaposleni_id) === zid);
+      let dodatnaMinute = 0, dodatnaOsnova = 0;
+      for (const r of zRaz) {
+        const min = razMin(r);
+        dodatnaMinute += min;
+        const up = parseFloat(r.delo_up) || 0;
+        if (up > 0) dodatnaOsnova += Math.round(min / 60 * up * 100) / 100;
+      }
+      const privzetaOsnova = privzetaUp > 0 ? Math.round(Math.max(0, skupajMinut - dodatnaMinute) / 60 * privzetaUp * 100) / 100 : 0;
+      const osnova = (privzetaUp > 0 || zRaz.length > 0) ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
+      const akt = aktMap.get(zid) || null;
+      return { id: zid, ime: z.ime, minute: skupajMinut, osnova, potrjeno: !!akt, akontacijaId: akt?.id || null, akontacijaZnesek: akt?.znesek || null };
+    }).filter(z => z.minute > 0 || z.potrjeno);
+
+    res.json({ mesec: mesecStr, zaposleni: rezultat });
+  });
+
+  app.post('/api/admin/polmesec/potrdi', requireAuth, async (req, res) => {
+    const { zaposleni_id, mesec, znesek } = req.body;
+    if (!zaposleni_id || !mesec || znesek == null)
+      return res.status(400).json({ napaka: 'Manjkajo podatki' });
+    await req.db.execute({ sql: `DELETE FROM akontacija WHERE zaposleni_id = ? AND mesec = ? AND opomba = 'polmesec'`, args: [zaposleni_id, mesec] });
+    const r = await req.db.execute({
+      sql: `INSERT INTO akontacija (zaposleni_id, mesec, datum, znesek, opomba) VALUES (?, ?, ?, ?, 'polmesec')`,
+      args: [zaposleni_id, mesec, localDate(), znesek]
+    });
+    res.json({ id: Number(r.lastInsertRowid) });
+  });
+
   // ── Briši današnje vnose ──────────────────────────────────────────────────────
   app.post('/api/admin/brisi-danes', requireAuth, async (req, res) => {
     const danes = localDate();
