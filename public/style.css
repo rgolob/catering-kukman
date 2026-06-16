@@ -534,11 +534,11 @@ header p{ font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
 .dodatno-cas-row{ display: flex; gap: 10px; }
 .dodatno-cas-row label{ display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: #718096; flex: 1; }
 .dodatno-cas-row input[type="time"]{ flex: 1; padding: 8px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.9rem; color: #1a202c; }
-.btn-dodaj-seg{ padding: 7px 14px; border: 1.5px solid #90cdf4; border-radius: 8px; background: #ebf8ff; color: #2b6cb0; font-weight: 600; cursor: pointer; font-size: 0.84rem; align-self: flex-start; }
+.btn-dodaj-seg{ padding: 7px 14px; border: 1.5px solid #90cdf4; border-radius: 8px; background: #ebf8ff; color: #2b6cb0; font-weight: 500; cursor: pointer; font-size: 0.84rem; align-self: flex-start; }
 .btn-dodaj-seg:hover{ background: #bee3f8; }
 .trajanje-row{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .trajanje-input{ width: 72px; padding: 7px 10px; border: 1.5px solid #e2e8f0; border-radius: 8px; font-size: 0.93rem; color: #1a202c; }
-.btn-cel-dan{ padding: 7px 12px; border: 1.5px solid #c6f6d5; border-radius: 8px; background: #f0fff4; color: #276749; font-weight: 600; cursor: pointer; font-size: 0.84rem; white-space: nowrap; }
+.btn-cel-dan{ padding: 7px 12px; border: 1.5px solid #c6f6d5; border-radius: 8px; background: #f0fff4; color: #38a169; font-weight: 500; cursor: pointer; font-size: 0.84rem; white-space: nowrap; }
 .btn-cel-dan:hover{ background: #c6f6d5; }
 .dialog-pin-napaka{ color: #e53e3e; font-size: 0.82rem; min-height: 18px; margin: 6px 0; }
 .dodatno-segmenti{ margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
@@ -1100,9 +1100,9 @@ header p{ font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
 .radio-skupina label{ display: flex; align-items: center; gap: 7px; font-size: 0.9rem; font-weight: 500; text-transform: none; letter-spacing: 0; }
 .nak-napaka{ color: #e53e3e; font-size: 0.82rem; min-height: 18px; margin-bottom: 4px; }
 .modal-gumbi{ display: flex; gap: 10px; margin-top: 14px; }
-.btn-primarni{ flex: 1; padding: 10px; background: #3182ce; color: white; border: none; border-radius: 9px; font-size: 0.93rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
-.btn-primarni:hover{ background: #2c5282; }
-.btn-sekundarni{ flex: 1; padding: 10px; background: #edf2f7; color: #4a5568; border: none; border-radius: 9px; font-size: 0.93rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btn-primarni{ flex: 1; padding: 10px; background: #4299e1; color: white; border: none; border-radius: 9px; font-size: 0.93rem; font-weight: 500; cursor: pointer; transition: background 0.15s; }
+.btn-primarni:hover{ background: #3182ce; }
+.btn-sekundarni{ flex: 1; padding: 10px; background: #edf2f7; color: #4a5568; border: none; border-radius: 9px; font-size: 0.93rem; font-weight: 500; cursor: pointer; transition: background 0.15s; }
 .btn-sekundarni:hover{ background: #e2e8f0; }
 
 @media (max-width: 480px){
@@ -1164,7 +1164,7 @@ header h1{ font-size: 1.4rem; font-weight: 700; }
 .bliznjica-naslov{ font-weight: 600; font-size: 0.88rem; color: #1a202c; }
 .bliznjica-opis{ font-size: 0.8rem; color: #718096; margin-top: 2px; line-height: 1.4; }
 .bliznjica-gumbi{ display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.btn-bliznjica-dodaj{ background: #276749; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+.btn-bliznjica-dodaj{ background: #48bb78; color: #fff; border: none; border-radius: 8px; padding: 8px 14px; font-size: 0.85rem; font-weight: 500; cursor: pointer; }
 .btn-bliznjica-zapri{ background: none; border: none; color: #a0aec0; font-size: 1rem; cursor: pointer; padding: 4px 6px; line-height: 1; }
 
 .btn-odjava{
@@ -1274,21 +1274,21 @@ input[type="date"]:focus{ border-color: #4299e1; }
 
 button{
   padding: 10px 20px;
-  background: #2c5282;
+  background: #4299e1;
   color: white;
   border: none;
   border-radius: 8px;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
   transition: background 0.15s;
 }
-button:hover{ background: #1a365d; }
+button:hover{ background: #3182ce; }
 
 .btn-izvoz{
-  background: #276749;
+  background: #48bb78;
 }
-.btn-izvoz:hover{ background: #1c4532; }
+.btn-izvoz:hover{ background: #38a169; }
 
 /* Filter row */
 .filter-row{
@@ -1767,8 +1767,8 @@ button:hover{ background: #1a365d; }
 .polmesec-mesec-napis{ font-size: 0.85rem; color: #718096; }
 .polmesec-tabela .td-polmesec-status{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .polmesec-vnos{ width: 72px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; font-size: 0.88rem; text-align: right; background: #f7fafc; }
-.btn-polmesec-potrdi{ background: #276749; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
-.btn-polmesec-potrdi:hover{ background: #22543d; }
+.btn-polmesec-potrdi{ background: #48bb78; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.84rem; font-weight: 500; cursor: pointer; }
+.btn-polmesec-potrdi:hover{ background: #38a169; }
 .btn-polmesec-potrdi:disabled{ background: #a0aec0; cursor: default; }
 .polmesec-potrjeno{ color: #276749; font-weight: 600; font-size: 0.88rem; }
 .btn-polmesec-razveljavi{ background: none; border: 1px solid #e2e8f0; color: #718096; border-radius: 6px; padding: 4px 8px; font-size: 0.78rem; cursor: pointer; }
