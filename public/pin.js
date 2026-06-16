@@ -25,7 +25,6 @@ function izberIme(id, ime) {
   document.getElementById('header-podnaslov').textContent = ime;
   document.getElementById('ime-karta').style.display = 'none';
   document.getElementById('pin-karta').style.display = '';
-  document.getElementById('link-nazaj').style.display = 'none';
   pin = '';
   posodobiPrikaz();
   document.getElementById('napaka').textContent = '';
@@ -38,7 +37,6 @@ function vrniNaIzbiro() {
   document.getElementById('btn-nisem-jaz').style.display = 'none';
   document.getElementById('ime-karta').style.display = '';
   document.getElementById('pin-karta').style.display = 'none';
-  document.getElementById('link-nazaj').style.display = '';
   document.getElementById('header-podnaslov').textContent = 'Moj čas';
   document.getElementById('napaka').textContent = '';
 }
