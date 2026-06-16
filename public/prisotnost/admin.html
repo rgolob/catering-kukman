@@ -184,55 +184,60 @@
 
     <!-- Tab: Obračun -->
     <div id="tab-obracun" class="tab-content">
-      <div class="card">
-        <div class="obr-nav-row">
-          <button id="obr-btn-prej" class="btn-nav-obr">&#8249;</button>
-          <span id="obr-mesec-napis" class="obr-mesec-napis"></span>
-          <button id="obr-btn-naprej" class="btn-nav-obr">&#8250;</button>
-        </div>
+      <div class="card card-accordion open">
+        <button class="accordion-toggle">Mesečni obračun <span class="accordion-ikona">▾</span></button>
+        <div class="accordion-body">
+          <div class="obr-nav-row">
+            <button id="obr-btn-prej" class="btn-nav-obr">&#8249;</button>
+            <span id="obr-mesec-napis" class="obr-mesec-napis"></span>
+            <button id="obr-btn-naprej" class="btn-nav-obr">&#8250;</button>
+          </div>
 
-        <table id="obracun-tabela" class="tabela">
-          <thead>
-            <tr>
-              <th>Ime</th>
-              <th class="th-r">Osnova</th>
-              <th class="th-r">Gorivo</th>
-              <th class="th-r">Nakup</th>
-              <th class="th-r">Skupaj</th>
-              <th class="th-r">Akontacija</th>
-              <th class="th-r">Preostalo</th>
-            </tr>
-          </thead>
-          <tbody id="obracun-tbody"></tbody>
-        </table>
-        <div id="obracun-prazno" class="prazno" style="display:none">Ni podatkov za ta mesec.</div>
+          <table id="obracun-tabela" class="tabela">
+            <thead>
+              <tr>
+                <th>Ime</th>
+                <th class="th-r">Osnova</th>
+                <th class="th-r">Gorivo</th>
+                <th class="th-r">Nakup</th>
+                <th class="th-r">Skupaj</th>
+                <th class="th-r">Akontacija</th>
+                <th class="th-r">Preostalo</th>
+              </tr>
+            </thead>
+            <tbody id="obracun-tbody"></tbody>
+          </table>
+          <div id="obracun-prazno" class="prazno" style="display:none">Ni podatkov za ta mesec.</div>
+        </div>
       </div>
 
-      <div class="card">
-        <h2>Stimulativno nagrajevanje</h2>
-        <div class="stim-form-row">
-          <select id="stim-zaposleni" class="stim-select"></select>
-          <input type="number" id="stim-znesek" class="stim-input" placeholder="Znesek €" min="0.01" step="0.01" />
-          <input type="text" id="stim-opomba" class="stim-input-opomba" placeholder="Opomba (neobvezno)" maxlength="80" />
-          <button id="btn-dodaj-stim">Dodaj</button>
+      <div class="card card-accordion">
+        <button class="accordion-toggle">Stimulativno nagrajevanje <span class="accordion-ikona">▸</span></button>
+        <div class="accordion-body" style="display:none">
+          <div class="stim-form-row">
+            <select id="stim-zaposleni" class="stim-select"></select>
+            <input type="number" id="stim-znesek" class="stim-input" placeholder="Znesek €" min="0.01" step="0.01" />
+            <input type="text" id="stim-opomba" class="stim-input-opomba" placeholder="Opomba (neobvezno)" maxlength="80" />
+            <button id="btn-dodaj-stim">Dodaj</button>
+          </div>
+          <div id="stim-napaka" class="inline-napaka"></div>
+          <table id="stim-tabela" class="tabela" style="margin-top:12px">
+            <thead>
+              <tr><th>Zaposleni</th><th class="th-r">Znesek</th><th>Opomba</th><th></th></tr>
+            </thead>
+            <tbody id="stim-tbody"></tbody>
+          </table>
+          <div id="stim-prazno" class="prazno" style="display:none">Ni stimulacij za ta mesec.</div>
         </div>
-        <div id="stim-napaka" class="inline-napaka"></div>
-        <table id="stim-tabela" class="tabela" style="margin-top:12px">
-          <thead>
-            <tr><th>Zaposleni</th><th class="th-r">Znesek</th><th>Opomba</th><th></th></tr>
-          </thead>
-          <tbody id="stim-tbody"></tbody>
-        </table>
-        <div id="stim-prazno" class="prazno" style="display:none">Ni stimulacij za ta mesec.</div>
       </div>
 
       <!-- Akontacija 1-14 -->
-      <div class="card">
-        <div class="polmesec-header">
-          <h2>Akontacija 1–14</h2>
+      <div class="card card-accordion">
+        <button class="accordion-toggle">Akontacija 1–14 <span class="accordion-ikona">▸</span></button>
+        <div class="accordion-body" style="display:none">
           <span id="polmesec-mesec-napis" class="polmesec-mesec-napis"></span>
+          <div id="polmesec-vsebina"><p class="prazno">Nalaganje…</p></div>
         </div>
-        <div id="polmesec-vsebina"><p class="prazno">Nalaganje…</p></div>
       </div>
 
     </div>
