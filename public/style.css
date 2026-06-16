@@ -1762,6 +1762,19 @@ button:hover{ background: #1a365d; }
 }
 .stim-select:focus, .stim-input:focus, .stim-input-opomba:focus{ border-color: #4299e1; }
 
+/* ── Akontacija 1-14 ─────────────────────────────────────────────────────── */
+.polmesec-header{ display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.polmesec-mesec-napis{ font-size: 0.85rem; color: #718096; }
+.polmesec-tabela .td-polmesec-status{ display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.polmesec-vnos{ width: 72px; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 6px; font-size: 0.88rem; text-align: right; background: #f7fafc; }
+.btn-polmesec-potrdi{ background: #276749; color: #fff; border: none; border-radius: 6px; padding: 6px 12px; font-size: 0.84rem; font-weight: 600; cursor: pointer; }
+.btn-polmesec-potrdi:hover{ background: #22543d; }
+.btn-polmesec-potrdi:disabled{ background: #a0aec0; cursor: default; }
+.polmesec-potrjeno{ color: #276749; font-weight: 600; font-size: 0.88rem; }
+.btn-polmesec-razveljavi{ background: none; border: 1px solid #e2e8f0; color: #718096; border-radius: 6px; padding: 4px 8px; font-size: 0.78rem; cursor: pointer; }
+.btn-polmesec-razveljavi:hover{ border-color: #fc8181; color: #c53030; }
+.brez-postavke{ color: #a0aec0; font-size: 0.82rem; }
+
 .pin-privzet{
   background: #fffaf0 !important;
   color: #c05621 !important;
