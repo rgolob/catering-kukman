@@ -789,16 +789,18 @@ function createApp() {
     const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
-    const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }, { rows: kmRows }] = await Promise.all([
+    const [{ rows }, { rows: zRows }, { rows: stimRows }, { rows: razRows }, { rows: kmRows }, { rows: aktRows }] = await Promise.all([
       req.db.execute({ sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [req.session.zaposleniId, od, do_] }),
       req.db.execute({ sql: `SELECT z.urna_postavka, z.privzeto_delo_id, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?`, args: [req.session.zaposleniId] }),
       req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM stimulacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] }),
       req.db.execute({ sql: `SELECT r.datum, r.cas_od, r.cas_do, r.trajanje_minut, d.naziv, d.urna_postavka AS delo_up FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id WHERE r.zaposleni_id = ? AND r.datum BETWEEN ? AND ?`, args: [req.session.zaposleniId, od, do_] }),
-      req.db.execute({ sql: 'SELECT datum, km, strosek, komentar FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] })
+      req.db.execute({ sql: 'SELECT datum, km, strosek, komentar FROM kilometrina WHERE zaposleni_id = ? AND datum BETWEEN ? AND ?', args: [req.session.zaposleniId, od, do_] }),
+      req.db.execute({ sql: 'SELECT SUM(znesek) as skupaj FROM akontacija WHERE zaposleni_id = ? AND mesec = ?', args: [req.session.zaposleniId, mesecStr] })
     ]);
 
     const privzetaUp = parseFloat(zRows[0]?.priv_up) || parseFloat(zRows[0]?.urna_postavka) || 0;
     const stimulacija = parseFloat(stimRows[0]?.skupaj) || 0;
+    const akontacija = parseFloat(aktRows[0]?.skupaj) || 0;
     const dnevi = izracunajDnevneUre(rows, zdaj);
     const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
 
@@ -839,7 +841,8 @@ function createApp() {
       nakup: skupajNakup || null,
       skupajPlacilo: (osnova !== null || stimulacija > 0 || skupajStroški > 0)
         ? Math.round(((osnova || 0) + stimulacija + skupajStroški) * 100) / 100
-        : null
+        : null,
+      akontacija: akontacija || null
     });
   });
 

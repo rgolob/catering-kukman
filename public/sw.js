@@ -1,7 +1,8 @@
-const CACHE = 'kukman-v78';
+const CACHE = 'kukman-v82';
 
 const STATIC = [
   '/style.css',
+  '/kukman-catering-logo.jpg',
   '/app.js',
   '/admin.js',
   '/pin.js',

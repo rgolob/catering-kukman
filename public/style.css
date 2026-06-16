@@ -1012,6 +1012,8 @@ header p{ font-size: 0.9rem; opacity: 0.8; margin-top: 4px; }
 }
 .placilo-vrstica:last-child{ border-bottom: none; }
 .placilo-skupaj-row{ font-weight: 700; font-size: 0.97rem; color: #22543d; margin-top: 4px; border-top: 2px solid #9ae6b4; padding-top: 6px; }
+.placilo-akt-row{ color: #744210; font-size: 0.88rem; }
+.placilo-preostalo-row{ font-weight: 700; font-size: 0.97rem; color: #2b6cb0; border-top: 1px solid #bee3f8; padding-top: 6px; margin-top: 2px; }
 
 /* ── KUMULATIVNO ── */
 .kumulativno-razdelek{ margin-top: 20px; }

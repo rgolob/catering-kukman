@@ -198,6 +198,18 @@ async function naloziMesec() {
       nakupRow.style.display = '';
     } else { nakupRow.style.display = 'none'; }
     document.getElementById('placilo-skupaj-znesek').textContent = formatEur(data.skupajPlacilo);
+    const aktRow = document.getElementById('placilo-akt-row');
+    const preostaloRow = document.getElementById('placilo-preostalo-row');
+    if (data.akontacija) {
+      document.getElementById('placilo-akt-znesek').textContent = `− ${formatEur(data.akontacija)}`;
+      const preostalo = Math.round((data.skupajPlacilo - data.akontacija) * 100) / 100;
+      document.getElementById('placilo-preostalo-znesek').textContent = formatEur(preostalo);
+      aktRow.style.display = '';
+      preostaloRow.style.display = '';
+    } else {
+      aktRow.style.display = 'none';
+      preostaloRow.style.display = 'none';
+    }
     plBox.style.display = '';
   } else {
     plBox.style.display = 'none';

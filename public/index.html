@@ -3,102 +3,98 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Catering Kukman</title>
-  <meta name="theme-color" content="#1a1a1a" />
+  <title>Kukman Catering – Jože Kukman, s.p.</title>
+  <meta name="description" content="Kukman Catering, Jože Kukman s.p. – Catering storitve za posebne priložnosti. Orkljevec 9a, Mirna Peč." />
+  <meta name="theme-color" content="#0f1923" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f4f4f2;
+      color: #1a1a2e;
       min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #faf9f7;
-      font-family: 'Georgia', serif;
-      color: #1a1a1a;
-      padding: 40px 24px;
     }
 
-    .card {
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.08);
-      padding: 48px 40px 40px;
-      max-width: 400px;
-      width: 100%;
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(160deg, #1a2332 0%, #0f1923 100%);
+      padding: 56px 24px 72px;
       text-align: center;
     }
 
-    .logo-wrap {
-      margin-bottom: 28px;
-    }
-
-    .logo-wrap img {
-      max-width: 180px;
-      max-height: 120px;
-      object-fit: contain;
-    }
-
-    .logo-placeholder {
-      width: 140px;
-      height: 140px;
+    .logo-krog {
+      width: 148px;
+      height: 148px;
+      background: #fff;
       border-radius: 50%;
-      border: 2px dashed #c9b96e;
+      margin: 0 auto 24px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      overflow: hidden;
+      padding: 12px;
+    }
+
+    .logo-krog img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    .hero-ime {
+      color: #fff;
+      font-size: 1.75rem;
+      font-weight: 300;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    .hero-podnaslov {
       color: #c9b96e;
       font-size: 0.75rem;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
-    .divider {
-      width: 60px;
-      height: 2px;
-      background: linear-gradient(90deg, #c9b96e, #e8d48a, #c9b96e);
-      margin: 0 auto 20px;
-      border-radius: 2px;
+    /* ── Kontakt kartica ── */
+    .kontakt-wrap {
+      max-width: 420px;
+      margin: -28px auto 0;
+      padding: 0 16px 40px;
     }
 
-    h1 {
-      font-size: 1.7rem;
-      font-weight: normal;
-      letter-spacing: 0.02em;
-      color: #1a1a1a;
-      margin-bottom: 4px;
+    .kontakt-kartica {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+      overflow: hidden;
     }
 
-    .podnaslov {
-      font-size: 0.8rem;
-      color: #888;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 32px;
-    }
-
-    .kontakt {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      text-align: left;
-    }
-
-    .kontakt-vrstica {
+    .kontakt-item {
       display: flex;
       align-items: center;
       gap: 14px;
+      padding: 15px 20px;
+      border-bottom: 1px solid #f0ede8;
+      text-decoration: none;
+      color: #1a1a2e;
       font-size: 0.92rem;
-      color: #333;
+      transition: background 0.12s;
+      cursor: pointer;
     }
 
+    .kontakt-item:last-child { border-bottom: none; }
+    .kontakt-item:active { background: #faf8f4; }
+
     .kontakt-ikona {
-      width: 36px;
-      height: 36px;
-      border-radius: 50%;
-      background: #f5f0e8;
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      background: #f8f4ec;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -106,84 +102,119 @@
     }
 
     .kontakt-ikona svg {
-      width: 17px;
-      height: 17px;
-      stroke: #c9b96e;
+      width: 18px;
+      height: 18px;
+      stroke: #c9a84c;
       fill: none;
       stroke-width: 1.8;
       stroke-linecap: round;
       stroke-linejoin: round;
     }
 
-    .kontakt-ikona.fb svg,
-    .kontakt-ikona.ig svg {
-      fill: #c9b96e;
-      stroke: none;
+    .kontakt-ikona.social svg { fill: #c9a84c; stroke: none; }
+
+    .kontakt-tekst {
+      flex: 1;
+      min-width: 0;
+      overflow-wrap: break-word;
+      word-break: break-word;
+      line-height: 1.3;
     }
 
-    .kontakt-vrstica a {
-      color: #333;
-      text-decoration: none;
+    .kontakt-tekst small {
+      display: block;
+      font-size: 0.72rem;
+      color: #aaa;
+      margin-bottom: 1px;
     }
-    .kontakt-vrstica a:hover { color: #c9b96e; }
+
+    .kontakt-chevron {
+      color: #ccc;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
 
     footer {
-      margin-top: 32px;
-      font-size: 0.72rem;
+      text-align: center;
+      padding: 8px 16px 32px;
+      font-size: 0.68rem;
       color: #bbb;
-      letter-spacing: 0.03em;
     }
+    footer a { color: #bbb; text-decoration: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="logo-wrap">
-      <!-- Logo bo dodan sem -->
-      <div class="logo-placeholder">Logotip</div>
+
+  <div class="hero">
+    <div class="logo-krog">
+      <img src="/kukman-catering-logo.jpg" alt="Kukman Catering – Jože Kukman, s.p." />
     </div>
+    <div class="hero-ime">Kukman Catering</div>
+    <div class="hero-podnaslov">Jože Kukman, s.p.</div>
+  </div>
 
-    <div class="divider"></div>
-    <h1>Jože Kukman</h1>
-    <p class="podnaslov">Catering Kukman, s.p.</p>
+  <div class="kontakt-wrap">
+    <div class="kontakt-kartica">
 
-    <div class="kontakt">
-      <div class="kontakt-vrstica">
+      <a class="kontakt-item" href="https://maps.google.com/?q=Orkljevec+9a,+8216+Mirna+Peč" target="_blank" rel="noopener">
         <div class="kontakt-ikona">
           <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
         </div>
-        <span>Orkljevec 9a, 8216 Mirna Peč</span>
-      </div>
+        <div class="kontakt-tekst">
+          <small>Naslov</small>
+          Orkljevec 9a, 8216 Mirna Peč
+        </div>
+        <span class="kontakt-chevron">›</span>
+      </a>
 
-      <div class="kontakt-vrstica">
+      <a class="kontakt-item" href="tel:031759848">
         <div class="kontakt-ikona">
           <svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 11.1 19.79 19.79 0 0 1 1.61 2.5 2 2 0 0 1 3.59.5h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.1a16 16 0 0 0 6 6l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
         </div>
-        <a href="tel:031759848">031 759 848</a>
-      </div>
+        <div class="kontakt-tekst">
+          <small>Telefon</small>
+          031 759 848
+        </div>
+        <span class="kontakt-chevron">›</span>
+      </a>
 
-      <div class="kontakt-vrstica">
+      <a class="kontakt-item" href="mailto:cateringkukman@gmail.com">
         <div class="kontakt-ikona">
-          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z" stroke="#c9b96e" stroke-width="1.8" fill="none"/><polyline points="22,6 12,13 2,6" stroke="#c9b96e" stroke-width="1.8" fill="none"/></svg>
+          <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         </div>
-        <a href="mailto:cateringkukman@gmail.com">cateringkukman@gmail.com</a>
-      </div>
+        <div class="kontakt-tekst">
+          <small>E-pošta</small>
+          cateringkukman@gmail.com
+        </div>
+        <span class="kontakt-chevron">›</span>
+      </a>
 
-      <div class="kontakt-vrstica">
-        <div class="kontakt-ikona ig">
-          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="#faf9f7"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="#faf9f7" stroke-width="2"/></svg>
+      <a class="kontakt-item" href="https://instagram.com/cateringkukman" target="_blank" rel="noopener">
+        <div class="kontakt-ikona social">
+          <svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" fill="#f8f4ec"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" stroke="#f8f4ec" stroke-width="2"/></svg>
         </div>
-        <a href="https://instagram.com/cateringkukman" target="_blank" rel="noopener">@cateringkukman</a>
-      </div>
+        <div class="kontakt-tekst">
+          <small>Instagram</small>
+          @cateringkukman
+        </div>
+        <span class="kontakt-chevron">›</span>
+      </a>
 
-      <div class="kontakt-vrstica">
-        <div class="kontakt-ikona fb">
-          <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" fill="#c9b96e"/></svg>
+      <a class="kontakt-item" href="https://facebook.com/cateringkukman" target="_blank" rel="noopener">
+        <div class="kontakt-ikona social">
+          <svg viewBox="0 0 24 24"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
         </div>
-        <a href="https://facebook.com/cateringkukman" target="_blank" rel="noopener">cateringkukman</a>
-      </div>
+        <div class="kontakt-tekst">
+          <small>Facebook</small>
+          cateringkukman
+        </div>
+        <span class="kontakt-chevron">›</span>
+      </a>
+
     </div>
   </div>
 
-  <footer>© 2026 Catering Kukman, Jože Kukman s.p. · <a href="/prisotnost/admin" style="color:#bbb;text-decoration:none;">admin</a></footer>
+  <footer>© 2026 Catering Kukman, Jože Kukman s.p. · <a href="/prisotnost/admin">admin</a></footer>
+
 </body>
 </html>
