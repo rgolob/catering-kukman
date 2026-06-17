@@ -1014,15 +1014,17 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
 
         const ureStr = dan.minute ? formatUre(dan.minute) : '—';
         const rowClass = dan.nepopoln ? 'class="pris-row-nepopoln"' : '';
-        const delaStr = (dan.dela || []).length
-          ? '<br><span class="td-ure-sub">' + dan.dela.map(d => `${escHtml(d.naziv)}${d.minute ? ` ${formatUre(d.minute)}` : ''}`).join(' · ') + '</span>'
+        const delaChips = (dan.dela || []).length
+          ? '<div class="pris-dela-chips">' + dan.dela.map(d =>
+              `<span class="pris-delo-chip">${escHtml(d.naziv)}${d.minute ? ` · ${formatUre(d.minute)}` : ''}</span>`
+            ).join('') + '</div>'
           : '';
 
         return `<tr ${rowClass}>
-          <td class="pris-td-datum">${datStr}</td>
+          <td class="pris-td-datum">${datStr}${delaChips}</td>
           <td>${vnosiHtml(prihodiVnosi)}</td>
           <td>${vnosiHtml(odhodiVnosi)}</td>
-          <td class="td-r pris-td-ure">${ureStr}${delaStr}</td>
+          <td class="td-r pris-td-ure">${ureStr}</td>
         </tr>`;
       }).join('');
 
