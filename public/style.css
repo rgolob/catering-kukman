@@ -2224,3 +2224,55 @@ input[type="time"].rv-input{ min-width: 110px; }
 .akt-popup-btn-dodaj:hover{ background: #2c5282; }
 .btn-pris-tisk{ background:none; border:none; color:#a0aec0; font-size:1.1rem; cursor:pointer; padding:4px 8px; border-radius:6px; transition:color 0.15s; }
 .btn-pris-tisk:hover{ color:#4a5568; background:#f0f0f0; }
+
+/* ── Admin mobile (≤430px) ─────────────────────────────────────────────── */
+@media (max-width: 430px) {
+  /* Vse tabele z vodoravnim scrollom */
+  .card { overflow-x: auto; }
+
+  /* Tabs — manjši, brez preloma */
+  .tab { padding: 7px 10px; font-size: 0.75rem; }
+
+  /* Prisotnost modal — full screen */
+  .pris-overlay { padding: 0; align-items: flex-start; }
+  .pris-modal {
+    width: 100%; max-width: 100%; height: 100dvh; max-height: 100dvh;
+    border-radius: 0; padding: 14px 12px; overflow-y: auto;
+  }
+  .pris-modal-header h2 { font-size: 0.95rem; }
+  .pris-modal-razporeditev,
+  .pris-modal-km > div:last-child { flex-direction: column; }
+
+  /* Akontacija popup — wider */
+  .akt-popup { width: 96%; max-width: 96%; padding: 16px 14px; }
+  .akt-popup-row { flex-direction: column; }
+
+  /* Dialog — smaller padding */
+  .dialog { width: 96%; padding: 20px 16px; border-radius: 16px; }
+
+  /* Admin form grid — single column */
+  .admin-form-grid { grid-template-columns: 1fr; }
+
+  /* Inline max-width overrides (nastavitve sekcije) */
+  [style*="max-width: 440px"], [style*="max-width: 560px"],
+  [style*="max-width:440px"], [style*="max-width:560px"] { max-width: 100% !important; }
+
+  /* Polmesec tabela — scroll */
+  .polmesec-tabela { min-width: 480px; }
+
+  /* Obracun tabela */
+  #obracun-tabela { min-width: 480px; }
+
+  /* Vnos popup forme — stack */
+  .vnos-label { width: 100%; }
+
+  /* Zaposleni form row */
+  .zap-form-row { flex-direction: column; }
+  .zap-form-row input, .zap-form-row select { width: 100%; }
+
+  /* Prisotnost kartica — en stolpec na zelo ozkih */
+  .prisotnost-seznam { grid-template-columns: 1fr; }
+
+  /* Večje touch tarče za gumbe */
+  .btn-sm { padding: 6px 10px; font-size: 0.78rem; min-height: 34px; }
+}
