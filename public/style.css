@@ -2222,3 +2222,5 @@ input[type="time"].rv-input{ min-width: 110px; }
   cursor: pointer; width: 100%;
 }
 .akt-popup-btn-dodaj:hover{ background: #2c5282; }
+.btn-pris-tisk{ background:none; border:none; color:#a0aec0; font-size:1.1rem; cursor:pointer; padding:4px 8px; border-radius:6px; transition:color 0.15s; }
+.btn-pris-tisk:hover{ color:#4a5568; background:#f0f0f0; }
