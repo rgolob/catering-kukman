@@ -1773,9 +1773,13 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     .t-akt td{color:#92400e}
     .t-preostalo td{font-weight:700;color:#1e40af;border-bottom:2px solid #1e40af}
     .t-podpis{margin-top:32px;display:flex;gap:40px;font-size:10pt;color:#444}
-    @media print{.nova-stran{page-break-before:always;break-before:page}.stran{padding:15mm 14mm}}
+    .btn-zapri{position:fixed;top:12px;right:16px;background:#1a2332;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:10pt;cursor:pointer;z-index:999}
+    .btn-zapri:hover{background:#2d3748}
+    @media print{.nova-stran{page-break-before:always;break-before:page}.stran{padding:15mm 14mm}.btn-zapri{display:none}}
   </style>
-  </head><body>${strani}</body></html>`;
+  </head><body>
+  <button class="btn-zapri" onclick="window.close()">✕ Zapri</button>
+  ${strani}</body></html>`;
 }
 
 async function odpriTiskalnikPosameznik(zaposleniId, leto, mesec) {
