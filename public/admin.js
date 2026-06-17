@@ -1732,7 +1732,7 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
       <h1 class="t-ime">${z.ime}</h1>
       <p class="t-povzetek">${fUre(z.skupajMinut)} · ${z.dnevi.length} delovnih dni</p>
       <table class="t-tabela">
-        <colgroup><col style="width:95px"><col><col style="width:78px"><col style="width:78px"><col style="width:82px"></colgroup>
+        <colgroup><col style="width:16%"><col style="width:28%"><col style="width:18%"><col style="width:18%"><col style="width:20%"></colgroup>
         <thead><tr><th>Datum</th><th>Delo</th><th class="t-c">Prihod</th><th class="t-c">Odhod</th><th class="t-r">Ure</th></tr></thead>
         <tbody>${dneviRows}</tbody>
       </table>
@@ -1761,10 +1761,10 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     .t-povzetek{font-size:10pt;color:#555;margin-bottom:18px}
     .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:16px;font-size:10pt}
     .t-tabela th{border-bottom:2px solid #1a2332;padding:5px 6px;text-align:left;font-size:9pt;text-transform:uppercase;letter-spacing:0.05em;color:#333}
-    .t-tabela td{border-bottom:1px solid #e0e0e0;padding:5px 6px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .t-tabela td{border-bottom:1px solid #e0e0e0;padding:5px 6px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10pt}
     .t-c{text-align:center}.t-r{text-align:right}
-    .t-financ{margin-top:8px;max-width:320px;margin-left:auto}
-    .t-financ td{border-bottom:1px solid #eee;padding:4px 6px}
+    .t-financ{margin-top:8px;max-width:360px;margin-left:auto}
+    .t-financ td{border-bottom:1px solid #eee;padding:4px 6px;white-space:normal;overflow:visible;text-overflow:clip}
     .t-skupaj td{font-weight:700;border-top:2px solid #1a2332;border-bottom:2px solid #1a2332}
     .t-akt td{color:#92400e}
     .t-preostalo td{font-weight:700;color:#1e40af;border-bottom:2px solid #1e40af}
