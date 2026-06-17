@@ -1694,16 +1694,26 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
   const fUre = m => { const h = Math.floor(m/60), min = m%60; return min ? `${h}u ${min}min` : `${h}u`; };
 
   const strani = zaposleniArr.map((z, idx) => {
-    const dneviRows = z.dnevi.map(d => {
+    const dneviRows = z.dnevi.flatMap(d => {
       const dt = new Date(d.datum + 'T00:00:00');
       const datStr = `${DNI_T[dt.getDay()]} ${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.`;
-      const delaStr = (d.dela||[]).map(dl => `<span class="t-chip">${dl.naziv}${dl.minute ? ` · ${fUre(dl.minute)}` : ''}</span>`).join('');
-      return `<tr>
-        <td>${datStr}${delaStr ? '<div class="t-chips">'+delaStr+'</div>' : ''}</td>
-        <td class="t-c">${d.prihod||'—'}</td>
-        <td class="t-c">${d.odhod||'—'}</td>
-        <td class="t-r">${d.minute ? fUre(d.minute) : '—'}</td>
-      </tr>`;
+      const dela = d.dela || [];
+      if (dela.length <= 1) {
+        return [`<tr>
+          <td>${datStr}</td>
+          <td>${dela[0] ? dela[0].naziv : '—'}</td>
+          <td class="t-c">${d.prihod||'—'}</td>
+          <td class="t-c">${d.odhod||'—'}</td>
+          <td class="t-r">${d.minute ? fUre(d.minute) : '—'}</td>
+        </tr>`];
+      }
+      return dela.map((dl, i) => `<tr>
+        <td>${i === 0 ? datStr : ''}</td>
+        <td>${dl.naziv}</td>
+        <td class="t-c">${i === 0 ? (d.prihod||'—') : ''}</td>
+        <td class="t-c">${i === 0 ? (d.odhod||'—') : ''}</td>
+        <td class="t-r">${dl.minute ? fUre(dl.minute) : '—'}</td>
+      </tr>`);
     }).join('');
 
     const financRows = [
@@ -1724,7 +1734,8 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
       <h1 class="t-ime">${z.ime}</h1>
       <p class="t-povzetek">${fUre(z.skupajMinut)} · ${z.dnevi.length} delovnih dni</p>
       <table class="t-tabela">
-        <thead><tr><th>Datum</th><th class="t-c">Prihod</th><th class="t-c">Odhod</th><th class="t-r">Ure</th></tr></thead>
+        <colgroup><col style="width:110px"><col><col style="width:68px"><col style="width:68px"><col style="width:68px"></colgroup>
+        <thead><tr><th>Datum</th><th>Delo</th><th class="t-c">Prihod</th><th class="t-c">Odhod</th><th class="t-r">Ure</th></tr></thead>
         <tbody>${dneviRows}</tbody>
       </table>
       ${financRows ? `<table class="t-tabela t-financ"><tbody>${financRows}</tbody></table>` : ''}
@@ -1748,12 +1759,10 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     .t-mesec{font-size:10pt;color:#555}
     .t-ime{font-size:20pt;font-weight:700;margin-bottom:4px}
     .t-povzetek{font-size:10pt;color:#555;margin-bottom:18px}
-    .t-tabela{width:100%;border-collapse:collapse;margin-bottom:16px;font-size:10pt}
+    .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:16px;font-size:10pt}
     .t-tabela th{border-bottom:2px solid #1a2332;padding:5px 6px;text-align:left;font-size:9pt;text-transform:uppercase;letter-spacing:0.05em;color:#333}
-    .t-tabela td{border-bottom:1px solid #e0e0e0;padding:5px 6px;vertical-align:top}
+    .t-tabela td{border-bottom:1px solid #e0e0e0;padding:5px 6px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .t-c{text-align:center}.t-r{text-align:right}
-    .t-chips{margin-top:3px}
-    .t-chip{display:inline-block;background:#dbeafe;color:#1e40af;font-size:8pt;padding:1px 6px;border-radius:8px;margin-right:3px}
     .t-financ{margin-top:8px;max-width:320px;margin-left:auto}
     .t-financ td{border-bottom:1px solid #eee;padding:4px 6px}
     .t-skupaj td{font-weight:700;border-top:2px solid #1a2332;border-bottom:2px solid #1a2332}
