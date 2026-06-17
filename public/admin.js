@@ -1056,7 +1056,7 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
       const razHtml = raz.length ? raz.map(r => {
         const ureStr = r.trajanje_minut ? formatUre(Number(r.trajanje_minut)) : `${r.cas_od}–${r.cas_do}`;
         return `<tr>
-          <td>${r.datum.slice(5).replace('-','.')}</td>
+          <td>${r.datum.slice(8)}.${r.datum.slice(5,7)}.</td>
           <td>${escHtml(r.delo_naziv)} <span class="td-ure-sub">€${parseFloat(r.delo_up || r.urna_postavka).toFixed(2)}/h</span></td>
           <td>${ureStr}</td>
           <td><button class="btn-sm btn-danger btn-raz-brisi" data-id="${r.id}">×</button></td>
