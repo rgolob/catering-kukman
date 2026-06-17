@@ -1778,8 +1778,10 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     @media print{.nova-stran{page-break-before:always;break-before:page}.stran{padding:15mm 14mm}.btn-zapri{display:none}}
   </style>
   </head><body>
-  <button class="btn-zapri" onclick="window.close()">✕ Zapri</button>
-  ${strani}</body></html>`;
+  <button class="btn-zapri" id="btn-zapri-tisk">&times; Zapri</button>
+  ${strani}
+  <script>document.getElementById('btn-zapri-tisk').addEventListener('click',function(){window.close();});</script>
+  </body></html>`;
 }
 
 async function odpriTiskalnikPosameznik(zaposleniId, leto, mesec) {
