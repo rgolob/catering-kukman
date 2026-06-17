@@ -1,4 +1,4 @@
-const CACHE = 'kukman-v102';
+const CACHE = 'kukman-v103';
 
 const STATIC = [
   '/style.css',
@@ -12,8 +12,11 @@ const STATIC = [
   '/moj-prihod.js',
   '/moj.js',
   '/manifest.json',
+  '/manifest-admin.json',
   '/icon-192.png',
   '/icon-512.png',
+  '/icon-admin-192.png',
+  '/icon-admin-512.png',
 ];
 
 self.addEventListener('install', e => {
