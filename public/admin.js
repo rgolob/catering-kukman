@@ -992,6 +992,7 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
       `${MESECI_PRIS[d.mesec - 1]} ${d.leto}  ·  Skupaj: ${formatUre(d.skupajMinut)}  ·  ${d.dnevi.length} dni`;
 
     const vsebina = document.getElementById('pris-modal-vsebina');
+    const privzetoDelo = d.privzetoDelo || null;
     if (!d.dnevi.length) {
       vsebina.innerHTML = '<div class="prazno">Ni evidentiranih ur za ta mesec.</div>';
     } else {
@@ -1014,8 +1015,11 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
 
         const ureStr = dan.minute ? formatUre(dan.minute) : '—';
         const rowClass = dan.nepopoln ? 'class="pris-row-nepopoln"' : '';
-        const delaChips = (dan.dela || []).length
-          ? '<div class="pris-dela-chips">' + dan.dela.map(d =>
+        const delaZaPrikaz = (dan.dela || []).length
+          ? dan.dela
+          : (privzetoDelo && dan.minute ? [{ naziv: privzetoDelo, minute: dan.minute }] : []);
+        const delaChips = delaZaPrikaz.length
+          ? '<div class="pris-dela-chips">' + delaZaPrikaz.map(d =>
               `<span class="pris-delo-chip">${escHtml(d.naziv)}${d.minute ? ` · ${formatUre(d.minute)}` : ''}</span>`
             ).join('') + '</div>'
           : '';

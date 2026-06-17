@@ -1661,7 +1661,7 @@ function createApp() {
     const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
 
     const [{ rows: zRows }, { rows: vnosi }, { rows: razVnosi }] = await Promise.all([
-      req.db.execute({ sql: 'SELECT id, ime, privzeto_delo_id FROM zaposleni WHERE id = ?', args: [req.params.id] }),
+      req.db.execute({ sql: 'SELECT z.id, z.ime, d.naziv AS privzeto_delo FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ?', args: [req.params.id] }),
       req.db.execute({
         sql: `SELECT id, tip, cas, naknadno FROM evidenca
               WHERE zaposleni_id = ? AND substr(cas,1,10) BETWEEN ? AND ?
@@ -1730,6 +1730,7 @@ function createApp() {
 
     res.json({
       id: Number(zRows[0].id), ime: zRows[0].ime,
+      privzetoDelo: zRows[0].privzeto_delo || null,
       leto, mesec,
       skupajMinut: Math.round(skupajMinut),
       dnevi
