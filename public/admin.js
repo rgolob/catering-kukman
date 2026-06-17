@@ -1064,21 +1064,33 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
       }).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni razporeditev</td></tr>`;
 
       const delaOpts = dela.map(d => `<option value="${d.id}">${escHtml(d.naziv)} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`).join('');
+      const badge = raz.length ? ` <span class="pris-acc-badge">${raz.length}</span>` : '';
 
       razEl.innerHTML = `
-        <h3 style="margin:20px 0 8px;font-size:0.95rem;color:#4a5568">Razporeditev del</h3>
-        <table class="tabela" style="margin-bottom:12px">
-          <thead><tr><th>Datum</th><th>Delo</th><th>Ure</th><th></th></tr></thead>
-          <tbody>${razHtml}</tbody>
-        </table>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="raz-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Delo<select id="raz-delo" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem">${delaOpts}</select></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Trajanje (ur)<input type="number" id="raz-trajanje" min="0.5" max="24" step="0.5" placeholder="ur" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:68px" /></label>
-          <button id="raz-cel-dan" class="btn-sm" style="background:#276749;color:#fff;padding:6px 12px;align-self:flex-end">Cel dan</button>
-          <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Dodaj</button>
-        </div>
-        <div id="raz-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>`;
+        <div class="pris-accordion">
+          <button class="pris-acc-toggle">Razporeditev del${badge} <span class="pris-acc-chevron">▾</span></button>
+          <div class="pris-acc-body" style="display:none">
+            <table class="tabela" style="margin-bottom:12px">
+              <thead><tr><th>Datum</th><th>Delo</th><th>Ure</th><th></th></tr></thead>
+              <tbody>${razHtml}</tbody>
+            </table>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="raz-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Delo<select id="raz-delo" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem">${delaOpts}</select></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Trajanje (ur)<input type="number" id="raz-trajanje" min="0.5" max="24" step="0.5" placeholder="ur" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:68px" /></label>
+              <button id="raz-cel-dan" class="btn-sm" style="background:#276749;color:#fff;padding:6px 12px;align-self:flex-end">Cel dan</button>
+              <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Dodaj</button>
+            </div>
+            <div id="raz-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>
+          </div>
+        </div>`;
+
+      razEl.querySelector('.pris-acc-toggle').addEventListener('click', function() {
+        const body = razEl.querySelector('.pris-acc-body');
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        this.querySelector('.pris-acc-chevron').textContent = open ? '▾' : '▴';
+      });
 
       razEl.querySelectorAll('.btn-raz-brisi').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1122,19 +1134,31 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
           <td><button class="btn-sm btn-danger btn-km-brisi" data-datum="${k.datum}">×</button></td>
         </tr>`).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni vnosov</td></tr>`;
 
+      const kmBadge = km.length ? ` <span class="pris-acc-badge">${km.length}</span>` : '';
       kmEl.innerHTML = `
-        <h3 style="margin:20px 0 8px;font-size:0.95rem;color:#4a5568">⛽ Gorivo / 🛍 Nakup</h3>
-        <table class="tabela" style="margin-bottom:12px">
-          <thead><tr><th>Datum</th><th class="th-r">Gorivo (€)</th><th class="th-r">Nakup (€)</th><th></th></tr></thead>
-          <tbody>${kmHtml}</tbody>
-        </table>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="km-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">⛽ Gorivo (€)<input type="number" id="km-gorivo" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">🛍 Nakup (€)<input type="number" id="km-nakup" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
-          <button id="km-shrani" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Shrani</button>
-        </div>
-        <div id="km-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>`;
+        <div class="pris-accordion">
+          <button class="pris-acc-toggle">⛽ Gorivo / 🛍 Nakup${kmBadge} <span class="pris-acc-chevron">▾</span></button>
+          <div class="pris-acc-body" style="display:none">
+            <table class="tabela" style="margin-bottom:12px">
+              <thead><tr><th>Datum</th><th>Gorivo (€)</th><th>Nakup (€)</th><th></th></tr></thead>
+              <tbody>${kmHtml}</tbody>
+            </table>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="km-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">⛽ Gorivo (€)<input type="number" id="km-gorivo" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">🛍 Nakup (€)<input type="number" id="km-nakup" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
+              <button id="km-shrani" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Shrani</button>
+            </div>
+            <div id="km-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>
+          </div>
+        </div>`;
+
+      kmEl.querySelector('.pris-acc-toggle').addEventListener('click', function() {
+        const body = kmEl.querySelector('.pris-acc-body');
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        this.querySelector('.pris-acc-chevron').textContent = open ? '▾' : '▴';
+      });
 
       kmEl.querySelectorAll('.btn-km-brisi').forEach(btn => {
         btn.addEventListener('click', async () => {

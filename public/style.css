@@ -2225,6 +2225,19 @@ input[type="time"].rv-input{ min-width: 110px; }
 .btn-pris-tisk{ background:none; border:none; color:#a0aec0; font-size:1.1rem; cursor:pointer; padding:4px 8px; border-radius:6px; transition:color 0.15s; }
 .btn-pris-tisk:hover{ color:#4a5568; background:#f0f0f0; }
 
+/* Prisotnost modal accordion (razporeditev / gorivo) */
+.pris-accordion{ margin-top:14px; border:1px solid #e2e8f0; border-radius:10px; overflow:hidden; }
+.pris-acc-toggle{
+  width:100%; background:#f7fafc; border:none; padding:10px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:0.88rem; font-weight:600; color:#2d3748; cursor:pointer;
+  text-align:left;
+}
+.pris-acc-toggle:hover{ background:#edf2f7; }
+.pris-acc-chevron{ font-size:0.8rem; color:#718096; margin-left:6px; }
+.pris-acc-badge{ background:#4a5568; color:#fff; font-size:0.7rem; border-radius:10px; padding:1px 7px; margin-left:5px; font-weight:600; }
+.pris-acc-body{ padding:12px 14px; }
+
 /* ── Admin mobile (≤430px) ─────────────────────────────────────────────── */
 @media (max-width: 430px) {
   /* Vse tabele z vodoravnim scrollom */
