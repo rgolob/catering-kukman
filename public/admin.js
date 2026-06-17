@@ -584,8 +584,6 @@ async function naloziObracun() {
       return `<tr>
         <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span> <button class="obr-vnos-btn" data-id="${z.id}" title="Dodaj strošek / akontacijo">+</button></td>
         <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
-        <td class="td-r">${z.gorivo ? formatEur(z.gorivo) : '—'}</td>
-        <td class="td-r">${z.nakup ? formatEur(z.nakup) : '—'}</td>
         <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
         <td class="td-r">${z.akontacija ? formatEur(z.akontacija) : '—'}${aktSubtext}</td>
         <td class="td-r td-skupaj">${z.preostalo != null ? `<strong>${formatEur(z.preostalo)}</strong>` : '—'}</td>
@@ -593,8 +591,6 @@ async function naloziObracun() {
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
         <td class="td-r td-osnova"><strong>${formatEur(skupajOsnova)}</strong><br><span class="td-ure-sub">${formatUre(skupajMin)}</span></td>
-        <td class="td-r">${skupajGorivo ? `<strong>${formatEur(skupajGorivo)}</strong>` : '—'}</td>
-        <td class="td-r">${skupajNakup ? `<strong>${formatEur(skupajNakup)}</strong>` : '—'}</td>
         <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong>${skupajStim ? `<br><span class="td-ure-sub">+ ${formatEur(skupajStim)} stim</span>` : ''}</td>
         <td class="td-r">${skupajAkt ? `<strong>${formatEur(skupajAkt)}</strong>` : '—'}</td>
         <td class="td-r td-skupaj"><strong>${formatEur(skupajPreostalo)}</strong></td>
