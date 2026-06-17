@@ -1494,6 +1494,134 @@ function createApp() {
     res.json({ leto, mesec, obracun });
   });
 
+  app.get('/api/admin/obracun-tiskalnik', requireAuth, async (req, res) => {
+    const zdaj = new Date();
+    const leto = parseInt(req.query.leto) || zdaj.getFullYear();
+    const mesec = parseInt(req.query.mesec) || (zdaj.getMonth() + 1);
+    const zaposleniId = req.query.zaposleniId ? parseInt(req.query.zaposleniId) : null;
+    const mesecStr = `${leto}-${String(mesec).padStart(2, '0')}`;
+    const od = `${mesecStr}-01`, do_ = `${mesecStr}-31`;
+
+    const [{ rows: zaposleniRows }, { rows: evidenca }, { rows: stimulacije }, { rows: razporeditev }, { rows: kmRows }, { rows: akontacije }] = await Promise.all([
+      req.db.execute(
+        zaposleniId
+          ? { sql: `SELECT z.id, z.ime, z.urna_postavka, z.privzeto_delo_id, d.naziv AS priv_naziv, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.id = ? AND z.aktiven = 1 ORDER BY z.ime`, args: [zaposleniId] }
+          : `SELECT z.id, z.ime, z.urna_postavka, z.privzeto_delo_id, d.naziv AS priv_naziv, d.urna_postavka AS priv_up FROM zaposleni z LEFT JOIN dela d ON d.id = z.privzeto_delo_id WHERE z.aktiven = 1 ORDER BY z.ime`
+      ),
+      req.db.execute({ sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE substr(cas,1,10) BETWEEN ? AND ? ORDER BY cas ASC`, args: [od, do_] }),
+      req.db.execute({ sql: 'SELECT zaposleni_id, SUM(znesek) as skupaj FROM stimulacija WHERE mesec = ? GROUP BY zaposleni_id', args: [mesecStr] }),
+      req.db.execute({
+        sql: `SELECT r.zaposleni_id, r.datum, r.delo_id, d.naziv AS delo_naziv, d.urna_postavka AS delo_up, r.cas_od, r.cas_do, r.trajanje_minut
+              FROM evidenca_razporeditev r JOIN dela d ON d.id = r.delo_id
+              WHERE r.datum BETWEEN ? AND ?`,
+        args: [od, do_]
+      }),
+      req.db.execute({ sql: `SELECT zaposleni_id, SUM(km) AS skupaj_km, SUM(strosek) AS skupaj_strosek FROM kilometrina WHERE datum BETWEEN ? AND ? GROUP BY zaposleni_id`, args: [od, do_] }),
+      req.db.execute({ sql: 'SELECT zaposleni_id, SUM(znesek) as skupaj FROM akontacija WHERE mesec = ? GROUP BY zaposleni_id', args: [mesecStr] })
+    ]);
+
+    const stimMap = new Map(stimulacije.map(s => [Number(s.zaposleni_id), parseFloat(s.skupaj) || 0]));
+    const kmMap = new Map(kmRows.map(r => [Number(r.zaposleni_id), { km: parseFloat(r.skupaj_km) || 0, strosek: parseFloat(r.skupaj_strosek) || 0 }]));
+    const aktMap = new Map(akontacije.map(a => [Number(a.zaposleni_id), parseFloat(a.skupaj) || 0]));
+
+    const zaposleniOut = [];
+    for (const z of zaposleniRows) {
+      const zid = Number(z.id);
+      const zEv = evidenca.filter(e => Number(e.zaposleni_id) === zid);
+      const zRaz = razporeditev.filter(r => Number(r.zaposleni_id) === zid);
+
+      // Build daily entries with prihod/odhod times
+      const sortedVnosi = [...zEv]
+        .map(v => ({ tip: v.tip, casObj: new Date(String(v.cas).replace(' ', 'T')), casStr: String(v.cas), datum: String(v.cas).slice(0, 10) }))
+        .sort((a, b) => a.casObj - b.casObj);
+
+      const poDnevih = new Map();
+      let odprtPrihod = null;
+      for (const v of sortedVnosi) {
+        if (v.tip === 'PRIHOD') {
+          odprtPrihod = v;
+          if (!poDnevih.has(v.datum)) poDnevih.set(v.datum, { minute: 0, prihod: null, odhod: null, odprtPrihod: v });
+          const d = poDnevih.get(v.datum);
+          if (!d.prihod) d.prihod = String(v.casStr).slice(11, 16);
+          d.odprtPrihod = v;
+        } else if (v.tip === 'ODHOD' && odprtPrihod) {
+          const datum = odprtPrihod.datum;
+          if (!poDnevih.has(datum)) poDnevih.set(datum, { minute: 0, prihod: String(odprtPrihod.casStr).slice(11, 16), odhod: null, odprtPrihod: null });
+          const d = poDnevih.get(datum);
+          d.minute += (v.casObj - odprtPrihod.casObj) / 60000;
+          d.odhod = String(v.casStr).slice(11, 16) + (v.datum !== datum ? ' +1d' : '');
+          d.odprtPrihod = null;
+          odprtPrihod = null;
+        }
+      }
+
+      // Build razporeditev by date
+      const razPoDateh = new Map();
+      for (const r of zRaz) {
+        if (!razPoDateh.has(r.datum)) razPoDateh.set(r.datum, []);
+        razPoDateh.get(r.datum).push({ naziv: r.delo_naziv, minute: razMin(r) });
+      }
+
+      const dnevi = [...poDnevih.entries()].sort().map(([datum, d]) => {
+        const minuteRounded = Math.round(d.minute);
+        let dela;
+        if (razPoDateh.has(datum)) {
+          dela = razPoDateh.get(datum);
+        } else if (z.priv_naziv && minuteRounded > 0) {
+          dela = [{ naziv: z.priv_naziv, minute: minuteRounded }];
+        } else {
+          dela = [];
+        }
+        return { datum, prihod: d.prihod || null, odhod: d.odhod || null, minute: minuteRounded, dela };
+      }).filter(d => d.minute > 0 || d.prihod);
+
+      if (!dnevi.length) continue;
+
+      const skupajMinut = dnevi.reduce((s, d) => s + d.minute, 0);
+
+      const privzetaUp = parseFloat(z.priv_up) || parseFloat(z.urna_postavka) || 0;
+      const delaMap = new Map();
+      for (const r of zRaz) {
+        const min = razMin(r);
+        if (!delaMap.has(r.delo_id)) {
+          delaMap.set(r.delo_id, { naziv: r.delo_naziv, urna_postavka: parseFloat(r.delo_up) || 0, minute: 0 });
+        }
+        delaMap.get(r.delo_id).minute += min;
+      }
+      const dodatnaMinute = [...delaMap.values()].reduce((s, d) => s + d.minute, 0);
+      const privzetaMinuta = Math.max(0, skupajMinut - dodatnaMinute);
+      const privzetaOsnova = privzetaUp > 0 ? Math.round(privzetaMinuta / 60 * privzetaUp * 100) / 100 : 0;
+      const dodatnaOsnova = [...delaMap.values()].reduce((s, d) =>
+        s + (d.urna_postavka > 0 ? Math.round(d.minute / 60 * d.urna_postavka * 100) / 100 : 0), 0);
+      const hasRate = privzetaUp > 0 || delaMap.size > 0;
+      const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
+
+      const stimulacija = stimMap.get(zid) || 0;
+      const { km: gorivo = 0, strosek: nakup = 0 } = kmMap.get(zid) || {};
+      const akontacija = aktMap.get(zid) || 0;
+      const hasData = osnova !== null || stimulacija > 0 || gorivo > 0 || nakup > 0 || akontacija > 0;
+      const skupajPlacilo = hasData ? Math.round(((osnova || 0) + stimulacija + gorivo + nakup) * 100) / 100 : null;
+
+      zaposleniOut.push({
+        id: zid,
+        ime: z.ime,
+        privzetoDelo: z.priv_naziv || null,
+        urnaPostavka: privzetaUp || null,
+        skupajMinut,
+        dnevi,
+        osnova,
+        stimulacija: stimulacija || null,
+        gorivo: gorivo || null,
+        nakup: nakup || null,
+        skupajPlacilo,
+        akontacija: akontacija || null,
+        preostalo: hasData ? Math.round((skupajPlacilo - akontacija) * 100) / 100 : null
+      });
+    }
+
+    res.json({ leto, mesec, mesecStr, zaposleni: zaposleniOut });
+  });
+
   app.get('/api/admin/stimulacija', requireAuth, async (req, res) => {
     const { mesec } = req.query;
     if (!mesec) return res.status(400).json({ napaka: 'Manjka mesec' });
