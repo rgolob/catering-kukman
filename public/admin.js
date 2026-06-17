@@ -583,14 +583,12 @@ async function naloziObracun() {
       ).join('');
       return `<tr>
         <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span> <button class="obr-vnos-btn" data-id="${z.id}" title="Dodaj strošek / akontacijo">+</button></td>
-        <td class="td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
         <td class="td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
         <td>${z.akontacija ? formatEur(z.akontacija) : '—'}${aktSubtext}</td>
         <td class="td-skupaj">${z.preostalo != null ? `<strong>${formatEur(z.preostalo)}</strong>` : '—'}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
-        <td class="td-osnova"><strong>${formatEur(skupajOsnova)}</strong><br><span class="td-ure-sub">${formatUre(skupajMin)}</span></td>
         <td class="td-skupaj"><strong>${formatEur(skupajVse)}</strong>${skupajStim ? `<br><span class="td-ure-sub">+ ${formatEur(skupajStim)} stim</span>` : ''}</td>
         <td>${skupajAkt ? `<strong>${formatEur(skupajAkt)}</strong>` : '—'}</td>
         <td class="td-skupaj"><strong>${formatEur(skupajPreostalo)}</strong></td>
@@ -1056,7 +1054,7 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
       const razHtml = raz.length ? raz.map(r => {
         const ureStr = r.trajanje_minut ? formatUre(Number(r.trajanje_minut)) : `${r.cas_od}–${r.cas_do}`;
         return `<tr>
-          <td>${r.datum.slice(5).replace('-','.')}</td>
+          <td>${r.datum.slice(8)}.${r.datum.slice(5,7)}.</td>
           <td>${escHtml(r.delo_naziv)} <span class="td-ure-sub">€${parseFloat(r.delo_up || r.urna_postavka).toFixed(2)}/h</span></td>
           <td>${ureStr}</td>
           <td><button class="btn-sm btn-danger btn-raz-brisi" data-id="${r.id}">×</button></td>
@@ -1064,21 +1062,33 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
       }).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni razporeditev</td></tr>`;
 
       const delaOpts = dela.map(d => `<option value="${d.id}">${escHtml(d.naziv)} (€${parseFloat(d.urna_postavka).toFixed(2)}/h)</option>`).join('');
+      const badge = raz.length ? ` <span class="pris-acc-badge">${raz.length}</span>` : '';
 
       razEl.innerHTML = `
-        <h3 style="margin:20px 0 8px;font-size:0.95rem;color:#4a5568">Razporeditev del</h3>
-        <table class="tabela" style="margin-bottom:12px">
-          <thead><tr><th>Datum</th><th>Delo</th><th>Ure</th><th></th></tr></thead>
-          <tbody>${razHtml}</tbody>
-        </table>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="raz-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Delo<select id="raz-delo" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem">${delaOpts}</select></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Trajanje (ur)<input type="number" id="raz-trajanje" min="0.5" max="24" step="0.5" placeholder="ur" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:68px" /></label>
-          <button id="raz-cel-dan" class="btn-sm" style="background:#276749;color:#fff;padding:6px 12px;align-self:flex-end">Cel dan</button>
-          <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Dodaj</button>
-        </div>
-        <div id="raz-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>`;
+        <div class="pris-accordion">
+          <button class="pris-acc-toggle">Razporeditev del${badge} <span class="pris-acc-chevron">▾</span></button>
+          <div class="pris-acc-body" style="display:none">
+            <table class="tabela" style="margin-bottom:12px">
+              <thead><tr><th>Datum</th><th>Delo</th><th>Ure</th><th></th></tr></thead>
+              <tbody>${razHtml}</tbody>
+            </table>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="raz-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Delo<select id="raz-delo" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem">${delaOpts}</select></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Trajanje (ur)<input type="number" id="raz-trajanje" min="0.5" max="24" step="0.5" placeholder="ur" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:68px" /></label>
+              <button id="raz-cel-dan" class="btn-sm" style="background:#276749;color:#fff;padding:6px 12px;align-self:flex-end">Cel dan</button>
+              <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Dodaj</button>
+            </div>
+            <div id="raz-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>
+          </div>
+        </div>`;
+
+      razEl.querySelector('.pris-acc-toggle').addEventListener('click', function() {
+        const body = razEl.querySelector('.pris-acc-body');
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        this.querySelector('.pris-acc-chevron').textContent = open ? '▾' : '▴';
+      });
 
       razEl.querySelectorAll('.btn-raz-brisi').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1122,19 +1132,31 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
           <td><button class="btn-sm btn-danger btn-km-brisi" data-datum="${k.datum}">×</button></td>
         </tr>`).join('') : `<tr><td colspan="4" class="prazno" style="font-size:0.85em">Ni vnosov</td></tr>`;
 
+      const kmBadge = km.length ? ` <span class="pris-acc-badge">${km.length}</span>` : '';
       kmEl.innerHTML = `
-        <h3 style="margin:20px 0 8px;font-size:0.95rem;color:#4a5568">⛽ Gorivo / 🛍 Nakup</h3>
-        <table class="tabela" style="margin-bottom:12px">
-          <thead><tr><th>Datum</th><th class="th-r">Gorivo (€)</th><th class="th-r">Nakup (€)</th><th></th></tr></thead>
-          <tbody>${kmHtml}</tbody>
-        </table>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="km-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">⛽ Gorivo (€)<input type="number" id="km-gorivo" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
-          <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">🛍 Nakup (€)<input type="number" id="km-nakup" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
-          <button id="km-shrani" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Shrani</button>
-        </div>
-        <div id="km-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>`;
+        <div class="pris-accordion">
+          <button class="pris-acc-toggle">⛽ Gorivo / 🛍 Nakup${kmBadge} <span class="pris-acc-chevron">▾</span></button>
+          <div class="pris-acc-body" style="display:none">
+            <table class="tabela" style="margin-bottom:12px">
+              <thead><tr><th>Datum</th><th>Gorivo (€)</th><th>Nakup (€)</th><th></th></tr></thead>
+              <tbody>${kmHtml}</tbody>
+            </table>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="km-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">⛽ Gorivo (€)<input type="number" id="km-gorivo" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">🛍 Nakup (€)<input type="number" id="km-nakup" min="0" step="0.01" placeholder="0.00" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:80px" /></label>
+              <button id="km-shrani" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Shrani</button>
+            </div>
+            <div id="km-napaka" style="color:#fc8181;font-size:0.82rem;margin-top:4px"></div>
+          </div>
+        </div>`;
+
+      kmEl.querySelector('.pris-acc-toggle').addEventListener('click', function() {
+        const body = kmEl.querySelector('.pris-acc-body');
+        const open = body.style.display !== 'none';
+        body.style.display = open ? 'none' : 'block';
+        this.querySelector('.pris-acc-chevron').textContent = open ? '▾' : '▴';
+      });
 
       kmEl.querySelectorAll('.btn-km-brisi').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -1754,37 +1776,39 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
   <title>Obračun ${MESECI_T[mesec-1]} ${leto}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:10.5pt;color:#1a202c;background:#f0f4f8}
-    .stran{padding:18mm 20mm;background:#fff}
+    @page{margin:10mm 12mm;size:A4 portrait}
+    body{font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:9pt;color:#1a202c;background:#f0f4f8}
+    .stran{padding:8mm 10mm;background:#fff}
     .nova-stran{page-break-before:always;break-before:page}
-    .t-doc-header{border-top:4px solid #1a2332;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
-    .t-logo{font-size:14pt;font-weight:800;color:#1a2332;letter-spacing:-0.01em}
-    .t-logo-sub{font-size:8pt;color:#718096;margin-top:3px;letter-spacing:0.05em;text-transform:uppercase}
+    .t-doc-header{border-top:3px solid #1a2332;padding-top:8px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+    .t-logo{font-size:11pt;font-weight:800;color:#1a2332;letter-spacing:-0.01em}
+    .t-logo-sub{font-size:7pt;color:#718096;margin-top:2px;letter-spacing:0.05em;text-transform:uppercase}
     .t-header-right{text-align:right}
-    .t-mesec{font-size:12pt;font-weight:700;color:#1a2332}
-    .t-izpis{font-size:8pt;color:#a0aec0;margin-top:3px}
-    .t-zaposleni-header{border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:18px}
-    .t-ime{font-size:19pt;font-weight:800;color:#1a202c;letter-spacing:-0.02em}
-    .t-povzetek{font-size:9.5pt;color:#718096;margin-top:5px}
-    .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:20px;font-size:10pt;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden}
+    .t-mesec{font-size:10pt;font-weight:700;color:#1a2332}
+    .t-izpis{font-size:7pt;color:#a0aec0;margin-top:2px}
+    .t-zaposleni-header{border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:10px}
+    .t-ime{font-size:15pt;font-weight:800;color:#1a202c;letter-spacing:-0.02em}
+    .t-povzetek{font-size:8pt;color:#718096;margin-top:3px}
+    .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:10px;font-size:8.5pt;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden}
     .t-tabela thead tr{background:#1a2332}
-    .t-tabela th{padding:7px 9px;text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:0.07em;color:#cbd5e0;font-weight:600}
-    .t-tabela td{padding:6px 9px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10pt;border-bottom:1px solid #f1f5f9}
+    .t-tabela th{padding:4px 7px;text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:0.06em;color:#cbd5e0;font-weight:600}
+    .t-tabela td{padding:3px 7px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8.5pt;border-bottom:1px solid #f1f5f9}
     .t-tabela tbody tr:nth-child(even){background:#f8fafc}
     .t-tabela tbody tr:last-child td{border-bottom:none}
-    .t-financ-wrap{display:flex;justify-content:flex-end;margin-bottom:24px}
-    .t-financ{width:100%;max-width:520px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;font-size:10pt;border-collapse:collapse}
-    .t-financ td{padding:7px 14px;border-bottom:1px solid #f1f5f9;white-space:normal;overflow:visible;text-overflow:clip}
+    .t-financ-wrap{display:flex;justify-content:flex-end;margin-bottom:10px}
+    .t-financ{width:100%;max-width:480px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;font-size:8.5pt;border-collapse:collapse}
+    .t-financ td{padding:4px 12px;border-bottom:1px solid #f1f5f9;white-space:normal;overflow:visible;text-overflow:clip}
     .t-financ tbody tr:last-child td{border-bottom:none}
-    .t-skupaj td{font-weight:700;background:#f1f5f9;border-top:2px solid #1a2332!important;border-bottom:2px solid #1a2332!important;font-size:11pt}
+    .t-skupaj td{font-weight:700;background:#f1f5f9;border-top:2px solid #1a2332!important;border-bottom:2px solid #1a2332!important;font-size:9.5pt}
     .t-akt td{color:#744210;background:#fffaf0}
-    .t-preostalo td{font-weight:700;color:#1e40af;background:#eff6ff;font-size:11pt}
-    .t-podpis{margin-top:36px;display:flex;gap:60px;padding-top:18px;border-top:1px solid #e2e8f0}
-    .t-podpis-polje .t-podpis-label{font-size:8pt;color:#a0aec0;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:22px}
+    .t-preostalo td{font-weight:700;color:#1e40af;background:#eff6ff;font-size:9.5pt}
+    .t-podpis{margin-top:16px;display:flex;gap:40px;padding-top:12px;border-top:1px solid #e2e8f0}
+    .t-podpis-polje{flex:1}
+    .t-podpis-polje .t-podpis-label{font-size:7pt;color:#a0aec0;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:40px}
     .t-podpis-polje .t-podpis-crta{border-bottom:1px solid #718096}
     .btn-zapri{position:fixed;top:12px;right:16px;background:#1a2332;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:10pt;cursor:pointer;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
     .btn-zapri:hover{background:#2d3748}
-    @media print{.stran{padding:14mm 16mm;background:#fff}.btn-zapri{display:none}}
+    @media print{.stran{padding:6mm 8mm;background:#fff}.btn-zapri{display:none}}
   </style>
   </head><body>
   <button class="btn-zapri" id="btn-zapri-tisk">&times; Zapri</button>
