@@ -1766,22 +1766,24 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
 }
 
 async function odpriTiskalnikPosameznik(zaposleniId, leto, mesec) {
-  const res = await fetch(`/api/admin/obracun-tiskalnik?leto=${leto}&mesec=${mesec}&zaposleniId=${zaposleniId}`);
-  if (!res.ok) return;
-  const data = await res.json();
-  if (!data.zaposleni.length) return;
   const win = window.open('', '_blank');
+  if (!win) return;
+  const res = await fetch(`/api/admin/obracun-tiskalnik?leto=${leto}&mesec=${mesec}&zaposleniId=${zaposleniId}`);
+  if (!res.ok) { win.close(); return; }
+  const data = await res.json();
+  if (!data.zaposleni.length) { win.close(); return; }
   win.document.write(generirajTiskHtml(data.zaposleni, data.leto, data.mesec));
   win.document.close();
   setTimeout(() => win.print(), 400);
 }
 
 async function odpriTiskalnikVsi(leto, mesec) {
-  const res = await fetch(`/api/admin/obracun-tiskalnik?leto=${leto}&mesec=${mesec}`);
-  if (!res.ok) return;
-  const data = await res.json();
-  if (!data.zaposleni.length) return;
   const win = window.open('', '_blank');
+  if (!win) return;
+  const res = await fetch(`/api/admin/obracun-tiskalnik?leto=${leto}&mesec=${mesec}`);
+  if (!res.ok) { win.close(); return; }
+  const data = await res.json();
+  if (!data.zaposleni.length) { win.close(); return; }
   win.document.write(generirajTiskHtml(data.zaposleni, data.leto, data.mesec));
   win.document.close();
   setTimeout(() => win.print(), 400);
