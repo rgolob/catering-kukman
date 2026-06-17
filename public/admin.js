@@ -1754,37 +1754,39 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
   <title>Obračun ${MESECI_T[mesec-1]} ${leto}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:10.5pt;color:#1a202c;background:#f0f4f8}
-    .stran{padding:18mm 20mm;background:#fff}
+    @page{margin:10mm 12mm;size:A4 portrait}
+    body{font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:9pt;color:#1a202c;background:#f0f4f8}
+    .stran{padding:8mm 10mm;background:#fff}
     .nova-stran{page-break-before:always;break-before:page}
-    .t-doc-header{border-top:4px solid #1a2332;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
-    .t-logo{font-size:14pt;font-weight:800;color:#1a2332;letter-spacing:-0.01em}
-    .t-logo-sub{font-size:8pt;color:#718096;margin-top:3px;letter-spacing:0.05em;text-transform:uppercase}
+    .t-doc-header{border-top:3px solid #1a2332;padding-top:8px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+    .t-logo{font-size:11pt;font-weight:800;color:#1a2332;letter-spacing:-0.01em}
+    .t-logo-sub{font-size:7pt;color:#718096;margin-top:2px;letter-spacing:0.05em;text-transform:uppercase}
     .t-header-right{text-align:right}
-    .t-mesec{font-size:12pt;font-weight:700;color:#1a2332}
-    .t-izpis{font-size:8pt;color:#a0aec0;margin-top:3px}
-    .t-zaposleni-header{border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:18px}
-    .t-ime{font-size:19pt;font-weight:800;color:#1a202c;letter-spacing:-0.02em}
-    .t-povzetek{font-size:9.5pt;color:#718096;margin-top:5px}
-    .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:20px;font-size:10pt;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden}
+    .t-mesec{font-size:10pt;font-weight:700;color:#1a2332}
+    .t-izpis{font-size:7pt;color:#a0aec0;margin-top:2px}
+    .t-zaposleni-header{border-bottom:1px solid #e2e8f0;padding-bottom:6px;margin-bottom:10px}
+    .t-ime{font-size:15pt;font-weight:800;color:#1a202c;letter-spacing:-0.02em}
+    .t-povzetek{font-size:8pt;color:#718096;margin-top:3px}
+    .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:10px;font-size:8.5pt;border:1px solid #e2e8f0;border-radius:4px;overflow:hidden}
     .t-tabela thead tr{background:#1a2332}
-    .t-tabela th{padding:7px 9px;text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:0.07em;color:#cbd5e0;font-weight:600}
-    .t-tabela td{padding:6px 9px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10pt;border-bottom:1px solid #f1f5f9}
+    .t-tabela th{padding:4px 7px;text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:0.06em;color:#cbd5e0;font-weight:600}
+    .t-tabela td{padding:3px 7px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8.5pt;border-bottom:1px solid #f1f5f9}
     .t-tabela tbody tr:nth-child(even){background:#f8fafc}
     .t-tabela tbody tr:last-child td{border-bottom:none}
-    .t-financ-wrap{display:flex;justify-content:flex-end;margin-bottom:24px}
-    .t-financ{width:100%;max-width:520px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;font-size:10pt;border-collapse:collapse}
-    .t-financ td{padding:7px 14px;border-bottom:1px solid #f1f5f9;white-space:normal;overflow:visible;text-overflow:clip}
+    .t-financ-wrap{display:flex;justify-content:flex-end;margin-bottom:10px}
+    .t-financ{width:100%;max-width:480px;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden;font-size:8.5pt;border-collapse:collapse}
+    .t-financ td{padding:4px 12px;border-bottom:1px solid #f1f5f9;white-space:normal;overflow:visible;text-overflow:clip}
     .t-financ tbody tr:last-child td{border-bottom:none}
-    .t-skupaj td{font-weight:700;background:#f1f5f9;border-top:2px solid #1a2332!important;border-bottom:2px solid #1a2332!important;font-size:11pt}
+    .t-skupaj td{font-weight:700;background:#f1f5f9;border-top:2px solid #1a2332!important;border-bottom:2px solid #1a2332!important;font-size:9.5pt}
     .t-akt td{color:#744210;background:#fffaf0}
-    .t-preostalo td{font-weight:700;color:#1e40af;background:#eff6ff;font-size:11pt}
-    .t-podpis{margin-top:36px;display:flex;gap:60px;padding-top:18px;border-top:1px solid #e2e8f0}
-    .t-podpis-polje .t-podpis-label{font-size:8pt;color:#a0aec0;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:22px}
+    .t-preostalo td{font-weight:700;color:#1e40af;background:#eff6ff;font-size:9.5pt}
+    .t-podpis{margin-top:16px;display:flex;gap:40px;padding-top:12px;border-top:1px solid #e2e8f0}
+    .t-podpis-polje{flex:1}
+    .t-podpis-polje .t-podpis-label{font-size:7pt;color:#a0aec0;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:40px}
     .t-podpis-polje .t-podpis-crta{border-bottom:1px solid #718096}
     .btn-zapri{position:fixed;top:12px;right:16px;background:#1a2332;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:10pt;cursor:pointer;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
     .btn-zapri:hover{background:#2d3748}
-    @media print{.stran{padding:14mm 16mm;background:#fff}.btn-zapri{display:none}}
+    @media print{.stran{padding:6mm 8mm;background:#fff}.btn-zapri{display:none}}
   </style>
   </head><body>
   <button class="btn-zapri" id="btn-zapri-tisk">&times; Zapri</button>
