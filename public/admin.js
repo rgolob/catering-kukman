@@ -1700,17 +1700,17 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
         return [`<tr>
           <td>${datStr}</td>
           <td>${dela[0] ? dela[0].naziv : '—'}</td>
-          <td class="t-c">${d.prihod||'—'}</td>
-          <td class="t-c">${d.odhod||'—'}</td>
-          <td class="t-r">${d.minute ? fUre(d.minute) : '—'}</td>
+          <td>${d.prihod||'—'}</td>
+          <td>${d.odhod||'—'}</td>
+          <td>${d.minute ? fUre(d.minute) : '—'}</td>
         </tr>`];
       }
       return dela.map((dl, i) => `<tr>
         <td>${i === 0 ? datStr : ''}</td>
         <td>${dl.naziv}</td>
-        <td class="t-c">${i === 0 ? (d.prihod||'—') : ''}</td>
-        <td class="t-c">${i === 0 ? (d.odhod||'—') : ''}</td>
-        <td class="t-r">${dl.minute ? fUre(dl.minute) : '—'}</td>
+        <td>${i === 0 ? (d.prihod||'—') : ''}</td>
+        <td>${i === 0 ? (d.odhod||'—') : ''}</td>
+        <td>${dl.minute ? fUre(dl.minute) : '—'}</td>
       </tr>`);
     }).join('');
 
@@ -1736,7 +1736,7 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
       <p class="t-povzetek">${fUre(z.skupajMinut)} · ${z.dnevi.length} delovnih dni</p>
       <table class="t-tabela">
         <colgroup><col style="width:16%"><col style="width:28%"><col style="width:18%"><col style="width:18%"><col style="width:20%"></colgroup>
-        <thead><tr><th>Datum</th><th>Delo</th><th class="t-c">Prihod</th><th class="t-c">Odhod</th><th class="t-r">Ure</th></tr></thead>
+        <thead><tr><th>Datum</th><th>Delo</th><th>Prihod</th><th>Odhod</th><th>Ure</th></tr></thead>
         <tbody>${dneviRows}</tbody>
       </table>
       ${financRows ? `<table class="t-tabela t-financ"><tbody>${financRows}</tbody></table>` : ''}
@@ -1766,7 +1766,7 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     .t-tabela th{border-bottom:2px solid #1a2332;padding:5px 6px;text-align:left;font-size:9pt;text-transform:uppercase;letter-spacing:0.05em;color:#333}
     .t-tabela td{border-bottom:1px solid #e0e0e0;padding:5px 6px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10pt}
     .t-c{text-align:center}.t-r{text-align:right}
-    .t-financ{margin-top:8px;max-width:360px;margin-left:auto}
+    .t-financ{margin-top:8px;max-width:520px;margin-left:auto}
     .t-financ td{border-bottom:1px solid #eee;padding:4px 6px;white-space:normal;overflow:visible;text-overflow:clip}
     .t-skupaj td{font-weight:700;border-top:2px solid #1a2332;border-bottom:2px solid #1a2332}
     .t-akt td{color:#92400e}
