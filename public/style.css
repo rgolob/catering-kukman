@@ -2275,4 +2275,27 @@ input[type="time"].rv-input{ min-width: 110px; }
 
   /* Večje touch tarče za gumbe */
   .btn-sm { padding: 6px 10px; font-size: 0.78rem; min-height: 34px; }
+
+  /* Moj čas — modal full-screen */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal-karta {
+    max-width: 100%; width: 100%; border-radius: 18px 18px 0 0;
+    padding: 22px 16px; max-height: 90dvh; overflow-y: auto;
+  }
+
+  /* Moj čas — mesec navigacija */
+  .mesec-navigacija { gap: 8px; }
+  .mesec-navigacija h2 { font-size: 0.88rem; min-width: 100px; }
+
+  /* Moj čas — retroaktivni strošek forma */
+  .retro-strosek-row { flex-direction: column; gap: 6px; }
+
+  /* Moj čas — placilo box */
+  .placilo-box { padding: 12px 14px; }
+
+  /* Moj čas — uredi dan gumb — večja touch area */
+  .btn-uredi-dan { padding: 6px; font-size: 1rem; }
+
+  /* Moj čas — tabela z scrollom (cards že imajo overflow-x:auto) */
+  .tabela { min-width: 380px; }
 }
