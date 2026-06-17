@@ -583,17 +583,17 @@ async function naloziObracun() {
       ).join('');
       return `<tr>
         <td><span class="obr-ime-link" data-id="${z.id}" style="cursor:pointer;color:#2b6cb0;text-decoration:underline">${escHtml(z.ime)}</span> <button class="obr-vnos-btn" data-id="${z.id}" title="Dodaj strošek / akontacijo">+</button></td>
-        <td class="td-r td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
-        <td class="td-r td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
-        <td class="td-r">${z.akontacija ? formatEur(z.akontacija) : '—'}${aktSubtext}</td>
-        <td class="td-r td-skupaj">${z.preostalo != null ? `<strong>${formatEur(z.preostalo)}</strong>` : '—'}</td>
+        <td class="td-osnova">${formatEur(z.osnova)}<br><span class="td-ure-sub">${formatUre(z.minute)}</span>${delaBreakdown}</td>
+        <td class="td-skupaj">${z.skupaj ? formatEur(z.skupaj) : '—'}${z.stimulacija ? `<br><span class="td-ure-sub">+ ${formatEur(z.stimulacija)} stim</span>` : ''}</td>
+        <td>${z.akontacija ? formatEur(z.akontacija) : '—'}${aktSubtext}</td>
+        <td class="td-skupaj">${z.preostalo != null ? `<strong>${formatEur(z.preostalo)}</strong>` : '—'}</td>
       </tr>`;
     }).join('') + (obracun.length ? `<tr class="obr-skupaj-row">
         <td><strong>SKUPAJ</strong></td>
-        <td class="td-r td-osnova"><strong>${formatEur(skupajOsnova)}</strong><br><span class="td-ure-sub">${formatUre(skupajMin)}</span></td>
-        <td class="td-r td-skupaj"><strong>${formatEur(skupajVse)}</strong>${skupajStim ? `<br><span class="td-ure-sub">+ ${formatEur(skupajStim)} stim</span>` : ''}</td>
-        <td class="td-r">${skupajAkt ? `<strong>${formatEur(skupajAkt)}</strong>` : '—'}</td>
-        <td class="td-r td-skupaj"><strong>${formatEur(skupajPreostalo)}</strong></td>
+        <td class="td-osnova"><strong>${formatEur(skupajOsnova)}</strong><br><span class="td-ure-sub">${formatUre(skupajMin)}</span></td>
+        <td class="td-skupaj"><strong>${formatEur(skupajVse)}</strong>${skupajStim ? `<br><span class="td-ure-sub">+ ${formatEur(skupajStim)} stim</span>` : ''}</td>
+        <td>${skupajAkt ? `<strong>${formatEur(skupajAkt)}</strong>` : '—'}</td>
+        <td class="td-skupaj"><strong>${formatEur(skupajPreostalo)}</strong></td>
       </tr>` : '');
 
     prazno.style.display = obracun.length ? 'none' : 'block';
@@ -645,7 +645,7 @@ async function naloziStimulacije(stimulacije) {
   tbody.innerHTML = stimulacije.map(s => `
     <tr>
       <td>${escHtml(s.ime)}</td>
-      <td class="td-r">${formatEur(s.znesek)}</td>
+      <td>${formatEur(s.znesek)}</td>
       <td>${escHtml(s.opomba || '—')}</td>
       <td><button class="btn-sm btn-danger btn-stim-brisi" data-id="${s.id}">Izbriši</button></td>
     </tr>
@@ -857,8 +857,8 @@ async function naloziPolmesec() {
         <thead>
           <tr>
             <th>Zaposleni</th>
-            <th class="th-r">Ure (1–14)</th>
-            <th class="th-r">Zasluženo</th>
+            <th>Ure (1–14)</th>
+            <th>Zasluženo</th>
             <th>Izplačilo</th>
           </tr>
         </thead>
@@ -866,8 +866,8 @@ async function naloziPolmesec() {
           ${data.zaposleni.map(z => `
             <tr data-zid="${z.id}">
               <td>${escHtml(z.ime)}</td>
-              <td class="td-r">${formatUre(z.minute)}</td>
-              <td class="td-r">${z.osnova != null ? formatEur(z.osnova) : '—'}</td>
+              <td>${formatUre(z.minute)}</td>
+              <td>${z.osnova != null ? formatEur(z.osnova) : '—'}</td>
               <td class="td-polmesec-status">
                 ${z.potrjeno
                   ? `<span class="polmesec-potrjeno">✓ ${formatEur(z.akontacijaZnesek)} izplačano</span>
@@ -884,7 +884,7 @@ async function naloziPolmesec() {
         <tfoot>
           <tr>
             <td colspan="2"></td>
-            <td class="td-r"><strong>${formatEur(skupajZnesek)}</strong></td>
+            <td><strong>${formatEur(skupajZnesek)}</strong></td>
             <td>${skupajPotrjeno > 0 ? `<strong class="polmesec-potrjeno">${formatEur(skupajPotrjeno)} potrjeno</strong>` : ''}</td>
           </tr>
         </tfoot>
@@ -1024,13 +1024,13 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
           <td class="pris-td-datum">${datStr}${delaChips}</td>
           <td>${vnosiHtml(prihodiVnosi)}</td>
           <td>${vnosiHtml(odhodiVnosi)}</td>
-          <td class="td-r pris-td-ure">${ureStr}</td>
+          <td class="pris-td-ure">${ureStr}</td>
         </tr>`;
       }).join('');
 
       vsebina.innerHTML = `<table class="tabela pris-tabela">
         <thead><tr>
-          <th>Datum</th><th>Prihod</th><th>Odhod</th><th class="th-r">Ure</th>
+          <th>Datum</th><th>Prihod</th><th>Odhod</th><th>Ure</th>
         </tr></thead>
         <tbody>${vrstice}</tbody>
       </table>`;
@@ -1700,17 +1700,17 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
         return [`<tr>
           <td>${datStr}</td>
           <td>${dela[0] ? dela[0].naziv : '—'}</td>
-          <td class="t-c">${d.prihod||'—'}</td>
-          <td class="t-c">${d.odhod||'—'}</td>
-          <td class="t-r">${d.minute ? fUre(d.minute) : '—'}</td>
+          <td>${d.prihod||'—'}</td>
+          <td>${d.odhod||'—'}</td>
+          <td>${d.minute ? fUre(d.minute) : '—'}</td>
         </tr>`];
       }
       return dela.map((dl, i) => `<tr>
         <td>${i === 0 ? datStr : ''}</td>
         <td>${dl.naziv}</td>
-        <td class="t-c">${i === 0 ? (d.prihod||'—') : ''}</td>
-        <td class="t-c">${i === 0 ? (d.odhod||'—') : ''}</td>
-        <td class="t-r">${dl.minute ? fUre(dl.minute) : '—'}</td>
+        <td>${i === 0 ? (d.prihod||'—') : ''}</td>
+        <td>${i === 0 ? (d.odhod||'—') : ''}</td>
+        <td>${dl.minute ? fUre(dl.minute) : '—'}</td>
       </tr>`);
     }).join('');
 
@@ -1728,21 +1728,23 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     ].filter(Boolean).join('');
 
     return `<div class="stran${idx > 0 ? ' nova-stran' : ''}">
-      <div class="t-header">
-        <div class="t-logo">Catering Kukman</div>
+      <div class="t-doc-header">
+        <div><div class="t-logo">Catering Kukman</div><div class="t-logo-sub">Evidenca prisotnosti</div></div>
         <div class="t-header-right"><div class="t-mesec">${MESECI_T[mesec-1]} ${leto}</div><div class="t-izpis">${izpisStr}</div></div>
       </div>
-      <h1 class="t-ime">${z.ime}</h1>
-      <p class="t-povzetek">${fUre(z.skupajMinut)} · ${z.dnevi.length} delovnih dni</p>
+      <div class="t-zaposleni-header">
+        <div class="t-ime">${z.ime}</div>
+        <div class="t-povzetek">${fUre(z.skupajMinut)} · ${z.dnevi.length} delovnih dni</div>
+      </div>
       <table class="t-tabela">
         <colgroup><col style="width:16%"><col style="width:28%"><col style="width:18%"><col style="width:18%"><col style="width:20%"></colgroup>
-        <thead><tr><th>Datum</th><th>Delo</th><th class="t-c">Prihod</th><th class="t-c">Odhod</th><th class="t-r">Ure</th></tr></thead>
+        <thead><tr><th>Datum</th><th>Delo</th><th>Prihod</th><th>Odhod</th><th>Ure</th></tr></thead>
         <tbody>${dneviRows}</tbody>
       </table>
-      ${financRows ? `<table class="t-tabela t-financ"><tbody>${financRows}</tbody></table>` : ''}
+      ${financRows ? `<div class="t-financ-wrap"><table class="t-financ"><tbody>${financRows}</tbody></table></div>` : ''}
       <div class="t-podpis">
-        <div class="t-podpis-polje">Podpis zaposlenega: ___________________________</div>
-        <div class="t-podpis-polje">Datum: _______________</div>
+        <div class="t-podpis-polje"><div class="t-podpis-label">Podpis zaposlenega</div><div class="t-podpis-crta"></div></div>
+        <div class="t-podpis-polje"><div class="t-podpis-label">Datum</div><div class="t-podpis-crta"></div></div>
       </div>
     </div>`;
   }).join('');
@@ -1752,29 +1754,37 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
   <title>Obračun ${MESECI_T[mesec-1]} ${leto}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:Arial,sans-serif;font-size:11pt;color:#111;background:#fff}
-    .stran{padding:20mm 18mm}
-    .nova-stran{page-break-before:always}
-    .t-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a2332;padding-bottom:6px;margin-bottom:16px}
-    .t-logo{font-size:13pt;font-weight:700;color:#1a2332;letter-spacing:0.03em}
+    body{font-family:system-ui,-apple-system,'Segoe UI',Arial,sans-serif;font-size:10.5pt;color:#1a202c;background:#f0f4f8}
+    .stran{padding:18mm 20mm;background:#fff}
+    .nova-stran{page-break-before:always;break-before:page}
+    .t-doc-header{border-top:4px solid #1a2332;padding-top:14px;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px}
+    .t-logo{font-size:14pt;font-weight:800;color:#1a2332;letter-spacing:-0.01em}
+    .t-logo-sub{font-size:8pt;color:#718096;margin-top:3px;letter-spacing:0.05em;text-transform:uppercase}
     .t-header-right{text-align:right}
-    .t-mesec{font-size:10pt;color:#555}
-    .t-izpis{font-size:8pt;color:#999;margin-top:2px}
-    .t-ime{font-size:20pt;font-weight:700;margin-bottom:4px}
-    .t-povzetek{font-size:10pt;color:#555;margin-bottom:18px}
-    .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:16px;font-size:10pt}
-    .t-tabela th{border-bottom:2px solid #1a2332;padding:5px 6px;text-align:left;font-size:9pt;text-transform:uppercase;letter-spacing:0.05em;color:#333}
-    .t-tabela td{border-bottom:1px solid #e0e0e0;padding:5px 6px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10pt}
-    .t-c{text-align:center}.t-r{text-align:right}
-    .t-financ{margin-top:8px;max-width:360px;margin-left:auto}
-    .t-financ td{border-bottom:1px solid #eee;padding:4px 6px;white-space:normal;overflow:visible;text-overflow:clip}
-    .t-skupaj td{font-weight:700;border-top:2px solid #1a2332;border-bottom:2px solid #1a2332}
-    .t-akt td{color:#92400e}
-    .t-preostalo td{font-weight:700;color:#1e40af;border-bottom:2px solid #1e40af}
-    .t-podpis{margin-top:32px;display:flex;gap:40px;font-size:10pt;color:#444}
-    .btn-zapri{position:fixed;top:12px;right:16px;background:#1a2332;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:10pt;cursor:pointer;z-index:999}
+    .t-mesec{font-size:12pt;font-weight:700;color:#1a2332}
+    .t-izpis{font-size:8pt;color:#a0aec0;margin-top:3px}
+    .t-zaposleni-header{border-bottom:1px solid #e2e8f0;padding-bottom:12px;margin-bottom:18px}
+    .t-ime{font-size:19pt;font-weight:800;color:#1a202c;letter-spacing:-0.02em}
+    .t-povzetek{font-size:9.5pt;color:#718096;margin-top:5px}
+    .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:20px;font-size:10pt;border:1px solid #e2e8f0;border-radius:6px;overflow:hidden}
+    .t-tabela thead tr{background:#1a2332}
+    .t-tabela th{padding:7px 9px;text-align:left;font-size:8pt;text-transform:uppercase;letter-spacing:0.07em;color:#cbd5e0;font-weight:600}
+    .t-tabela td{padding:6px 9px;vertical-align:top;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10pt;border-bottom:1px solid #f1f5f9}
+    .t-tabela tbody tr:nth-child(even){background:#f8fafc}
+    .t-tabela tbody tr:last-child td{border-bottom:none}
+    .t-financ-wrap{display:flex;justify-content:flex-end;margin-bottom:24px}
+    .t-financ{width:100%;max-width:520px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;font-size:10pt;border-collapse:collapse}
+    .t-financ td{padding:7px 14px;border-bottom:1px solid #f1f5f9;white-space:normal;overflow:visible;text-overflow:clip}
+    .t-financ tbody tr:last-child td{border-bottom:none}
+    .t-skupaj td{font-weight:700;background:#f1f5f9;border-top:2px solid #1a2332!important;border-bottom:2px solid #1a2332!important;font-size:11pt}
+    .t-akt td{color:#744210;background:#fffaf0}
+    .t-preostalo td{font-weight:700;color:#1e40af;background:#eff6ff;font-size:11pt}
+    .t-podpis{margin-top:36px;display:flex;gap:60px;padding-top:18px;border-top:1px solid #e2e8f0}
+    .t-podpis-polje .t-podpis-label{font-size:8pt;color:#a0aec0;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:22px}
+    .t-podpis-polje .t-podpis-crta{border-bottom:1px solid #718096}
+    .btn-zapri{position:fixed;top:12px;right:16px;background:#1a2332;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:10pt;cursor:pointer;z-index:999;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
     .btn-zapri:hover{background:#2d3748}
-    @media print{.nova-stran{page-break-before:always;break-before:page}.stran{padding:15mm 14mm}.btn-zapri{display:none}}
+    @media print{.stran{padding:14mm 16mm;background:#fff}.btn-zapri{display:none}}
   </style>
   </head><body>
   <button class="btn-zapri" id="btn-zapri-tisk">&times; Zapri</button>
