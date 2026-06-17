@@ -21,6 +21,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (btn.dataset.tab === 'obracun') naloziObracunTab();
     if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
+    if (btn.dataset.tab === 'napake') naloziNapakeTab();
     if (btn.dataset.tab === 'lestvica') naloziLestvicaTab();
     if (btn.dataset.tab === 'dela') naloziDelaTab();
     if (btn.dataset.tab === 'nastavitve') { naloziNapraveTab(); naloziUvozTekst(); }
@@ -1428,6 +1429,123 @@ document.getElementById('lestvica-obdobje').querySelectorAll('.btn-obdobje').for
   });
 });
 
+// ── NAPAKE TAB ────────────────────────────────────────────────────────────────
+function naloziNapakeTab() { naloziNapake(); }
+
+async function naloziNapake() {
+  try {
+    const res = await fetch('/api/admin/anomalije');
+    if (!res.ok) return;
+    const { odprte, napake } = await res.json();
+
+    const odprteТbody = document.getElementById('napake-odprte-tbody');
+    const odprtePrazno = document.getElementById('napake-odprte-prazno');
+    const napakeTbody = document.getElementById('napake-tbody');
+    const napakePrazno = document.getElementById('napake-prazno');
+    const badge = document.getElementById('napake-badge');
+
+    if (!odprte.length) {
+      odprteТbody.innerHTML = '';
+      odprtePrazno.style.display = 'block';
+    } else {
+      odprtePrazno.style.display = 'none';
+      const zdaj = Date.now();
+      odprteТbody.innerHTML = odprte.map(r => {
+        const prihodStr = String(r.prihod_cas).slice(0, 16).replace('T', ' ');
+        const prihodDatum = String(r.prihod_cas).slice(0, 10);
+        const prihodMs = new Date(r.prihod_cas).getTime();
+        const diffMin = Math.floor((zdaj - prihodMs) / 60000);
+        let casOdp;
+        if (diffMin >= 1440) {
+          casOdp = Math.floor(diffMin / 1440) + ' dni';
+        } else {
+          const h = Math.floor(diffMin / 60);
+          const m = diffMin % 60;
+          casOdp = h > 0 ? `${h}u ${m}min` : `${m}min`;
+        }
+        return `<tr data-zap="${r.zaposleni_id}" data-datum="${prihodDatum}">
+          <td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${casOdp}</td>
+          <td><button class="btn-sm btn-napaka-uredi">Vnesi odhod</button></td>
+        </tr>`;
+      }).join('');
+      odprteТbody.querySelectorAll('.btn-napaka-uredi').forEach(btn => {
+        btn.addEventListener('click', () => prikaziNapakForm(btn.closest('tr')));
+      });
+    }
+
+    if (odprte.length > 0) {
+      badge.textContent = odprte.length;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (!napake.length) {
+      napakeTbody.innerHTML = '';
+      napakePrazno.style.display = 'block';
+    } else {
+      napakePrazno.style.display = 'none';
+      napakeTbody.innerHTML = napake.map(r => {
+        const prihodStr = String(r.prihod_cas).slice(0, 16).replace('T', ' ');
+        const prihodDatum = String(r.prihod_cas).slice(0, 10);
+        const naslednjiStr = String(r.naslednji_prihod_cas).slice(0, 16).replace('T', ' ');
+        return `<tr data-zap="${r.zaposleni_id}" data-datum="${prihodDatum}">
+          <td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${naslednjiStr}</td>
+          <td><button class="btn-sm btn-napaka-uredi">Vnesi odhod</button></td>
+        </tr>`;
+      }).join('');
+      napakeTbody.querySelectorAll('.btn-napaka-uredi').forEach(btn => {
+        btn.addEventListener('click', () => prikaziNapakForm(btn.closest('tr')));
+      });
+    }
+  } catch(_) {}
+}
+
+function prikaziNapakForm(tr) {
+  document.querySelectorAll('.napaka-edit-row').forEach(r => r.remove());
+  const zapId = tr.dataset.zap;
+  const datum = tr.dataset.datum;
+  const colCount = tr.cells.length;
+  const editTr = document.createElement('tr');
+  editTr.className = 'napaka-edit-row';
+  editTr.innerHTML = `
+    <td colspan="${colCount}" style="padding:10px 14px;background:#f0fff4;border-top:2px solid #c6f6d5">
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div>
+          <label style="display:block;font-size:0.78rem;color:#718096;margin-bottom:3px">Datum</label>
+          <input type="date" class="ne-datum" value="${datum}" style="font-size:0.88rem;padding:5px 8px;border:1px solid #cbd5e0;border-radius:6px">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;color:#718096;margin-bottom:3px">Ura odhoda</label>
+          <input type="time" class="ne-cas" style="font-size:0.88rem;padding:5px 8px;border:1px solid #cbd5e0;border-radius:6px">
+        </div>
+        <button class="btn-sm btn-primary ne-shrani">Shrani</button>
+        <button class="btn-sm ne-preklic">Prekliči</button>
+      </div>
+    </td>`;
+  tr.after(editTr);
+  editTr.querySelector('.ne-cas').focus();
+  editTr.querySelector('.ne-preklic').addEventListener('click', () => editTr.remove());
+  editTr.querySelector('.ne-shrani').addEventListener('click', async () => {
+    const d = editTr.querySelector('.ne-datum').value;
+    const t = editTr.querySelector('.ne-cas').value;
+    if (!d || !t) { prikaziToast('Vnesi datum in uro', 'napaka'); return; }
+    const r = await fetch('/api/admin/rocni-vnos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zaposleniId: zapId, datum: d, casPrihoda: '', casOdhoda: t })
+    });
+    if (r.ok) {
+      prikaziToast('Odhod vnešen');
+      editTr.remove();
+      naloziNapake();
+    } else {
+      const j = await r.json().catch(() => ({}));
+      prikaziToast(j.napaka || 'Napaka pri vnosu', 'napaka');
+    }
+  });
+}
+
 // ── ROČNI VNOS ────────────────────────────────────────────────────────────────
 async function naloziRvZaposlene() {
   const res = await fetch('/api/admin/zaposleni');
@@ -1849,6 +1967,7 @@ document.getElementById('btn-obr-tisk').addEventListener('click', () => {
 naloziZaposlene();
 naloziEvidenco();
 naloziRvZaposlene();
+naloziNapake();
 // Check for pending requests badge on load
 (async () => {
   try {

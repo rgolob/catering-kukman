@@ -1414,6 +1414,32 @@ function createApp() {
     res.json({ ok: true });
   });
 
+  app.get('/api/admin/anomalije', requireAuth, async (req, res) => {
+    const [{ rows: odprte }, { rows: napake }] = await Promise.all([
+      req.db.execute(
+        `SELECT e.zaposleni_id, z.ime, e.cas AS prihod_cas
+         FROM evidenca e
+         JOIN zaposleni z ON z.id = e.zaposleni_id
+         WHERE z.aktiven = 1
+           AND e.id = (SELECT id FROM evidenca e2 WHERE e2.zaposleni_id = e.zaposleni_id ORDER BY e2.cas DESC LIMIT 1)
+           AND e.tip = 'PRIHOD'
+         ORDER BY e.cas ASC`
+      ),
+      req.db.execute(
+        `SELECT e1.zaposleni_id, z.ime, e1.cas AS prihod_cas, e2.cas AS naslednji_prihod_cas
+         FROM evidenca e1
+         JOIN zaposleni z ON z.id = e1.zaposleni_id
+         JOIN evidenca e2 ON e2.zaposleni_id = e1.zaposleni_id
+           AND e2.cas = (SELECT MIN(cas) FROM evidenca e3 WHERE e3.zaposleni_id = e1.zaposleni_id AND e3.cas > e1.cas)
+         WHERE e1.tip = 'PRIHOD' AND e2.tip = 'PRIHOD'
+           AND e1.cas >= date('now', '-60 days')
+         ORDER BY e1.cas DESC
+         LIMIT 50`
+      )
+    ]);
+    res.json({ odprte, napake });
+  });
+
   app.get('/api/admin/obracun', requireAuth, async (req, res) => {
     const zdaj = new Date();
     const leto = parseInt(req.query.leto) || zdaj.getFullYear();
