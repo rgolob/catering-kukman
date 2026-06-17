@@ -1452,6 +1452,7 @@ async function naloziNapake() {
       const zdaj = Date.now();
       odprteТbody.innerHTML = odprte.map(r => {
         const prihodStr = String(r.prihod_cas).slice(0, 16).replace('T', ' ');
+        const prihodDatum = String(r.prihod_cas).slice(0, 10);
         const prihodMs = new Date(r.prihod_cas).getTime();
         const diffMin = Math.floor((zdaj - prihodMs) / 60000);
         let casOdp;
@@ -1462,8 +1463,14 @@ async function naloziNapake() {
           const m = diffMin % 60;
           casOdp = h > 0 ? `${h}u ${m}min` : `${m}min`;
         }
-        return `<tr><td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${casOdp}</td></tr>`;
+        return `<tr data-zap="${r.zaposleni_id}" data-datum="${prihodDatum}">
+          <td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${casOdp}</td>
+          <td><button class="btn-sm btn-napaka-uredi">Vnesi odhod</button></td>
+        </tr>`;
       }).join('');
+      odprteТbody.querySelectorAll('.btn-napaka-uredi').forEach(btn => {
+        btn.addEventListener('click', () => prikaziNapakForm(btn.closest('tr')));
+      });
     }
 
     if (odprte.length > 0) {
@@ -1480,11 +1487,63 @@ async function naloziNapake() {
       napakePrazno.style.display = 'none';
       napakeTbody.innerHTML = napake.map(r => {
         const prihodStr = String(r.prihod_cas).slice(0, 16).replace('T', ' ');
+        const prihodDatum = String(r.prihod_cas).slice(0, 10);
         const naslednjiStr = String(r.naslednji_prihod_cas).slice(0, 16).replace('T', ' ');
-        return `<tr><td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${naslednjiStr}</td></tr>`;
+        return `<tr data-zap="${r.zaposleni_id}" data-datum="${prihodDatum}">
+          <td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${naslednjiStr}</td>
+          <td><button class="btn-sm btn-napaka-uredi">Vnesi odhod</button></td>
+        </tr>`;
       }).join('');
+      napakeTbody.querySelectorAll('.btn-napaka-uredi').forEach(btn => {
+        btn.addEventListener('click', () => prikaziNapakForm(btn.closest('tr')));
+      });
     }
   } catch(_) {}
+}
+
+function prikaziNapakForm(tr) {
+  document.querySelectorAll('.napaka-edit-row').forEach(r => r.remove());
+  const zapId = tr.dataset.zap;
+  const datum = tr.dataset.datum;
+  const colCount = tr.cells.length;
+  const editTr = document.createElement('tr');
+  editTr.className = 'napaka-edit-row';
+  editTr.innerHTML = `
+    <td colspan="${colCount}" style="padding:10px 14px;background:#f0fff4;border-top:2px solid #c6f6d5">
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+        <div>
+          <label style="display:block;font-size:0.78rem;color:#718096;margin-bottom:3px">Datum</label>
+          <input type="date" class="ne-datum" value="${datum}" style="font-size:0.88rem;padding:5px 8px;border:1px solid #cbd5e0;border-radius:6px">
+        </div>
+        <div>
+          <label style="display:block;font-size:0.78rem;color:#718096;margin-bottom:3px">Ura odhoda</label>
+          <input type="time" class="ne-cas" style="font-size:0.88rem;padding:5px 8px;border:1px solid #cbd5e0;border-radius:6px">
+        </div>
+        <button class="btn-sm btn-primary ne-shrani">Shrani</button>
+        <button class="btn-sm ne-preklic">Prekliči</button>
+      </div>
+    </td>`;
+  tr.after(editTr);
+  editTr.querySelector('.ne-cas').focus();
+  editTr.querySelector('.ne-preklic').addEventListener('click', () => editTr.remove());
+  editTr.querySelector('.ne-shrani').addEventListener('click', async () => {
+    const d = editTr.querySelector('.ne-datum').value;
+    const t = editTr.querySelector('.ne-cas').value;
+    if (!d || !t) { prikaziToast('Vnesi datum in uro', 'napaka'); return; }
+    const r = await fetch('/api/admin/rocni-vnos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ zaposleniId: zapId, datum: d, casPrihoda: '', casOdhoda: t })
+    });
+    if (r.ok) {
+      prikaziToast('Odhod vnešen');
+      editTr.remove();
+      naloziNapake();
+    } else {
+      const j = await r.json().catch(() => ({}));
+      prikaziToast(j.napaka || 'Napaka pri vnosu', 'napaka');
+    }
+  });
 }
 
 // ── ROČNI VNOS ────────────────────────────────────────────────────────────────
