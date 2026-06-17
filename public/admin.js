@@ -1692,6 +1692,8 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
   const DNI_T = ['ned','pon','tor','sre','čet','pet','sob'];
   const fEur = v => v != null ? `€ ${parseFloat(v).toFixed(2).replace('.',',')}` : '—';
   const fUre = m => { const h = Math.floor(m/60), min = m%60; return min ? `${h}u ${min}min` : `${h}u`; };
+  const now = new Date();
+  const izpisStr = `Izpisano: ${String(now.getDate()).padStart(2,'0')}.${String(now.getMonth()+1).padStart(2,'0')}.${now.getFullYear()}`;
 
   const strani = zaposleniArr.map((z, idx) => {
     const dneviRows = z.dnevi.flatMap(d => {
@@ -1729,7 +1731,7 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     return `<div class="stran${idx > 0 ? ' nova-stran' : ''}">
       <div class="t-header">
         <div class="t-logo">Catering Kukman</div>
-        <div class="t-mesec">${MESECI_T[mesec-1]} ${leto}</div>
+        <div class="t-header-right"><div class="t-mesec">${MESECI_T[mesec-1]} ${leto}</div><div class="t-izpis">${izpisStr}</div></div>
       </div>
       <h1 class="t-ime">${z.ime}</h1>
       <p class="t-povzetek">${fUre(z.skupajMinut)} · ${z.dnevi.length} delovnih dni</p>
@@ -1752,11 +1754,13 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:Arial,sans-serif;font-size:11pt;color:#111;background:#fff}
-    .stran{padding:20mm 18mm;min-height:100vh}
+    .stran{padding:20mm 18mm}
     .nova-stran{page-break-before:always}
-    .t-header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #1a2332;padding-bottom:6px;margin-bottom:16px}
+    .t-header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid #1a2332;padding-bottom:6px;margin-bottom:16px}
     .t-logo{font-size:13pt;font-weight:700;color:#1a2332;letter-spacing:0.03em}
+    .t-header-right{text-align:right}
     .t-mesec{font-size:10pt;color:#555}
+    .t-izpis{font-size:8pt;color:#999;margin-top:2px}
     .t-ime{font-size:20pt;font-weight:700;margin-bottom:4px}
     .t-povzetek{font-size:10pt;color:#555;margin-bottom:18px}
     .t-tabela{width:100%;table-layout:fixed;border-collapse:collapse;margin-bottom:16px;font-size:10pt}
@@ -1769,7 +1773,7 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
     .t-akt td{color:#92400e}
     .t-preostalo td{font-weight:700;color:#1e40af;border-bottom:2px solid #1e40af}
     .t-podpis{margin-top:32px;display:flex;gap:40px;font-size:10pt;color:#444}
-    @media print{.nova-stran{page-break-before:always}.stran{padding:15mm 14mm}}
+    @media print{.nova-stran{page-break-before:always;break-before:page}.stran{padding:15mm 14mm}}
   </style>
   </head><body>${strani}</body></html>`;
 }
