@@ -1714,8 +1714,11 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
       </tr>`);
     }).join('');
 
+    const osnovaRows = z.delaBreakdown && z.delaBreakdown.length
+      ? z.delaBreakdown.map(d => `<tr><td>${d.naziv} (${fUre(d.minute)} × €${parseFloat(d.urna_postavka).toFixed(2)}/h)</td><td class="t-r">${fEur(d.osnova)}</td></tr>`).join('')
+      : (z.urnaPostavka ? `<tr><td>Osnova (${fUre(z.skupajMinut)} × €${parseFloat(z.urnaPostavka).toFixed(2)}/h)</td><td class="t-r">${fEur(z.osnova)}</td></tr>` : '');
     const financRows = [
-      z.urnaPostavka ? `<tr><td>Osnova (${fUre(z.skupajMinut)} × €${parseFloat(z.urnaPostavka).toFixed(2)}/h)</td><td class="t-r">${fEur(z.osnova)}</td></tr>` : '',
+      osnovaRows,
       z.stimulacija ? `<tr><td>Stimulacija</td><td class="t-r">${fEur(z.stimulacija)}</td></tr>` : '',
       z.gorivo ? `<tr><td>Gorivo</td><td class="t-r">${fEur(z.gorivo)}</td></tr>` : '',
       z.nakup ? `<tr><td>Nakup</td><td class="t-r">${fEur(z.nakup)}</td></tr>` : '',

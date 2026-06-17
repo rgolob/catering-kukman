@@ -1596,6 +1596,17 @@ function createApp() {
       const hasRate = privzetaUp > 0 || delaMap.size > 0;
       const osnova = hasRate ? Math.round((privzetaOsnova + dodatnaOsnova) * 100) / 100 : null;
 
+      // Per-work-type breakdown for print
+      const delaBreakdown = [];
+      if (privzetaMinuta > 0 && privzetaUp > 0) {
+        delaBreakdown.push({ naziv: z.priv_naziv || 'Osnova', minute: privzetaMinuta, urna_postavka: privzetaUp, osnova: privzetaOsnova });
+      }
+      for (const [, d] of delaMap) {
+        if (d.minute > 0 && d.urna_postavka > 0) {
+          delaBreakdown.push({ naziv: d.naziv, minute: d.minute, urna_postavka: d.urna_postavka, osnova: Math.round(d.minute / 60 * d.urna_postavka * 100) / 100 });
+        }
+      }
+
       const stimulacija = stimMap.get(zid) || 0;
       const { km: gorivo = 0, strosek: nakup = 0 } = kmMap.get(zid) || {};
       const akontacija = aktMap.get(zid) || 0;
@@ -1608,6 +1619,7 @@ function createApp() {
         privzetoDelo: z.priv_naziv || null,
         urnaPostavka: privzetaUp || null,
         skupajMinut,
+        delaBreakdown,
         dnevi,
         osnova,
         stimulacija: stimulacija || null,
