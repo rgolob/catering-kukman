@@ -1732,7 +1732,7 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
       <h1 class="t-ime">${z.ime}</h1>
       <p class="t-povzetek">${fUre(z.skupajMinut)} · ${z.dnevi.length} delovnih dni</p>
       <table class="t-tabela">
-        <colgroup><col style="width:110px"><col><col style="width:68px"><col style="width:68px"><col style="width:68px"></colgroup>
+        <colgroup><col style="width:95px"><col><col style="width:78px"><col style="width:78px"><col style="width:82px"></colgroup>
         <thead><tr><th>Datum</th><th>Delo</th><th class="t-c">Prihod</th><th class="t-c">Odhod</th><th class="t-r">Ure</th></tr></thead>
         <tbody>${dneviRows}</tbody>
       </table>
@@ -1776,7 +1776,7 @@ function generirajTiskHtml(zaposleniArr, leto, mesec) {
   </head><body>
   <button class="btn-zapri" id="btn-zapri-tisk">&times; Zapri</button>
   ${strani}
-  <script>document.getElementById('btn-zapri-tisk').addEventListener('click',function(){window.close();});</script>
+  <script>document.getElementById('btn-zapri-tisk').addEventListener('click',function(){window.open('','_self','');window.close();});</script>
   </body></html>`;
 }
 
