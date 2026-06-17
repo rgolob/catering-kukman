@@ -21,6 +21,7 @@ document.querySelectorAll('.tab').forEach(btn => {
     if (btn.dataset.tab === 'obracun') naloziObracunTab();
     if (btn.dataset.tab === 'prisotnost') naloziPrisotnostTab();
     if (btn.dataset.tab === 'zahtevki') naloziZahtevkiTab();
+    if (btn.dataset.tab === 'napake') naloziNapakeTab();
     if (btn.dataset.tab === 'lestvica') naloziLestvicaTab();
     if (btn.dataset.tab === 'dela') naloziDelaTab();
     if (btn.dataset.tab === 'nastavitve') { naloziNapraveTab(); naloziUvozTekst(); }
@@ -1428,6 +1429,64 @@ document.getElementById('lestvica-obdobje').querySelectorAll('.btn-obdobje').for
   });
 });
 
+// ── NAPAKE TAB ────────────────────────────────────────────────────────────────
+function naloziNapakeTab() { naloziNapake(); }
+
+async function naloziNapake() {
+  try {
+    const res = await fetch('/api/admin/anomalije');
+    if (!res.ok) return;
+    const { odprte, napake } = await res.json();
+
+    const odprteТbody = document.getElementById('napake-odprte-tbody');
+    const odprtePrazno = document.getElementById('napake-odprte-prazno');
+    const napakeTbody = document.getElementById('napake-tbody');
+    const napakePrazno = document.getElementById('napake-prazno');
+    const badge = document.getElementById('napake-badge');
+
+    if (!odprte.length) {
+      odprteТbody.innerHTML = '';
+      odprtePrazno.style.display = 'block';
+    } else {
+      odprtePrazno.style.display = 'none';
+      const zdaj = Date.now();
+      odprteТbody.innerHTML = odprte.map(r => {
+        const prihodStr = String(r.prihod_cas).slice(0, 16).replace('T', ' ');
+        const prihodMs = new Date(r.prihod_cas).getTime();
+        const diffMin = Math.floor((zdaj - prihodMs) / 60000);
+        let casOdp;
+        if (diffMin >= 1440) {
+          casOdp = Math.floor(diffMin / 1440) + ' dni';
+        } else {
+          const h = Math.floor(diffMin / 60);
+          const m = diffMin % 60;
+          casOdp = h > 0 ? `${h}u ${m}min` : `${m}min`;
+        }
+        return `<tr><td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${casOdp}</td></tr>`;
+      }).join('');
+    }
+
+    if (odprte.length > 0) {
+      badge.textContent = odprte.length;
+      badge.style.display = '';
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (!napake.length) {
+      napakeTbody.innerHTML = '';
+      napakePrazno.style.display = 'block';
+    } else {
+      napakePrazno.style.display = 'none';
+      napakeTbody.innerHTML = napake.map(r => {
+        const prihodStr = String(r.prihod_cas).slice(0, 16).replace('T', ' ');
+        const naslednjiStr = String(r.naslednji_prihod_cas).slice(0, 16).replace('T', ' ');
+        return `<tr><td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${naslednjiStr}</td></tr>`;
+      }).join('');
+    }
+  } catch(_) {}
+}
+
 // ── ROČNI VNOS ────────────────────────────────────────────────────────────────
 async function naloziRvZaposlene() {
   const res = await fetch('/api/admin/zaposleni');
@@ -1849,6 +1908,7 @@ document.getElementById('btn-obr-tisk').addEventListener('click', () => {
 naloziZaposlene();
 naloziEvidenco();
 naloziRvZaposlene();
+naloziNapake();
 // Check for pending requests badge on load
 (async () => {
   try {

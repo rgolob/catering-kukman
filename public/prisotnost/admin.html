@@ -34,6 +34,7 @@
       <button class="tab" data-tab="evidenca">Evidenca</button>
       <button class="tab" data-tab="prisotnost">Prisotnost</button>
       <button class="tab" data-tab="zahtevki">Zahtevki <span id="zahtevki-badge" class="zahtevki-badge" style="display:none"></span></button>
+      <button class="tab" data-tab="napake">Napake <span id="napake-badge" class="zahtevki-badge" style="display:none"></span></button>
       <button class="tab" data-tab="lestvica">Lestvica</button>
       <button class="tab" data-tab="obracun">Obračun</button>
       <button class="tab" data-tab="dela">Dela</button>
@@ -163,6 +164,28 @@
           <tbody id="zahtevki-tbody"></tbody>
         </table>
         <div id="zahtevki-prazno" class="prazno" style="display:none">Ni zahtevkov.</div>
+      </div>
+    </div>
+
+    <!-- Tab: Napake -->
+    <div id="tab-napake" class="tab-content">
+      <div class="card">
+        <h2>Odprte izmene</h2>
+        <p class="prazno" style="font-size:0.85rem;margin-bottom:8px">Zaposleni, ki so se prijavili a se niso odjavili.</p>
+        <table class="tabela" id="napake-odprte-tabela">
+          <thead><tr><th>Zaposleni</th><th>Prihod</th><th>Čas odprtosti</th></tr></thead>
+          <tbody id="napake-odprte-tbody"></tbody>
+        </table>
+        <div id="napake-odprte-prazno" class="prazno">Ni odprtih izmen.</div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <h2>Manjkajoči odhodi (zadnji 60 dni)</h2>
+        <p class="prazno" style="font-size:0.85rem;margin-bottom:8px">Prijave brez odjave — naslednji prihod je sledil brez vmesnega odhoda.</p>
+        <table class="tabela" id="napake-tabela">
+          <thead><tr><th>Zaposleni</th><th>Prihod</th><th>Naslednji prihod</th></tr></thead>
+          <tbody id="napake-tbody"></tbody>
+        </table>
+        <div id="napake-prazno" class="prazno">Ni napak v zadnjih 60 dneh.</div>
       </div>
     </div>
 
