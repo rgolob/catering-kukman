@@ -1,6 +1,6 @@
 {
-  "name": "Catering Kukman",
-  "short_name": "Kukman",
+  "name": "Kukman Evidenca",
+  "short_name": "Evidenca",
   "description": "Evidenca prisotnosti zaposlenih",
   "start_url": "/prisotnost",
   "display": "standalone",
