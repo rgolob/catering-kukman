@@ -5,10 +5,10 @@ let korak = 1; // 1 = vnos novega, 2 = potrditev
 async function init() {
   try {
     const res = await fetch('/api/nastavi-pin-info');
-    if (res.status === 401) { window.location.href = '/prisotnost/pin'; return; }
+    if (res.status === 401) { window.location.href = '/moj-cas'; return; }
     const data = await res.json();
     document.getElementById('pozdrav-ime').textContent = data.ime;
-    if (!data.pinSetupRequired) { window.location.href = '/prisotnost/moj-cas'; return; }
+    if (!data.pinSetupRequired) { window.location.href = '/moj-cas/app'; return; }
   } catch(_) {}
 }
 
@@ -67,7 +67,7 @@ async function preveriPin() {
       body: JSON.stringify({ novPin })
     });
     if (res.ok) {
-      window.location.href = '/prisotnost/moj-cas';
+      window.location.href = '/moj-cas/app';
     } else {
       const d = await res.json();
       document.getElementById('napaka').textContent = d.napaka || 'Napaka';

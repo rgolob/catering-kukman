@@ -310,17 +310,24 @@ function createApp() {
   app.get(BASE + '/admin', requireAuth, (req, res) =>
     res.sendFile(path.join(P, 'admin.html')));
 
-  app.get(BASE + '/pin', (req, res) => {
-    if (req.session.zaposleniId) return res.redirect(BASE + '/moj-cas');
+  app.get(BASE + '/pin', (req, res) => res.redirect('/moj-cas'));
+
+  app.get(BASE + '/moj-cas', (req, res) => res.redirect('/moj-cas/app'));
+
+  app.get(BASE + '/pin-setup', (req, res) => res.redirect('/moj-cas/pin-setup'));
+
+  // ── Moj čas — dedicated employee route ──────────────────────────────────────
+  app.get('/moj-cas', (req, res) => {
+    if (req.session.zaposleniId) return res.redirect('/moj-cas/app');
     res.sendFile(path.join(P, 'pin.html'));
   });
 
-  app.get(BASE + '/moj-cas', (req, res) => {
-    if (!req.session.zaposleniId) return res.redirect(BASE + '/pin');
+  app.get('/moj-cas/app', (req, res) => {
+    if (!req.session.zaposleniId) return res.redirect('/moj-cas');
     res.sendFile(path.join(P, 'moj-cas.html'));
   });
 
-  app.get(BASE + '/pin-setup', (req, res) =>
+  app.get('/moj-cas/pin-setup', (req, res) =>
     res.sendFile(path.join(P, 'pin-setup.html')));
 
   app.get(BASE + '/qr', (req, res) =>

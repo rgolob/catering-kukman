@@ -87,7 +87,7 @@ async function initPinSekcija() {
   }
   const data = await res.json();
   if (data.pinSetupRequired) {
-    window.location.href = '/prisotnost/pin-setup';
+    window.location.href = '/moj-cas/pin-setup';
     return;
   }
   prikaziUreVsebina(data);
@@ -171,7 +171,7 @@ async function preveriPin() {
   });
   if (res.ok) {
     const data = await res.json();
-    if (data.pinSetupRequired) { window.location.href = '/prisotnost/pin-setup'; return; }
+    if (data.pinSetupRequired) { window.location.href = '/moj-cas/pin-setup'; return; }
     const infoRes = await fetch('/api/moj-cas/info');
     prikaziUreVsebina(await infoRes.json());
   } else {
