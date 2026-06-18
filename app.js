@@ -303,11 +303,14 @@ function createApp() {
     res.sendFile(path.join(P, 'index.html')));
 
   app.get(BASE + '/login', (req, res) => {
-    if (req.session.admin) return res.redirect(BASE + '/admin');
+    if (req.session.admin) return res.redirect('/admin');
     res.sendFile(path.join(P, 'login.html'));
   });
 
-  app.get(BASE + '/admin', requireAuth, (req, res) =>
+  app.get(BASE + '/admin', (req, res) => res.redirect('/admin'));
+
+  // ── Admin — dedicated route ──────────────────────────────────────────────────
+  app.get('/admin', requireAuth, (req, res) =>
     res.sendFile(path.join(P, 'admin.html')));
 
   app.get(BASE + '/pin', (req, res) => res.redirect('/moj-cas'));
