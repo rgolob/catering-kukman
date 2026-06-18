@@ -5,8 +5,8 @@
   "start_url": "/moj-cas",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#276749",
-  "theme_color": "#276749",
+  "background_color": "#1e40af",
+  "theme_color": "#1e40af",
   "lang": "sl",
   "icons": [
     {
