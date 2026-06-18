@@ -1430,6 +1430,7 @@ function createApp() {
          WHERE z.aktiven = 1
            AND e.id = (SELECT id FROM evidenca e2 WHERE e2.zaposleni_id = e.zaposleni_id ORDER BY e2.cas DESC LIMIT 1)
            AND e.tip = 'PRIHOD'
+           AND e.cas <= datetime('now', '-2 days')
          ORDER BY e.cas ASC`
       ),
       req.db.execute(
