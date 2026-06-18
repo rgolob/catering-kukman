@@ -59,7 +59,7 @@ async function preveriPin() {
   if (res.ok) {
     const data = await res.json();
     localStorage.setItem(LS_USER, JSON.stringify({ id: izbraniZaposleniId, ime: izbraniZaposleniIme }));
-    window.location.href = data.pinSetupRequired ? '/prisotnost/pin-setup' : '/prisotnost/moj-cas';
+    window.location.href = data.pinSetupRequired ? '/moj-cas/pin-setup' : '/moj-cas/app';
   } else {
     const prikaz = document.querySelector('.pin-prikaz');
     prikaz.classList.remove('tresenje');

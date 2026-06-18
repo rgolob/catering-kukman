@@ -310,17 +310,24 @@ function createApp() {
   app.get(BASE + '/admin', requireAuth, (req, res) =>
     res.sendFile(path.join(P, 'admin.html')));
 
-  app.get(BASE + '/pin', (req, res) => {
-    if (req.session.zaposleniId) return res.redirect(BASE + '/moj-cas');
+  app.get(BASE + '/pin', (req, res) => res.redirect('/moj-cas'));
+
+  app.get(BASE + '/moj-cas', (req, res) => res.redirect('/moj-cas/app'));
+
+  app.get(BASE + '/pin-setup', (req, res) => res.redirect('/moj-cas/pin-setup'));
+
+  // ── Moj čas — dedicated employee route ──────────────────────────────────────
+  app.get('/moj-cas', (req, res) => {
+    if (req.session.zaposleniId) return res.redirect('/moj-cas/app');
     res.sendFile(path.join(P, 'pin.html'));
   });
 
-  app.get(BASE + '/moj-cas', (req, res) => {
-    if (!req.session.zaposleniId) return res.redirect(BASE + '/pin');
+  app.get('/moj-cas/app', (req, res) => {
+    if (!req.session.zaposleniId) return res.redirect('/moj-cas');
     res.sendFile(path.join(P, 'moj-cas.html'));
   });
 
-  app.get(BASE + '/pin-setup', (req, res) =>
+  app.get('/moj-cas/pin-setup', (req, res) =>
     res.sendFile(path.join(P, 'pin-setup.html')));
 
   app.get(BASE + '/qr', (req, res) =>
@@ -482,8 +489,8 @@ function createApp() {
     let trajanjeMinut = null, casOdStore = '00:00', casDoStore = '00:00';
     if (celDan) {
       const { rows: ev } = await req.db.execute({
-        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC`,
-        args: [zaposleniId, datum]
+        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, '+1 day')) ORDER BY cas ASC`,
+        args: [zaposleniId, datum, datum]
       });
       trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
       if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
@@ -976,8 +983,8 @@ function createApp() {
     let trajanjeMinut = null, casOdStore = '00:00', casDoStore = '00:00';
     if (celDan) {
       const { rows: ev } = await req.db.execute({
-        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC`,
-        args: [req.session.zaposleniId, datum]
+        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, '+1 day')) ORDER BY cas ASC`,
+        args: [req.session.zaposleniId, datum, datum]
       });
       trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
       if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
@@ -1216,8 +1223,8 @@ function createApp() {
     let trajanjeMinut = null, casOdStore = '00:00', casDoStore = '00:00';
     if (celDan) {
       const { rows: ev } = await req.db.execute({
-        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC`,
-        args: [zaposleniId, datum]
+        sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, '+1 day')) ORDER BY cas ASC`,
+        args: [zaposleniId, datum, datum]
       });
       trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
       if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
@@ -1285,8 +1292,8 @@ function createApp() {
     let trajanjeMinut = null;
     if (celDan) {
       const { rows: ev } = await req.db.execute({
-        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas ASC',
-        args: [zaposleniId, datum]
+        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, \'+1 day\')) ORDER BY cas ASC',
+        args: [zaposleniId, datum, datum]
       });
       trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
       if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
