@@ -38,8 +38,8 @@
 
 [[redirects]]
   from = "/prisotnost/admin"
-  to = "/admin.html"
-  status = 200
+  to = "/admin"
+  status = 301
 
 [[redirects]]
   from = "/prisotnost/pin"
@@ -95,8 +95,8 @@
 
 [[redirects]]
   from = "/admin"
-  to = "/prisotnost/admin"
-  status = 301
+  to = "/prisotnost/admin.html"
+  status = 200
 
 [[redirects]]
   from = "/pin"
