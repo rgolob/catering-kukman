@@ -492,8 +492,14 @@ function createApp() {
         sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, '+1 day')) ORDER BY cas ASC`,
         args: [zaposleniId, datum, datum]
       });
-      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
-      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const shiftMin = Math.round(izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0);
+      if (!shiftMin) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const { rows: razObs } = await req.db.execute({
+        sql: 'SELECT COALESCE(SUM(trajanje_minut),0) AS s FROM evidenca_razporeditev WHERE zaposleni_id = ? AND datum = ?',
+        args: [zaposleniId, datum]
+      });
+      trajanjeMinut = Math.max(0, shiftMin - Number(razObs[0]?.s || 0));
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Vse minute tega dne so že razporejene' });
     } else if (trajanje != null) {
       trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
       if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Vnesite veljavno trajanje' });
@@ -986,8 +992,14 @@ function createApp() {
         sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, '+1 day')) ORDER BY cas ASC`,
         args: [req.session.zaposleniId, datum, datum]
       });
-      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
-      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const shiftMin = Math.round(izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0);
+      if (!shiftMin) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const { rows: razObs } = await req.db.execute({
+        sql: 'SELECT COALESCE(SUM(trajanje_minut),0) AS s FROM evidenca_razporeditev WHERE zaposleni_id = ? AND datum = ?',
+        args: [req.session.zaposleniId, datum]
+      });
+      trajanjeMinut = Math.max(0, shiftMin - Number(razObs[0]?.s || 0));
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Vse minute tega dne so že razporejene' });
     } else if (trajanje != null) {
       trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
       if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Neveljavno trajanje' });
@@ -1226,8 +1238,14 @@ function createApp() {
         sql: `SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, '+1 day')) ORDER BY cas ASC`,
         args: [zaposleniId, datum, datum]
       });
-      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
-      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const shiftMin = Math.round(izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0);
+      if (!shiftMin) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const { rows: razObs } = await req.db.execute({
+        sql: 'SELECT COALESCE(SUM(trajanje_minut),0) AS s FROM evidenca_razporeditev WHERE zaposleni_id = ? AND datum = ?',
+        args: [zaposleniId, datum]
+      });
+      trajanjeMinut = Math.max(0, shiftMin - Number(razObs[0]?.s || 0));
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Vse minute tega dne so že razporejene' });
     } else if (trajanje != null) {
       trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
       if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Vnesite veljavno trajanje' });
@@ -1295,8 +1313,14 @@ function createApp() {
         sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND (substr(cas,1,10) = ? OR substr(cas,1,10) = date(?, \'+1 day\')) ORDER BY cas ASC',
         args: [zaposleniId, datum, datum]
       });
-      trajanjeMinut = izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0;
-      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const shiftMin = Math.round(izracunajDnevneUre(ev).find(d => d.datum === datum)?.minute || 0);
+      if (!shiftMin) return res.status(400).json({ napaka: 'Ni evidentirane prisotnosti za ta dan' });
+      const { rows: razObs } = await req.db.execute({
+        sql: 'SELECT COALESCE(SUM(trajanje_minut),0) AS s FROM evidenca_razporeditev WHERE zaposleni_id = ? AND datum = ?',
+        args: [zaposleniId, datum]
+      });
+      trajanjeMinut = Math.max(0, shiftMin - Number(razObs[0]?.s || 0));
+      if (!trajanjeMinut) return res.status(400).json({ napaka: 'Vse minute tega dne so že razporejene' });
     } else if (trajanje != null) {
       trajanjeMinut = Math.round(parseFloat(trajanje) * 60);
       if (!trajanjeMinut || trajanjeMinut <= 0) return res.status(400).json({ napaka: 'Vnesite veljavno trajanje' });

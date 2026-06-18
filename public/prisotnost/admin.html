@@ -98,13 +98,15 @@
               <label>Zaposleni</label>
               <select id="filter-zaposleni"><option value="">Vsi</option></select>
             </div>
-            <div class="afg-polje">
-              <label>Od</label>
-              <input type="date" id="filter-od" />
-            </div>
-            <div class="afg-polje">
-              <label>Do</label>
-              <input type="date" id="filter-do" />
+            <div class="afg-full" style="display:flex;gap:8px">
+              <div class="afg-polje" style="flex:1;min-width:0">
+                <label>Od</label>
+                <input type="date" id="filter-od" style="padding:5px 7px;font-size:0.8rem" />
+              </div>
+              <div class="afg-polje" style="flex:1;min-width:0">
+                <label>Do</label>
+                <input type="date" id="filter-do" style="padding:5px 7px;font-size:0.8rem" />
+              </div>
             </div>
             <div class="afg-full afg-gumbi">
               <button id="btn-iskanje">Prikaži</button>

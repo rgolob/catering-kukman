@@ -1,12 +1,12 @@
 {
-  "name": "Catering Kukman",
-  "short_name": "Kukman",
+  "name": "Kukman Evidenca",
+  "short_name": "Evidenca",
   "description": "Evidenca prisotnosti zaposlenih",
   "start_url": "/prisotnost",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1a365d",
-  "theme_color": "#1a365d",
+  "background_color": "#b45309",
+  "theme_color": "#b45309",
   "lang": "sl",
   "icons": [
     {

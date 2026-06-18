@@ -1,6 +1,6 @@
 {
   "name": "Kukman Admin",
-  "short_name": "KK Admin",
+  "short_name": "Admin",
   "description": "Administracija — Catering Kukman",
   "start_url": "/prisotnost/admin",
   "display": "standalone",
