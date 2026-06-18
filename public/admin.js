@@ -1051,6 +1051,9 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
 
     // Razporeditev del
     const razEl = document.getElementById('pris-modal-razporeditev');
+    let razAccordionOpen = false;
+    let lastRazDatum = '';
+
     function prikaziRazporeditev(raz) {
       const razHtml = raz.length ? raz.map(r => {
         const ureStr = r.trajanje_minut ? formatUre(Number(r.trajanje_minut)) : `${r.cas_od}–${r.cas_do}`;
@@ -1067,8 +1070,8 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
 
       razEl.innerHTML = `
         <div class="pris-accordion">
-          <button class="pris-acc-toggle">Razporeditev del${badge} <span class="pris-acc-chevron">▾</span></button>
-          <div class="pris-acc-body" style="display:none">
+          <button class="pris-acc-toggle">Razporeditev del${badge} <span class="pris-acc-chevron">${razAccordionOpen ? '▴' : '▾'}</span></button>
+          <div class="pris-acc-body" style="display:${razAccordionOpen ? 'block' : 'none'}">
             <table class="tabela" style="margin-bottom:12px">
               <thead><tr><th>Datum</th><th>Delo</th><th>Ure</th><th></th></tr></thead>
               <tbody>${razHtml}</tbody>
@@ -1076,7 +1079,7 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
               <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Datum<input type="date" id="raz-datum" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem" /></label>
               <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Delo<select id="raz-delo" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem">${delaOpts}</select></label>
-              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Trajanje (ur)<input type="number" id="raz-trajanje" min="0.5" max="24" step="0.5" placeholder="ur" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:68px" /></label>
+              <label style="font-size:0.82rem;display:flex;flex-direction:column;gap:3px">Trajanje (ur)<input type="number" id="raz-trajanje" min="0.01" max="24" step="any" placeholder="ur" style="padding:4px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:0.85rem;width:68px" /></label>
               <button id="raz-cel-dan" class="btn-sm" style="background:#276749;color:#fff;padding:6px 12px;align-self:flex-end">Cel dan</button>
               <button id="raz-dodaj" class="btn-sm" style="background:#2b6cb0;color:#fff;padding:6px 14px;align-self:flex-end">Dodaj</button>
             </div>
@@ -1088,8 +1091,29 @@ async function odpriPrisModal(zaposleniId, leto, mesec) {
         const body = razEl.querySelector('.pris-acc-body');
         const open = body.style.display !== 'none';
         body.style.display = open ? 'none' : 'block';
+        razAccordionOpen = !open;
         this.querySelector('.pris-acc-chevron').textContent = open ? '▾' : '▴';
       });
+
+      function posodobiPreostanek(datum) {
+        const celDanBtn = razEl.querySelector('#raz-cel-dan');
+        const trajanjeInput = razEl.querySelector('#raz-trajanje');
+        if (!datum) { celDanBtn.style.display = ''; return; }
+        const obstojeceMin = raz.filter(r => r.datum === datum).reduce((s, r) => s + (Number(r.trajanje_minut) || 0), 0);
+        const izmenaMin = d.dnevi.find(dn => dn.datum === datum)?.minute || 0;
+        if (obstojeceMin > 0 && izmenaMin > 0) {
+          const preostanekMin = Math.max(0, izmenaMin - obstojeceMin);
+          trajanjeInput.value = preostanekMin > 0 ? (preostanekMin / 60).toFixed(2) : '0';
+          celDanBtn.style.display = 'none';
+        } else {
+          celDanBtn.style.display = '';
+          if (!trajanjeInput.value) trajanjeInput.value = '';
+        }
+      }
+
+      const razDatumInput = razEl.querySelector('#raz-datum');
+      razDatumInput.addEventListener('change', () => { lastRazDatum = razDatumInput.value; posodobiPreostanek(razDatumInput.value); });
+      if (lastRazDatum) { razDatumInput.value = lastRazDatum; posodobiPreostanek(lastRazDatum); }
 
       razEl.querySelectorAll('.btn-raz-brisi').forEach(btn => {
         btn.addEventListener('click', async () => {
