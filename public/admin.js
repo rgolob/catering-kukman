@@ -1510,6 +1510,18 @@ document.getElementById('lestvica-obdobje').querySelectorAll('.btn-obdobje').for
 // ── NAPAKE TAB ────────────────────────────────────────────────────────────────
 function naloziNapakeTab() { naloziNapake(); }
 
+async function odpriEvidencaZaZaposlenega(zapId, datum) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('.tab[data-tab="evidenca"]').classList.add('active');
+  document.getElementById('tab-evidenca').classList.add('active');
+  await naloziRvZaposlene();
+  document.getElementById('filter-zaposleni').value = zapId;
+  document.getElementById('filter-od').value = datum;
+  document.getElementById('filter-do').value = datum;
+  naloziEvidenco();
+}
+
 async function naloziNapake() {
   try {
     const res = await fetch('/api/admin/anomalije');
@@ -1543,11 +1555,18 @@ async function naloziNapake() {
         }
         return `<tr data-zap="${r.zaposleni_id}" data-datum="${prihodDatum}">
           <td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${casOdp}</td>
-          <td><button class="btn-sm btn-napaka-uredi">Vnesi odhod</button></td>
+          <td style="white-space:nowrap">
+            <button class="btn-sm btn-napaka-uredi">Vnesi odhod</button>
+            <button class="btn-sm btn-napaka-evidenca">Pokaži v evidenci</button>
+          </td>
         </tr>`;
       }).join('');
       odprteТbody.querySelectorAll('.btn-napaka-uredi').forEach(btn => {
         btn.addEventListener('click', () => prikaziNapakForm(btn.closest('tr')));
+      });
+      odprteТbody.querySelectorAll('.btn-napaka-evidenca').forEach(btn => {
+        const tr = btn.closest('tr');
+        btn.addEventListener('click', () => odpriEvidencaZaZaposlenega(tr.dataset.zap, tr.dataset.datum));
       });
     }
 
@@ -1569,11 +1588,18 @@ async function naloziNapake() {
         const naslednjiStr = String(r.naslednji_prihod_cas).slice(0, 16).replace('T', ' ');
         return `<tr data-zap="${r.zaposleni_id}" data-datum="${prihodDatum}">
           <td>${escHtml(r.ime)}</td><td>${prihodStr}</td><td>${naslednjiStr}</td>
-          <td><button class="btn-sm btn-napaka-uredi">Vnesi odhod</button></td>
+          <td style="white-space:nowrap">
+            <button class="btn-sm btn-napaka-uredi">Vnesi odhod</button>
+            <button class="btn-sm btn-napaka-evidenca">Pokaži v evidenci</button>
+          </td>
         </tr>`;
       }).join('');
       napakeTbody.querySelectorAll('.btn-napaka-uredi').forEach(btn => {
         btn.addEventListener('click', () => prikaziNapakForm(btn.closest('tr')));
+      });
+      napakeTbody.querySelectorAll('.btn-napaka-evidenca').forEach(btn => {
+        const tr = btn.closest('tr');
+        btn.addEventListener('click', () => odpriEvidencaZaZaposlenega(tr.dataset.zap, tr.dataset.datum));
       });
     }
   } catch(_) {}
