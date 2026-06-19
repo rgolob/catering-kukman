@@ -446,22 +446,76 @@ async function naloziEvidenco() {
     const tr = document.createElement('tr');
     const nakNapis = z.naknadno ? ' <span class="nk-pill">NK</span>' : '';
     const delaNapis = z.dodatna_dela ? `<br><span class="ev-dela-badge">${escHtml(z.dodatna_dela)}</span>` : '';
+    const casISO = z.cas.replace(' ', 'T');
+    const datumVal = casISO.slice(0, 10);
+    const casVal = casISO.slice(11, 16);
+    tr.dataset.id = z.id;
     tr.innerHTML = `
       <td>${datum}</td>
       <td>${escHtml(z.ime)}</td>
       <td><span class="tip-pill ${z.tip}">${z.tip === 'PRIHOD' ? 'Prihod' : 'Odhod'}</span>${delaNapis}</td>
       <td>${ura}${nakNapis}</td>
-      <td><button class="btn-sm btn-danger" data-id="${z.id}">Izbriši</button></td>
+      <td style="white-space:nowrap">
+        <button class="btn-sm btn-uredi-ev" data-id="${z.id}" data-tip="${z.tip}" data-datum="${datumVal}" data-cas="${casVal}">Uredi</button>
+        <button class="btn-sm btn-danger btn-brisi-ev" data-id="${z.id}">Izbriši</button>
+      </td>
     `;
     tbody.appendChild(tr);
   });
 
-  tbody.querySelectorAll('.btn-danger').forEach(btn => {
+  tbody.querySelectorAll('.btn-brisi-ev').forEach(btn => {
     btn.addEventListener('click', async () => {
       if (!confirm('Izbrisati ta zapis?')) return;
       await fetch(`/api/admin/evidenca/${btn.dataset.id}`, { method: 'DELETE' });
       prikaziToast('Zapis izbrisan');
       naloziEvidenco();
+    });
+  });
+
+  tbody.querySelectorAll('.btn-uredi-ev').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.ev-edit-row').forEach(r => r.remove());
+      const tr = btn.closest('tr');
+      const editTr = document.createElement('tr');
+      editTr.className = 'ev-edit-row';
+      editTr.innerHTML = `
+        <td colspan="5" style="padding:10px 14px;background:#eff6ff;border-top:2px solid #bfdbfe">
+          <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap">
+            <div>
+              <label style="display:block;font-size:0.75rem;color:#64748b;margin-bottom:3px">Tip</label>
+              <select class="ee-tip" style="padding:5px 8px;border:1px solid #cbd5e0;border-radius:6px;font-size:0.85rem">
+                <option value="PRIHOD" ${btn.dataset.tip === 'PRIHOD' ? 'selected' : ''}>Prihod</option>
+                <option value="ODHOD" ${btn.dataset.tip === 'ODHOD' ? 'selected' : ''}>Odhod</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.75rem;color:#64748b;margin-bottom:3px">Datum</label>
+              <input type="date" class="ee-datum" value="${btn.dataset.datum}" style="padding:5px 8px;border:1px solid #cbd5e0;border-radius:6px;font-size:0.85rem" />
+            </div>
+            <div>
+              <label style="display:block;font-size:0.75rem;color:#64748b;margin-bottom:3px">Ura</label>
+              <input type="time" class="ee-cas" value="${btn.dataset.cas}" style="padding:5px 8px;border:1px solid #cbd5e0;border-radius:6px;font-size:0.85rem" />
+            </div>
+            <button class="btn-sm btn-primary ee-shrani">Shrani</button>
+            <button class="btn-sm ee-preklic">Prekliči</button>
+          </div>
+        </td>`;
+      tr.after(editTr);
+      editTr.querySelector('.ee-cas').focus();
+      editTr.querySelector('.ee-preklic').addEventListener('click', () => editTr.remove());
+      editTr.querySelector('.ee-shrani').addEventListener('click', async () => {
+        const tip = editTr.querySelector('.ee-tip').value;
+        const datum = editTr.querySelector('.ee-datum').value;
+        const cas = editTr.querySelector('.ee-cas').value;
+        if (!datum || !cas) { prikaziToast('Vnesi datum in uro', 'napaka'); return; }
+        const r = await fetch(`/api/admin/evidenca/${btn.dataset.id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tip, cas: `${datum} ${cas}:00` })
+        });
+        if (r.ok) { prikaziToast('Zapis posodobljen'); editTr.remove(); naloziEvidenco(); }
+        else { const j = await r.json().catch(() => ({})); prikaziToast(j.napaka || 'Napaka', 'napaka'); }
+      });
     });
   });
   } catch (e) {
