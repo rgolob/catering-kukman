@@ -1361,6 +1361,14 @@ function createApp() {
     res.json({ ok: true });
   });
 
+  app.patch('/api/admin/evidenca/:id', requireAuth, async (req, res) => {
+    const { tip, cas } = req.body;
+    if (!tip || !['PRIHOD', 'ODHOD'].includes(tip)) return res.status(400).json({ napaka: 'Neveljaven tip' });
+    if (!cas || !/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(cas)) return res.status(400).json({ napaka: 'Neveljaven čas' });
+    await req.db.execute({ sql: 'UPDATE evidenca SET tip = ?, cas = ? WHERE id = ?', args: [tip, cas, req.params.id] });
+    res.json({ ok: true });
+  });
+
   app.get('/api/admin/kilometrina', requireAuth, async (req, res) => {
     const { zaposleniId, od, do: do_ } = req.query;
     if (!zaposleniId) return res.status(400).json({ napaka: 'Manjka zaposleniId' });
