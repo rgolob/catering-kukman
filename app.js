@@ -385,10 +385,9 @@ function createApp() {
     });
     if (!pinRows.length) return res.status(401).json({ napaka: 'Napačen PIN' });
     if (rows[0].pin_setup_required || pin === '1234') return res.json({ pinSetupRequired: true });
-    const danes = localDate();
     const { rows: zadnji } = await req.db.execute({
-      sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
-      args: [zaposleniId, danes]
+      sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas DESC LIMIT 1',
+      args: [zaposleniId]
     });
     const tip = zadnji[0]?.tip === 'PRIHOD' ? 'ODHOD' : 'PRIHOD';
     if (tip === 'ODHOD' && zadnji[0]?.cas) {
@@ -441,10 +440,9 @@ function createApp() {
       sql: 'UPDATE zaposleni SET pin = ?, pin_setup_required = 0 WHERE id = ?',
       args: [noviPin, zaposleniId]
     });
-    const danes = localDate();
     const { rows: zadnji } = await req.db.execute({
-      sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
-      args: [zaposleniId, danes]
+      sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas DESC LIMIT 1',
+      args: [zaposleniId]
     });
     const tip = zadnji[0]?.tip === 'PRIHOD' ? 'ODHOD' : 'PRIHOD';
     if (tip === 'ODHOD' && zadnji[0]?.cas) {
