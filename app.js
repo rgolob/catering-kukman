@@ -610,12 +610,12 @@ function createApp() {
     const [{ rows }, { rows: evMesec }] = await Promise.all([
       req.db.execute({
         sql: `SELECT z.id, z.ime,
-          (SELECT tip FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ?
+          (SELECT tip FROM evidenca WHERE zaposleni_id = z.id
            ORDER BY cas DESC LIMIT 1) AS zadnji_tip,
-          (SELECT cas FROM evidenca WHERE zaposleni_id = z.id AND substr(cas,1,10) = ? AND tip = 'PRIHOD'
+          (SELECT cas FROM evidenca WHERE zaposleni_id = z.id AND tip = 'PRIHOD'
            ORDER BY cas DESC LIMIT 1) AS zadnji_prihod
           FROM zaposleni z WHERE z.aktiven = 1 ORDER BY z.ime`,
-        args: [danes, danes]
+        args: []
       }),
       req.db.execute({
         sql: `SELECT zaposleni_id, tip, cas FROM evidenca WHERE substr(cas,1,10) >= ? ORDER BY cas ASC`,
@@ -662,19 +662,22 @@ function createApp() {
     if (zr[0].pin_setup_required || pin === '1234')
       return res.status(422).json({ pinSetupRequired: true, napaka: 'Najprej spremenite PIN — obiščite /prisotnost/pin-setup ali skenirajte QR kodo' });
 
-    if (tip === 'ODHOD') {
-      const danes = localDate();
+    {
       const { rows: zadnji } = await req.db.execute({
-        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
-        args: [zaposleni_id, danes]
+        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas DESC LIMIT 1',
+        args: [zaposleni_id]
       });
-      if (zadnji[0]?.tip === 'ODHOD')
-        return res.status(400).json({ napaka: 'Odhod je že zabeležen.' });
-      if (zadnji[0]?.tip === 'PRIHOD' && zadnji[0]?.cas) {
-        const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
-        if (minutesSince < 10) {
-          const preostalo = Math.ceil(10 - minutesSince);
-          return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+      if (tip === 'PRIHOD' && zadnji[0]?.tip === 'PRIHOD')
+        return res.status(400).json({ napaka: 'Prihod je že zabeležen.' });
+      if (tip === 'ODHOD') {
+        if (zadnji[0]?.tip === 'ODHOD')
+          return res.status(400).json({ napaka: 'Odhod je že zabeležen.' });
+        if (zadnji[0]?.tip === 'PRIHOD' && zadnji[0]?.cas) {
+          const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
+          if (minutesSince < 10) {
+            const preostalo = Math.ceil(10 - minutesSince);
+            return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+          }
         }
       }
     }
@@ -732,19 +735,22 @@ function createApp() {
       args: [novi_pin, zaposleni_id]
     });
 
-    if (tip === 'ODHOD') {
-      const danes = localDate();
+    {
       const { rows: zadnji } = await req.db.execute({
-        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? AND substr(cas,1,10) = ? ORDER BY cas DESC LIMIT 1',
-        args: [zaposleni_id, danes]
+        sql: 'SELECT tip, cas FROM evidenca WHERE zaposleni_id = ? ORDER BY cas DESC LIMIT 1',
+        args: [zaposleni_id]
       });
-      if (zadnji[0]?.tip === 'ODHOD')
-        return res.status(400).json({ napaka: 'Odhod je že zabeležen.' });
-      if (zadnji[0]?.tip === 'PRIHOD' && zadnji[0]?.cas) {
-        const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
-        if (minutesSince < 10) {
-          const preostalo = Math.ceil(10 - minutesSince);
-          return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+      if (tip === 'PRIHOD' && zadnji[0]?.tip === 'PRIHOD')
+        return res.status(400).json({ napaka: 'Prihod je že zabeležen.' });
+      if (tip === 'ODHOD') {
+        if (zadnji[0]?.tip === 'ODHOD')
+          return res.status(400).json({ napaka: 'Odhod je že zabeležen.' });
+        if (zadnji[0]?.tip === 'PRIHOD' && zadnji[0]?.cas) {
+          const minutesSince = (new Date(localTime().replace(' ', 'T')) - new Date(zadnji[0].cas.replace(' ', 'T'))) / 60000;
+          if (minutesSince < 10) {
+            const preostalo = Math.ceil(10 - minutesSince);
+            return res.status(400).json({ napaka: `Prezgodaj za odhod. Počakajte še ${preostalo} min.` });
+          }
         }
       }
     }
